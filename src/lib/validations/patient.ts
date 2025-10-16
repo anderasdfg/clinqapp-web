@@ -33,7 +33,7 @@ export const patientSchema = z.object({
       medications: z.array(z.string()).optional(),
       chronic_conditions: z.array(z.string()).optional(),
       previous_surgeries: z.array(z.string()).optional(),
-      specialty_notes: z.record(z.any()).optional(),
+      // specialty_notes: z.record(z.any()).optional(),
     })
     .optional(),
 });

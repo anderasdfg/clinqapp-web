@@ -1,100 +1,106 @@
-/* src/app/globals.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================ */
-/* CSS VARIABLES (Design Tokens)               */
+/* CSS DESIGN TOKENS & CUSTOM PROPERTIES       */
 /* ============================================ */
 
 @layer base {
   :root {
-    /* Light mode (default) */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* ============================================
+     * Brand Colors (HSL format for flexibility)
+     * ============================================ */
+    --color-clinq-purple: 267 99% 12%;       /* #17013e - Primary brand color */
+    --color-clinq-cyan: 187 98% 47%;         /* #03d3ee - Secondary brand color */
+    --color-clinq-magenta: 285 100% 62%;     /* #e040ff - Accent color */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* ============================================
+     * Semantic Colors - Light Mode
+     * ============================================ */
+    --background: 0 0% 100%;                 /* White background */
+    --foreground: 267 99% 12%;               /* Purple text */
+
+    --card: 0 0% 100%;                       /* White cards */
+    --card-foreground: 267 99% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 267 99% 12%;
 
-    /* Primary: Cyan de ClinqApp */
-    --primary: 190 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 267 99% 12%;                  /* Purple - Primary */
+    --primary-foreground: 0 0% 100%;         /* White text on purple */
 
-    /* Secondary: Magenta de ClinqApp */
-    --secondary: 331 84% 52%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 187 98% 47%;                /* Cyan - Secondary */
+    --secondary-foreground: 0 0% 100%;       /* White text on cyan */
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 240 4.8% 95.9%;                 /* Light gray */
+    --muted-foreground: 240 3.8% 46.1%;      /* Medium gray */
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 285 100% 62%;                  /* Magenta - Accent */
+    --accent-foreground: 0 0% 100%;          /* White text on magenta */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;                /* Red for errors */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
+    --border: 240 5.9% 90%;                  /* Light gray borders */
     --input: 240 5.9% 90%;
-    --ring: 190 100% 50%;
+    --ring: 187 98% 47%;                     /* Cyan focus ring */
 
-    --radius: 0.5rem;
+    /* ============================================
+     * Functional Tokens
+     * ============================================ */
+    --radius: 0.5rem;                        /* Default border radius */
 
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
+    /* ============================================
+     * Chart Colors
+     * ============================================ */
+    --chart-1: var(--primary);
+    --chart-2: var(--accent);
+    --chart-3: var(--secondary);
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
   }
 
+  /* ============================================
+   * Dark Mode Overrides
+   * ============================================ */
   .dark {
-    /* Dark mode: Basado en el fondo púrpura del logo */
-    --background: 267 65% 10%;
-    --foreground: 0 0% 98%;
+    --background: 267 99% 8%;                /* Very dark purple */
+    --foreground: 0 0% 98%;                  /* Off-white text */
 
-    --card: 267 55% 13%;
+    --card: 267 90% 13%;                     /* Dark purple cards */
     --card-foreground: 0 0% 98%;
 
-    --popover: 267 65% 10%;
+    --popover: 267 99% 8%;
     --popover-foreground: 0 0% 98%;
 
-    /* Primary: Cyan brillante */
-    --primary: 190 100% 50%;
-    --primary-foreground: 267 65% 10%;
+    --primary: 267 99% 12%;                  /* Purple - Primary */
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Magenta brillante */
-    --secondary: 331 84% 52%;
+    --secondary: 187 98% 47%;                /* Cyan - Secondary */
     --secondary-foreground: 0 0% 100%;
 
     --muted: 267 45% 20%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 267 45% 20%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 285 100% 62%;                  /* Magenta - Accent */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 267 45% 20%;
     --input: 267 45% 20%;
-    --ring: 190 100% 50%;
-
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --ring: 187 98% 47%;
   }
 }
 
 /* ============================================ */
-/* BASE STYLES                                  */
+/* BASE ELEMENT STYLES                          */
 /* ============================================ */
 
 @layer base {
+  /* Global resets and base styles */
   * {
     @apply border-border;
   }
@@ -105,33 +111,49 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground min-h-screen;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
-  /* Headings */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-semibold tracking-tight;
+  /* ============================================
+   * Typography Styles
+   * ============================================ */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-foreground;
   }
 
-  h1 {
-    @apply text-4xl lg:text-5xl;
+  h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
+  h2 { @apply text-3xl md:text-4xl; }
+  h3 { @apply text-2xl md:text-3xl; }
+  h4 { @apply text-xl md:text-2xl; }
+  h5 { @apply text-lg md:text-xl; }
+  h6 { @apply text-base md:text-lg; }
+
+  p {
+    @apply text-foreground/90 leading-relaxed;
   }
 
-  h2 {
-    @apply text-3xl lg:text-4xl;
+  /* ============================================
+   * Link Styles
+   * ============================================ */
+  a {
+    @apply text-primary hover:underline underline-offset-4 transition-colors;
   }
 
-  h3 {
-    @apply text-2xl lg:text-3xl;
+  /* ============================================
+   * Form Element Styles
+   * ============================================ */
+  input, textarea, select {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
+           text-sm ring-offset-background file:border-0 file:bg-transparent
+           file:text-sm file:font-medium placeholder:text-muted-foreground
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  /* Scrollbar personalizado */
+  /* ============================================
+   * Custom Scrollbar
+   * ============================================ */
   ::-webkit-scrollbar {
     @apply w-2.5 h-2.5;
   }
@@ -142,115 +164,23 @@
 
   ::-webkit-scrollbar-thumb {
     @apply rounded-lg;
-    background-color: rgba(0, 217, 255, 0.3);
+    background-color: rgba(3, 211, 238, 0.3);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(0, 217, 255, 0.5);
+    background-color: rgba(3, 211, 238, 0.5);
   }
 
-  /* Selection */
+  /* ============================================
+   * Selection & Focus Styles
+   * ============================================ */
   ::selection {
-    background-color: rgba(0, 217, 255, 0.3);
+    background-color: rgba(3, 211, 238, 0.3);
     @apply text-foreground;
   }
 
-  /* Focus visible */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-}
-
-/* ============================================ */
-/* UTILITY CLASSES                              */
-/* ============================================ */
-
-@layer utilities {
-  /* Text gradients */
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #00d9ff 0%, #e91e8c 100%);
-  }
-
-  .text-gradient-vertical {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(180deg, #00d9ff 0%, #e91e8c 100%);
-  }
-
-  /* Glass effects */
-  .glass {
-    @apply backdrop-blur-md border;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .glass-dark {
-    @apply backdrop-blur-md border;
-    background-color: rgba(26, 11, 46, 0.3);
-    border-color: rgba(0, 217, 255, 0.2);
-  }
-
-  .glass-card {
-    @apply backdrop-blur-lg border shadow-xl;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  /* Glow effects */
-  .glow-cyan {
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
-  }
-
-  .glow-cyan-sm {
-    box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
-  }
-
-  .glow-cyan-lg {
-    box-shadow: 0 0 30px rgba(0, 217, 255, 0.4);
-  }
-
-  .glow-magenta {
-    box-shadow: 0 0 20px rgba(233, 30, 140, 0.3);
-  }
-
-  .glow-magenta-sm {
-    box-shadow: 0 0 10px rgba(233, 30, 140, 0.2);
-  }
-
-  .glow-magenta-lg {
-    box-shadow: 0 0 30px rgba(233, 30, 140, 0.4);
-  }
-
-  .glow-both {
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3),
-      0 0 30px rgba(233, 30, 140, 0.2);
-  }
-
-  /* Hover glow */
-  .hover-glow-cyan {
-    @apply transition-shadow duration-300;
-  }
-
-  .hover-glow-cyan:hover {
-    box-shadow: 0 0 25px rgba(0, 217, 255, 0.4);
-  }
-
-  /* Border gradients */
-  .border-gradient {
-    border: 2px solid transparent;
-    background-image: linear-gradient(
-        hsl(var(--background)),
-        hsl(var(--background))
-      ),
-      linear-gradient(135deg, #00d9ff, #e91e8c);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-  }
-
-  /* Container queries */
-  .container-clinq {
-    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
-    max-width: 1400px;
   }
 }
 
@@ -259,64 +189,57 @@
 /* ============================================ */
 
 @layer components {
-  /* Buttons */
+  /* ============================================
+   * Button Variants
+   * ============================================ */
   .btn-clinq {
-    @apply inline-flex items-center justify-center gap-2 
-           text-white font-semibold 
-           py-2.5 px-6 rounded-lg 
-           hover:shadow-lg hover:scale-105 
+    @apply inline-flex items-center justify-center gap-2
+           text-white font-semibold
+           py-2.5 px-6 rounded-lg
+           hover:shadow-lg hover:scale-105
            active:scale-95
            transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
-    background-image: linear-gradient(135deg, #00d9ff 0%, #e91e8c 100%);
+           focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+    background-image: linear-gradient(135deg, #03d3ee 0%, #e040ff 100%);
   }
 
   .btn-clinq-outline {
     @apply inline-flex items-center justify-center gap-2
-           border-2 font-semibold py-2.5 px-6 rounded-lg
+           border-2 border-clinq-cyan-500
+           text-clinq-cyan-500 font-semibold
+           py-2.5 px-6 rounded-lg
+           hover:bg-clinq-cyan-500 hover:text-white
            active:scale-95
            transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
-    border-color: #00d9ff;
-    color: #00d9ff;
-  }
-
-  .btn-clinq-outline:hover {
-    background-color: #00d9ff;
-    color: white;
   }
 
   .btn-clinq-ghost {
     @apply inline-flex items-center justify-center gap-2
-           font-semibold
+           text-clinq-cyan-500 font-semibold
            py-2.5 px-6 rounded-lg
+           hover:bg-clinq-cyan-500/10
            active:scale-95
            transition-all duration-200
+           focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
            disabled:opacity-50 disabled:cursor-not-allowed;
-    color: #00d9ff;
   }
 
-  .btn-clinq-ghost:hover {
-    background-color: rgba(0, 217, 255, 0.1);
-  }
-
-  /* Cards */
+  /* ============================================
+   * Card Variants
+   * ============================================ */
   .card-clinq {
     @apply bg-card border border-border rounded-lg shadow-sm
-           transition-colors duration-200;
-  }
-
-  .card-clinq:hover {
-    border-color: rgba(0, 217, 255, 0.5);
+           transition-all duration-200
+           hover:border-clinq-cyan-500/50;
   }
 
   .card-clinq-glass {
     @apply glass-dark rounded-lg shadow-lg
-           transition-all duration-200;
-  }
-
-  .card-clinq-glass:hover {
-    border-color: rgba(0, 217, 255, 0.5);
+           transition-all duration-200
+           hover:border-clinq-cyan-500/50;
   }
 
   .card-clinq-gradient {
@@ -328,7 +251,7 @@
   .card-clinq-gradient::before {
     content: '';
     @apply absolute inset-0 -z-10;
-    background-image: linear-gradient(135deg, #00d9ff 0%, #e91e8c 100%);
+    background-image: linear-gradient(135deg, #03d3ee 0%, #e040ff 100%);
     opacity: 0.1;
   }
 
@@ -336,81 +259,206 @@
     opacity: 0.2;
   }
 
-  /* Inputs */
+  /* ============================================
+   * Input Variants
+   * ============================================ */
   .input-clinq {
-    @apply w-full px-3 py-2 
-           border-2 border-border 
+    @apply w-full px-3 py-2
+           border-2 border-border
            rounded-lg
            bg-background text-foreground
            placeholder:text-muted-foreground
            transition-all duration-200
+           focus:border-clinq-cyan-500
+           focus:ring-2 focus:ring-clinq-cyan-500/20
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  .input-clinq:focus {
-    border-color: #00d9ff;
-    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
-    @apply outline-none;
-  }
-
   .input-clinq-error {
-    @apply input-clinq;
-    border-color: hsl(var(--destructive));
+    @apply input-clinq
+           border-destructive
+           focus:border-destructive
+           focus:ring-destructive/20;
   }
 
-  .input-clinq-error:focus {
-    border-color: hsl(var(--destructive));
-    box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.2);
-  }
-
-  /* Badges */
+  /* ============================================
+   * Badge Variants
+   * ============================================ */
   .badge-clinq {
     @apply inline-flex items-center gap-1
            text-white text-xs font-semibold
            px-2.5 py-0.5 rounded-full;
-    background-image: linear-gradient(135deg, #00d9ff 0%, #e91e8c 100%);
+    background-image: linear-gradient(135deg, #03d3ee 0%, #e040ff 100%);
   }
 
   .badge-clinq-outline {
     @apply inline-flex items-center gap-1
-           border text-xs font-semibold
+           border border-clinq-cyan-500
+           text-clinq-cyan-500 text-xs font-semibold
            px-2.5 py-0.5 rounded-full;
-    border-color: #00d9ff;
-    color: #00d9ff;
   }
 
-  /* Links */
+  /* ============================================
+   * Link Variants
+   * ============================================ */
   .link-clinq {
-    @apply underline-offset-4 hover:underline
+    @apply text-clinq-cyan-500
+           underline-offset-4 hover:underline
+           hover:text-clinq-cyan-600
            transition-colors duration-200;
-    color: #00d9ff;
   }
 
-  .link-clinq:hover {
-    color: #00b8d9;
-  }
-
-  /* Dividers */
+  /* ============================================
+   * Divider
+   * ============================================ */
   .divider-clinq {
     @apply h-px;
     background-image: linear-gradient(
       to right,
       transparent,
-      rgba(0, 217, 255, 0.5),
+      rgba(3, 211, 238, 0.5),
       transparent
     );
   }
 
-  /* Skeleton loaders */
-  .skeleton-clinq {
-    @apply animate-pulse bg-muted rounded;
-  }
-
-  /* Section headers */
+  /* ============================================
+   * Section Header
+   * ============================================ */
   .section-header-clinq {
     @apply text-3xl font-bold tracking-tight
            bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #00d9ff 0%, #e91e8c 100%);
+    background-image: linear-gradient(135deg, #03d3ee 0%, #e040ff 100%);
+  }
+
+  /* ============================================
+   * Skeleton Loader
+   * ============================================ */
+  .skeleton-clinq {
+    @apply animate-pulse bg-muted rounded;
+  }
+}
+
+/* ============================================ */
+/* UTILITY CLASSES                              */
+/* ============================================ */
+
+@layer utilities {
+  /* ============================================
+   * Text Gradient Utilities
+   * ============================================ */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #03d3ee 0%, #e040ff 100%);
+  }
+
+  .text-gradient-vertical {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(180deg, #03d3ee 0%, #e040ff 100%);
+  }
+
+  /* ============================================
+   * Glass Effect Utilities
+   * ============================================ */
+  .glass {
+    @apply backdrop-blur-md border;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-md border;
+    background-color: rgba(23, 1, 62, 0.3);
+    border-color: rgba(3, 211, 238, 0.2);
+  }
+
+  .glass-card {
+    @apply backdrop-blur-lg border shadow-xl;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* ============================================
+   * Glow Effect Utilities
+   * ============================================ */
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(3, 211, 238, 0.3);
+  }
+
+  .glow-cyan-sm {
+    box-shadow: 0 0 10px rgba(3, 211, 238, 0.2);
+  }
+
+  .glow-cyan-lg {
+    box-shadow: 0 0 30px rgba(3, 211, 238, 0.4);
+  }
+
+  .glow-magenta {
+    box-shadow: 0 0 20px rgba(224, 64, 255, 0.3);
+  }
+
+  .glow-magenta-sm {
+    box-shadow: 0 0 10px rgba(224, 64, 255, 0.2);
+  }
+
+  .glow-magenta-lg {
+    box-shadow: 0 0 30px rgba(224, 64, 255, 0.4);
+  }
+
+  .glow-both {
+    box-shadow:
+      0 0 20px rgba(3, 211, 238, 0.3),
+      0 0 30px rgba(224, 64, 255, 0.2);
+  }
+
+  /* ============================================
+   * Hover Glow Utilities
+   * ============================================ */
+  .hover-glow-cyan {
+    @apply transition-shadow duration-300;
+  }
+
+  .hover-glow-cyan:hover {
+    box-shadow: 0 0 25px rgba(3, 211, 238, 0.4);
+  }
+
+  /* ============================================
+   * Border Gradient Utilities
+   * ============================================ */
+  .border-gradient {
+    border: 2px solid transparent;
+    background-image:
+      linear-gradient(hsl(var(--background)), hsl(var(--background))),
+      linear-gradient(135deg, #03d3ee, #e040ff);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  /* ============================================
+   * Container Utilities
+   * ============================================ */
+  .container-clinq {
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1400px;
+  }
+
+  /* ============================================
+   * Scrollbar Utilities
+   * ============================================ */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-primary/30 hover:bg-primary/50 transition-colors;
   }
 }
 
@@ -430,7 +478,12 @@
   .glass,
   .glass-dark,
   .glass-card {
-    @apply bg-white;
-    border-color: #d1d5db;
+    @apply bg-white border-gray-300;
+  }
+
+  .text-gradient,
+  .section-header-clinq {
+    @apply text-black;
+    background-image: none;
   }
 }

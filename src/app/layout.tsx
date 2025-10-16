@@ -1,19 +1,32 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "sonner"
-import { cn } from "@/lib/utils"
 
-const inter = Inter({ subsets: ["latin"] })
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
-  title: "ClinqApp - Gestión de Consultorios",
-  description: "Plataforma integral para la gestión de consultorios médicos",
-  keywords: ["clinqapp", "gestión médica", "consultorio", "podología"],
+  title: "ClinqApp - Gestión Inteligente de Consultorios",
+  description: "Plataforma integral para la gestión de consultorios médicos. Organiza pacientes, citas, tratamientos y finanzas en una sola aplicación moderna y fácil de usar.",
+  keywords: ["clinqapp", "gestión médica", "consultorio", "podología", "agenda médica", "pacientes"],
   authors: [{ name: "ClinqApp Team" }],
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/logo-icon.png",
+    shortcut: "/favicon.ico",
+  },
+  openGraph: {
+    title: "ClinqApp - Gestión Inteligente de Consultorios",
+    description: "Plataforma integral para la gestión de consultorios médicos",
+    type: "website",
+    images: ["/logo.png"],
   },
 }
 
@@ -24,20 +37,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body
-        className={cn(
-          inter.className,
-          "dark antialiased" // Modo dark por defecto (como tu logo)
-        )}
-      >
+      <body className={poppins.className}>
         {children}
+
         <Toaster
-          position="top-right"
+          position="top-center"
+          richColors
           toastOptions={{
             classNames: {
-              success: 'bg-clinq-cyan text-white',
+              success: 'bg-primary text-primary-foreground',
               error: 'bg-destructive text-destructive-foreground',
-              info: 'bg-clinq-magenta text-white',
+              info: 'bg-accent text-accent-foreground',
             }
           }}
         />

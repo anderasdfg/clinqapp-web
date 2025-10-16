@@ -30,7 +30,7 @@ export function Logo({
             {/* Logo Icon */}
             <div className={cn('relative', sizeClasses[size], 'aspect-square')}>
                 <Image
-                    src="/logo-icon.png" // Debes extraer solo el ícono del logo
+                    src="/logo-icon.png"
                     alt="ClinqApp"
                     fill
                     className="object-contain"
@@ -42,7 +42,7 @@ export function Logo({
             {showText && (
                 <span
                     className={cn(
-                        'font-bold tracking-tight',
+                        'font-semibold italic tracking-tight',
                         size === 'sm' && 'text-lg',
                         size === 'md' && 'text-xl',
                         size === 'lg' && 'text-2xl',
