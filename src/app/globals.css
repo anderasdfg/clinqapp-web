@@ -140,6 +140,16 @@
     @apply text-primary hover:underline underline-offset-4 transition-colors;
   }
 
+  /* Remove underline from links inside buttons */
+  button a,
+  .btn a,
+  .btn-clinq a,
+  .btn-clinq-outline a,
+  .btn-clinq-ghost a,
+  [role="button"] a {
+    @apply no-underline hover:no-underline;
+  }
+
   /* ============================================
    * Form Element Styles
    * ============================================ */

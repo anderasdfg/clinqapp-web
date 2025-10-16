@@ -15,7 +15,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <Logo size="lg" variant="white" />
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="text-white hover:text-clinq-cyan-600" asChild>
+              <Button variant="ghost" className="text-white hover:bg-clinq-gradient hover:text-white transition-all" asChild>
                 <Link href="/login">Iniciar Sesión</Link>
               </Button>
               <Button className="btn-clinq" asChild>
