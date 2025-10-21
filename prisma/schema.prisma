@@ -67,7 +67,10 @@ model Organization {
   subscriptionStatus SubscriptionStatus @default(TRIALING) @map("subscription_status")
   trialEndsAt        DateTime?          @map("trial_ends_at") @db.Timestamptz
   subscriptionEndsAt DateTime?          @map("subscription_ends_at") @db.Timestamptz
-  
+
+  // Onboarding
+  isTemporary        Boolean            @default(true) @map("is_temporary") // True until user completes onboarding
+
   // Relations
   users        User[]
   patients     Patient[]

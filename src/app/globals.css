@@ -11,45 +11,45 @@
     /* ============================================
      * Brand Colors (HSL format for flexibility)
      * ============================================ */
-    --color-clinq-purple: 267 99% 12%;       /* #17013e - Primary brand color */
-    --color-clinq-cyan: 187 98% 47%;         /* #03d3ee - Secondary brand color */
-    --color-clinq-magenta: 285 100% 62%;     /* #e040ff - Accent color */
+    --color-clinq-purple: 267 99% 12%; /* #17013e - Primary brand color */
+    --color-clinq-cyan: 187 98% 47%; /* #03d3ee - Secondary brand color */
+    --color-clinq-magenta: 285 100% 62%; /* #e040ff - Accent color */
 
     /* ============================================
      * Semantic Colors - Light Mode
      * ============================================ */
-    --background: 0 0% 100%;                 /* White background */
-    --foreground: 267 99% 12%;               /* Purple text */
+    --background: 0 0% 100%; /* White background */
+    --foreground: #fff; /* Purple text */
 
-    --card: 0 0% 100%;                       /* White cards */
+    --card: 0 0% 100%; /* White cards */
     --card-foreground: 267 99% 12%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 267 99% 12%;
 
-    --primary: 267 99% 12%;                  /* Purple - Primary */
-    --primary-foreground: 0 0% 100%;         /* White text on purple */
+    --primary: 267 99% 12%; /* Purple - Primary */
+    --primary-foreground: 0 0% 100%; /* White text on purple */
 
-    --secondary: 187 98% 47%;                /* Cyan - Secondary */
-    --secondary-foreground: 0 0% 100%;       /* White text on cyan */
+    --secondary: 187 98% 47%; /* Cyan - Secondary */
+    --secondary-foreground: 0 0% 100%; /* White text on cyan */
 
-    --muted: 240 4.8% 95.9%;                 /* Light gray */
-    --muted-foreground: 240 3.8% 46.1%;      /* Medium gray */
+    --muted: 240 4.8% 95.9%; /* Light gray */
+    --muted-foreground: 240 3.8% 46.1%; /* Medium gray */
 
-    --accent: 285 100% 62%;                  /* Magenta - Accent */
-    --accent-foreground: 0 0% 100%;          /* White text on magenta */
+    --accent: 285 100% 62%; /* Magenta - Accent */
+    --accent-foreground: 0 0% 100%; /* White text on magenta */
 
-    --destructive: 0 84% 60%;                /* Red for errors */
+    --destructive: 0 84% 60%; /* Red for errors */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;                  /* Light gray borders */
+    --border: 240 5.9% 90%; /* Light gray borders */
     --input: 240 5.9% 90%;
-    --ring: 187 98% 47%;                     /* Cyan focus ring */
+    --ring: 187 98% 47%; /* Cyan focus ring */
 
     /* ============================================
      * Functional Tokens
      * ============================================ */
-    --radius: 0.5rem;                        /* Default border radius */
+    --radius: 0.5rem; /* Default border radius */
 
     /* ============================================
      * Chart Colors
@@ -65,25 +65,25 @@
    * Dark Mode Overrides
    * ============================================ */
   .dark {
-    --background: 267 99% 8%;                /* Very dark purple */
-    --foreground: 0 0% 98%;                  /* Off-white text */
+    --background: 267 99% 8%; /* Very dark purple */
+    --foreground: 0 0% 98%; /* Off-white text */
 
-    --card: 267 90% 13%;                     /* Dark purple cards */
+    --card: 267 90% 13%; /* Dark purple cards */
     --card-foreground: 0 0% 98%;
 
     --popover: 267 99% 8%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 267 99% 12%;                  /* Purple - Primary */
+    --primary: 267 99% 12%; /* Purple - Primary */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 187 98% 47%;                /* Cyan - Secondary */
+    --secondary: 187 98% 47%; /* Cyan - Secondary */
     --secondary-foreground: 0 0% 100%;
 
     --muted: 267 45% 20%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 285 100% 62%;                  /* Magenta - Accent */
+    --accent: 285 100% 62%; /* Magenta - Accent */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -118,16 +118,33 @@
   /* ============================================
    * Typography Styles
    * ============================================ */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bold tracking-tight text-foreground;
   }
 
-  h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
-  h2 { @apply text-3xl md:text-4xl; }
-  h3 { @apply text-2xl md:text-3xl; }
-  h4 { @apply text-xl md:text-2xl; }
-  h5 { @apply text-lg md:text-xl; }
-  h6 { @apply text-base md:text-lg; }
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+  h4 {
+    @apply text-xl md:text-2xl;
+  }
+  h5 {
+    @apply text-lg md:text-xl;
+  }
+  h6 {
+    @apply text-base md:text-lg;
+  }
 
   p {
     @apply text-foreground/90 leading-relaxed;
@@ -146,14 +163,16 @@
   .btn-clinq a,
   .btn-clinq-outline a,
   .btn-clinq-ghost a,
-  [role="button"] a {
+  [role='button'] a {
     @apply no-underline hover:no-underline;
   }
 
   /* ============================================
    * Form Element Styles
    * ============================================ */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
            text-sm ring-offset-background file:border-0 file:bg-transparent
            file:text-sm file:font-medium placeholder:text-muted-foreground
@@ -415,8 +434,7 @@
   }
 
   .glow-both {
-    box-shadow:
-      0 0 20px rgba(3, 211, 238, 0.3),
+    box-shadow: 0 0 20px rgba(3, 211, 238, 0.3),
       0 0 30px rgba(224, 64, 255, 0.2);
   }
 
@@ -436,8 +454,10 @@
    * ============================================ */
   .border-gradient {
     border: 2px solid transparent;
-    background-image:
-      linear-gradient(hsl(var(--background)), hsl(var(--background))),
+    background-image: linear-gradient(
+        hsl(var(--background)),
+        hsl(var(--background))
+      ),
       linear-gradient(135deg, #03d3ee, #e040ff);
     background-origin: border-box;
     background-clip: padding-box, border-box;

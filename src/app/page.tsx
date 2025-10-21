@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import Link from 'next/link'
 import { ArrowRight, Check, Sparkles, Users, Calendar, FileText, CreditCard, BarChart3, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,10 +17,9 @@ export default function HomePage() {
               <Button variant="ghost" className="text-white hover:bg-clinq-gradient hover:text-white transition-all" asChild>
                 <Link href="/login">Iniciar Sesión</Link>
               </Button>
-              <Button className="btn-clinq" asChild>
+              <Button className="btn-clinq hidden md:block" asChild>
                 <Link href="/register">
                   Comenzar Gratis
-                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>

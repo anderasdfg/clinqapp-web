@@ -11,9 +11,10 @@
     "db:reset": "tsx prisma/reset.ts",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:fresh": "npm run db:reset && npm run db:push && npm run db:seed",
+    "db:setup-auth": "tsx prisma/setup-auth.ts",
+    "db:fresh": "npm run db:reset && npm run db:push && npm run db:setup-auth && npm run db:seed",
     "db:clean-supabase": "tsx prisma/clean-supabase.ts",
-    "db:full-reset": "npm run db:clean-supabase && npx prisma migrate reset --skip-seed && npm run db:seed",
+    "db:full-reset": "npm run db:clean-supabase && npx prisma migrate reset --skip-seed && npm run db:setup-auth && npm run db:seed",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -49,7 +50,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
