@@ -70,6 +70,22 @@ model Organization {
 
   // Onboarding
   isTemporary        Boolean            @default(true) @map("is_temporary") // True until user completes onboarding
+  onboardingCompleted Boolean           @default(false) @map("onboarding_completed")
+
+  // RUC (identificación fiscal)
+  ruc                String?            @unique
+
+  // Notification settings
+  notificationEmail     Boolean         @default(true) @map("notification_email")
+  notificationWhatsapp  Boolean         @default(false) @map("notification_whatsapp")
+  whatsappNumber        String?         @map("whatsapp_number")
+  sendReminders         Boolean         @default(true) @map("send_reminders")
+  reminderHoursBefore   Int            @default(24) @map("reminder_hours_before")
+
+  // Appointment settings
+  defaultAppointmentDuration Int       @default(30) @map("default_appointment_duration")
+  appointmentInterval        Int       @default(0) @map("appointment_interval")
+  allowOnlineBooking         Boolean   @default(false) @map("allow_online_booking")
 
   // Relations
   users        User[]
@@ -79,6 +95,8 @@ model Organization {
   payments     Payment[]
   coupons      Coupon[]
   schedules    Schedule[]
+  paymentMethods      PaymentMethodConfig[]
+  consultationTypes   ConsultationTypeConfig[]
 
   @@map("organizations")
 }
@@ -235,6 +253,13 @@ model Patient {
 // SERVICES (Tipos de tratamiento/servicio)
 // ============================================
 
+enum ServiceCategory {
+  DIAGNOSTIC
+  TREATMENT
+  FOLLOWUP
+  OTHER
+}
+
 model Service {
   id        String   @id @default(uuid()) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -243,15 +268,17 @@ model Service {
 
   organizationId String       @map("organization_id") @db.Uuid
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+
   name           String
   description    String?
+  category       ServiceCategory @default(OTHER)
   basePrice      Decimal  @map("base_price") @db.Decimal(10, 2)
+  currency       String   @default("PEN")
   duration       Int      // en minutos
   requiresSessions Boolean @default(false) @map("requires_sessions")
   defaultSessions  Int?    @default(1) @map("default_sessions")
   isActive       Boolean  @default(true) @map("is_active")
-  
+
   // Relations
   appointments Appointment[]
   treatments   Treatment[]
@@ -506,4 +533,88 @@ model Coupon {
   @@map("coupons")
   @@index([organizationId])
   @@index([code])
+}
+
+// ============================================
+// ONBOARDING CONFIGURATION
+// ============================================
+
+enum PaymentMethodType {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  MOBILE_PAYMENT // Yape, Plin, etc
+  BANK_DEPOSIT
+  OTHER
+}
+
+model PaymentMethodConfig {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type      PaymentMethodType
+  isActive  Boolean          @default(true) @map("is_active")
+  otherName String?          @map("other_name") // For "OTHER" type
+
+  @@map("payment_method_configs")
+  @@index([organizationId])
+}
+
+enum ConsultationType {
+  IN_PERSON
+  TELEMEDICINE
+  HOME_VISIT
+}
+
+model ConsultationTypeConfig {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type     ConsultationType
+  isActive Boolean         @default(true) @map("is_active")
+
+  @@map("consultation_type_configs")
+  @@index([organizationId])
+  @@unique([organizationId, type])
+}
+
+// ============================================
+// TEAM INVITATIONS
+// ============================================
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Invitation {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organizationId String @map("organization_id") @db.Uuid
+  // Note: We can't add the relation here because Organization model is above
+  // The relation will be one-way
+
+  email     String
+  role      UserRole
+  invitedBy String   @map("invited_by") @db.Uuid // User ID who sent the invitation
+
+  status    InvitationStatus @default(PENDING)
+  token     String           @unique // Unique token for invitation link
+  expiresAt DateTime         @map("expires_at") @db.Timestamptz
+
+  @@map("invitations")
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
 }

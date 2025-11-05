@@ -19,9 +19,7 @@ export default function OnboardingPage() {
   const [selectedOption, setSelectedOption] = useState<'create' | 'join' | null>(null);
 
   const handleCreateConsultorio = () => {
-    // TODO: Implementar en Fase 2
-    // Por ahora, simplemente redirige al dashboard
-    router.push('/dashboard');
+    router.push('/onboarding/create');
   };
 
   const handleJoinConsultorio = () => {
