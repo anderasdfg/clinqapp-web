@@ -18,9 +18,11 @@ app.get('/health', (req, res) => {
 
 import onboardingRoutes from './routes/onboarding.routes';
 import organizationRoutes from './routes/organization.routes';
+import patientsRoutes from './routes/patients.routes';
 
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/organization', organizationRoutes);
+app.use('/api/patients', patientsRoutes);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

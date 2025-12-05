@@ -67,12 +67,12 @@ export const ServicesStep = ({
                                     <h3 className="font-semibold text-[rgb(var(--text-primary))] truncate">{service.name}</h3>
                                     <p className="text-sm text-[rgb(var(--text-secondary))] mt-1 line-clamp-2">{service.description}</p>
                                     <div className="flex gap-4 mt-2 text-sm flex-wrap">
-                                        <span className="text-[rgb(var(--text-secondary))]">
+                                        {/* <span className="text-[rgb(var(--text-secondary))]">
                                             <span className="font-medium text-primary">S/ {service.basePrice}</span>
-                                        </span>
-                                        <span className="text-[rgb(var(--text-secondary))]">
+                                        </span> */}
+                                        {/* <span className="text-[rgb(var(--text-secondary))]">
                                             {service.duration} min
-                                        </span>
+                                        </span> */}
                                         <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                             {service.category === 'DIAGNOSTIC' ? 'Diagnóstico' :
                                                 service.category === 'TREATMENT' ? 'Tratamiento' :

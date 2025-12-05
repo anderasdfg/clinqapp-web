@@ -407,7 +407,7 @@ const Onboarding = () => {
                 </div>
 
                 <p className="text-center text-xs text-[rgb(var(--text-tertiary))] mt-6">
-                    © 2024 ClinqApp. Sistema de gestión para profesionales de la salud.
+                    © 2026 ClinqApp. Sistema de gestión para profesionales de la salud.
                 </p>
             </div>
         </div>

@@ -95,8 +95,8 @@ export const ServiceSelectionModal = ({
                                 key={service.id}
                                 onClick={() => onSelectService(service)}
                                 className={`p-4 rounded-xl border-2 transition-all text-left hover:shadow-md ${isSelected(service.id)
-                                        ? 'border-primary bg-primary/5 shadow-sm'
-                                        : 'border-[rgb(var(--border-primary))] hover:border-primary/50'
+                                    ? 'border-primary bg-primary/5 shadow-sm'
+                                    : 'border-[rgb(var(--border-primary))] hover:border-primary/50'
                                     }`}
                             >
                                 <div className="flex items-start gap-3">
@@ -115,19 +115,20 @@ export const ServiceSelectionModal = ({
                                         <p className="text-sm text-[rgb(var(--text-secondary))] line-clamp-2 mb-2">
                                             {service.description}
                                         </p>
+                                        <span className="ml-auto px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                            {service.category === 'DIAGNOSTIC' ? 'Diagnóstico' :
+                                                service.category === 'TREATMENT' ? 'Tratamiento' :
+                                                    service.category === 'FOLLOWUP' ? 'Seguimiento' : 'Otro'}
+                                        </span>
                                         <div className="flex items-center gap-3 text-sm">
-                                            <span className="font-medium text-primary">
+                                            {/* <span className="font-medium text-primary">
                                                 S/ {service.basePrice}
                                             </span>
                                             <span className="text-[rgb(var(--text-tertiary))]">•</span>
                                             <span className="text-[rgb(var(--text-secondary))]">
                                                 {service.duration} min
-                                            </span>
-                                            <span className="ml-auto px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                {service.category === 'DIAGNOSTIC' ? 'Diagnóstico' :
-                                                    service.category === 'TREATMENT' ? 'Tratamiento' :
-                                                        service.category === 'FOLLOWUP' ? 'Seguimiento' : 'Otro'}
-                                            </span>
+                                            </span> */}
+
                                         </div>
                                     </div>
                                 </div>
