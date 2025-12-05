@@ -10,6 +10,12 @@ import PatientsPage from './pages/dashboard/PatientsPage';
 import CreatePatientPage from './pages/dashboard/CreatePatientPage';
 import EditPatientPage from './pages/dashboard/EditPatientPage';
 import AgendaPage from './pages/dashboard/AgendaPage';
+import StaffPage from './pages/dashboard/StaffPage';
+import CreateStaffPage from './pages/dashboard/CreateStaffPage';
+import EditStaffPage from './pages/dashboard/EditStaffPage';
+import ServicesPage from './pages/dashboard/ServicesPage';
+import CreateServicePage from './pages/dashboard/CreateServicePage';
+import EditServicePage from './pages/dashboard/EditServicePage';
 import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
@@ -44,10 +50,15 @@ function App() {
                         <Route path="patients/:id" element={<PatientDetailPage />} />
                         <Route path="patients/:id/edit" element={<EditPatientPage />} />
                         <Route path="agenda" element={<AgendaPage />} />
+                        <Route path="staff" element={<StaffPage />} />
+                        <Route path="staff/new" element={<CreateStaffPage />} />
+                        <Route path="staff/:id/edit" element={<EditStaffPage />} />
+                        <Route path="services" element={<ServicesPage />} />
+                        <Route path="services/new" element={<CreateServicePage />} />
+                        <Route path="services/:id/edit" element={<EditServicePage />} />
                         <Route path="medical-records" element={<PatientsPage />} /> {/* Placeholder */}
-                        <Route path="services" element={<PatientsPage />} /> {/* Placeholder */}
                         <Route path="payment-methods" element={<PatientsPage />} /> {/* Placeholder */}
-                        <Route path="staff" element={<PatientsPage />} /> {/* Placeholder */}
+                        {/* <Route path="staff" element={<PatientsPage />} /> */} {/* Placeholder - Removed */}
                         <Route path="settings" element={<PatientsPage />} /> {/* Placeholder */}
                     </Route>
                     <Route path="*" element={<NotFound />} />

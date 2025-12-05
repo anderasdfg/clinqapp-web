@@ -46,9 +46,15 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
 // CRUD navigation items
 export const CRUD_NAVIGATION: NavigationItem[] = [
     {
+        id: 'staff',
+        label: 'Personal',
+        icon: 'user-group',
+        path: '/dashboard/staff',
+    },
+    {
         id: 'services',
         label: 'Servicios',
-        icon: 'briefcase',
+        icon: 'clipboard-list',
         path: '/dashboard/services',
     },
     {
@@ -56,12 +62,6 @@ export const CRUD_NAVIGATION: NavigationItem[] = [
         label: 'Métodos de Pago',
         icon: 'credit-card',
         path: '/dashboard/payment-methods',
-    },
-    {
-        id: 'staff',
-        label: 'Personal',
-        icon: 'user-group',
-        path: '/dashboard/staff',
     },
 ];
 

@@ -19,10 +19,16 @@ app.get('/health', (req, res) => {
 import onboardingRoutes from './routes/onboarding.routes';
 import organizationRoutes from './routes/organization.routes';
 import patientsRoutes from './routes/patients.routes';
+import appointmentsRoutes from './routes/appointments.routes';
+import staffRoutes from './routes/staff.routes';
+import servicesRoutes from './routes/services.routes';
 
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/patients', patientsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/services', servicesRoutes);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
