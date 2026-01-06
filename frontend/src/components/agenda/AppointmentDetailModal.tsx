@@ -4,6 +4,7 @@ import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { formatAppointmentDate, formatTimeRange } from '@/lib/utils/calendar.utils';
 import { useState } from 'react';
 import PaymentModal from './PaymentModal';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AppointmentDetailModalProps {
     appointment: Appointment | null;
@@ -220,34 +221,51 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                     </div>
                                 )}
 
-                                {/* Action Buttons */}
+                                {/* Action Buttons - Simplified based on status */}
                                 {currentAppointment.status !== 'CANCELLED' && currentAppointment.status !== 'COMPLETED' && (
-                                    <div className="flex flex-wrap gap-2 pt-4 border-t border-[rgb(var(--border-primary))]">
-                                        {currentAppointment.status === 'PENDING' && (
+                                    <div className="flex flex-col gap-3 pt-4 border-t border-[rgb(var(--border-primary))]">
+                                        {/* Primary Actions */}
+                                        <div className="flex gap-2">
+                                            {currentAppointment.status === 'PENDING' && (
+                                                <button
+                                                    onClick={() => handleStatusUpdate(Status.CONFIRMED)}
+                                                    disabled={isUpdating}
+                                                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50"
+                                                >
+                                                    Confirmar Cita
+                                                </button>
+                                            )}
+                                            {currentAppointment.status === 'CONFIRMED' && (
+                                                <button
+                                                    onClick={() => handleStatusUpdate(Status.COMPLETED)}
+                                                    disabled={isUpdating}
+                                                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium disabled:opacity-50"
+                                                >
+                                                    Completar Cita
+                                                </button>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Secondary Actions */}
+                                        <div className="flex gap-2">
                                             <button
-                                                onClick={() => handleStatusUpdate(Status.CONFIRMED)}
+                                                onClick={() => setShowCancelConfirm(true)}
                                                 disabled={isUpdating}
-                                                className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                                                className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium disabled:opacity-50"
                                             >
-                                                Confirmar
+                                                Cancelar Cita
                                             </button>
-                                        )}
-                                        {currentAppointment.status === 'CONFIRMED' && (
                                             <button
-                                                onClick={() => handleStatusUpdate(Status.COMPLETED)}
-                                                disabled={isUpdating}
-                                                className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                                                onClick={handleDelete}
+                                                disabled={isDeleting}
+                                                className="px-4 py-2 border border-[rgb(var(--border-primary))] text-[rgb(var(--text-secondary))] rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors text-sm font-medium disabled:opacity-50"
+                                                title="Eliminar cita"
                                             >
-                                                Completar
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
-                                        )}
-                                        <button
-                                            onClick={() => setShowCancelConfirm(true)}
-                                            disabled={isUpdating}
-                                            className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
-                                        >
-                                            Cancelar Cita
-                                        </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -260,11 +278,10 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                     <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                         Motivo de cancelación
                                     </label>
-                                    <textarea
+                                    <Textarea
                                         value={cancellationReason}
                                         onChange={(e) => setCancellationReason(e.target.value)}
                                         rows={3}
-                                        className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary"
                                         placeholder="Motivo..."
                                     />
                                 </div>
@@ -281,21 +298,14 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                         style={{
                                             background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                                         }}
-                                        className="w-full inline-flex justify-center rounded-lg shadow-sm px-4 py-2 text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm font-medium transition-opacity"
+                                        className="w-full inline-flex justify-center rounded-lg shadow-sm px-4 py-2 text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:w-auto sm:text-sm font-medium transition-opacity"
                                     >
                                         Editar
                                     </button>
                                 )}
                                 <button
-                                    onClick={handleDelete}
-                                    disabled={isDeleting}
-                                    className="mt-3 w-full inline-flex justify-center rounded-lg border border-red-500 shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:w-auto sm:text-sm font-medium transition-colors"
-                                >
-                                    Eliminar
-                                </button>
-                                <button
                                     onClick={onClose}
-                                    className="mt-3 w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:w-auto sm:text-sm font-medium transition-colors"
+                                    className="w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:w-auto sm:text-sm font-medium transition-colors"
                                 >
                                     Cerrar
                                 </button>
@@ -305,13 +315,13 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                 <button
                                     onClick={handleCancel}
                                     disabled={isUpdating}
-                                    className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm font-medium transition-colors"
+                                    className="w-full inline-flex justify-center rounded-lg shadow-sm px-4 py-2 bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm font-medium transition-colors disabled:opacity-50"
                                 >
                                     Confirmar Cancelación
                                 </button>
                                 <button
                                     onClick={() => setShowCancelConfirm(false)}
-                                    className="mt-3 w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:w-auto sm:text-sm font-medium transition-colors"
+                                    className="w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:w-auto sm:text-sm font-medium transition-colors"
                                 >
                                     Volver
                                 </button>

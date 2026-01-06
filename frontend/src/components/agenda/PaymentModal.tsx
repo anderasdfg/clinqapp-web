@@ -43,6 +43,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                 throw new Error('No autenticado');
             }
 
+            // Register payment
             const response = await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment.id}/payment`, {
                 method: 'POST',
                 headers: {
@@ -50,7 +51,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                     'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
-                    amount: data.amount,
+                    amount: Number(data.amount), // Convert to number explicitly
                     method: data.method,
                     receiptNumber: data.receiptNumber,
                     notes: data.notes,
@@ -60,6 +61,25 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Error al registrar pago');
+            }
+
+            // Auto-confirm appointment if it's in PENDING status
+            if (appointment.status === 'PENDING') {
+                const confirmResponse = await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment.id}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({
+                        status: 'CONFIRMED',
+                    }),
+                });
+
+                if (!confirmResponse.ok) {
+                    console.error('Error auto-confirming appointment');
+                    // Don't throw error, payment was successful
+                }
             }
 
             reset();

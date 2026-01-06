@@ -39,6 +39,7 @@ const Onboarding = () => {
         businessHours,
         paymentMethods,
         consultationTypes,
+        reset,
     } = useOnboardingStore();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -165,6 +166,8 @@ const Onboarding = () => {
             const result = await OnboardingService.completeOnboarding(completeData as any);
 
             if (result.success) {
+                // Clear onboarding store after successful completion
+                reset();
                 navigate('/dashboard');
             } else {
                 setError(result.error);

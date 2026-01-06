@@ -40,7 +40,8 @@ export const BasicDataStep = ({ form, onSubmit }: BasicDataStepProps) => {
                 />
                 <Input
                     label="Teléfono"
-                    placeholder="+51 987 654 321"
+                    placeholder="987654321"
+                    maxLength={9}
                     error={form.formState.errors.phone?.message as string}
                     {...form.register('phone')}
                 />

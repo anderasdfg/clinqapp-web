@@ -1,7 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NAVIGATION_GROUPS, NAVIGATION_ICONS } from '@/lib/constants/navigation';
 import logoRectangle from '@/assets/images/logos/logo-rectangle.png';
 import { cn } from '@/lib/utils/cn';
+import { AuthService } from '@/services/auth.service';
+import { useUserStore } from '@/stores/useUserStore';
+import { useOnboardingStore } from '@/stores/useOnboardingStore';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -11,9 +14,31 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const clearUser = useUserStore((state) => state.clearUser);
+    const resetOnboarding = useOnboardingStore((state) => state.reset);
 
     const isActive = (path: string) => {
         return location.pathname === path;
+    };
+
+    const handleLogout = async () => {
+        try {
+            // Call logout service
+            await AuthService.logout();
+            // Clear user store
+            clearUser();
+            // Clear onboarding store to prevent data persistence across users
+            resetOnboarding();
+            // Redirect to login
+            navigate('/login');
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Even if there's an error, clear local state and redirect
+            clearUser();
+            resetOnboarding();
+            navigate('/login');
+        }
     };
 
     const renderIcon = (iconName: string, className?: string) => {
@@ -118,6 +143,7 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
                     {/* Footer */}
                     <div className="p-4 border-t border-white/10">
                         <button
+                            onClick={handleLogout}
                             className={cn(
                                 'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg',
                                 'text-white/90 hover:bg-white/10 hover:text-white transition-all duration-200',

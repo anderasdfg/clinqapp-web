@@ -1,10 +1,11 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { patientSchema, type PatientFormData } from '@/lib/validations/patient.validation';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
 import type { Patient } from '@/types/patient.types';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 interface PatientFormProps {
     patient?: Patient;
@@ -18,9 +19,11 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors },
     } = useForm<PatientFormData>({
         resolver: zodResolver(patientSchema),
+        mode: 'onBlur', // Validate on blur to show errors immediately
         defaultValues: patient
             ? {
                 firstName: patient.firstName,
@@ -74,7 +77,12 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </label>
                         <input
                             type="text"
+                            maxLength={50}
                             {...register('firstName')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                target.value = target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                         {errors.firstName && (
@@ -88,7 +96,12 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </label>
                         <input
                             type="text"
+                            maxLength={50}
                             {...register('lastName')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                target.value = target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                         {errors.lastName && (
@@ -102,7 +115,14 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </label>
                         <input
                             type="text"
+                            inputMode="numeric"
+                            maxLength={10}
+                            placeholder="DNI (8 dígitos) o CE (10 dígitos)"
                             {...register('dni')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                target.value = target.value.replace(/\D/g, '');
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                         {errors.dni && (
@@ -114,10 +134,18 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                             Fecha de Nacimiento
                         </label>
-                        <input
-                            type="date"
-                            {...register('dateOfBirth')}
-                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+                        <Controller
+                            name="dateOfBirth"
+                            control={control}
+                            render={({ field }) => (
+                                <DatePicker
+                                    date={field.value ? new Date(field.value) : undefined}
+                                    onDateChange={(date) => {
+                                        field.onChange(date ? date.toISOString().split('T')[0] : '');
+                                    }}
+                                    placeholder="Seleccionar fecha de nacimiento"
+                                />
+                            )}
                         />
                     </div>
 
@@ -150,7 +178,19 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </label>
                         <input
                             type="tel"
+                            inputMode="numeric"
+                            maxLength={9}
+                            placeholder="987654321"
                             {...register('phone')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                let value = target.value.replace(/\D/g, '');
+                                // If user types a number, ensure it starts with 9
+                                if (value.length > 0 && value[0] !== '9') {
+                                    value = '9' + value.slice(0, 8);
+                                }
+                                target.value = value;
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                         {errors.phone && (
@@ -190,6 +230,10 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         <input
                             type="text"
                             {...register('occupation')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                target.value = target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                     </div>
@@ -209,6 +253,10 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         <input
                             type="text"
                             {...register('emergencyContact')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                target.value = target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                     </div>
@@ -219,7 +267,19 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </label>
                         <input
                             type="tel"
+                            inputMode="numeric"
+                            maxLength={9}
+                            placeholder="987654321"
                             {...register('emergencyPhone')}
+                            onInput={(e) => {
+                                const target = e.target as HTMLInputElement;
+                                let value = target.value.replace(/\D/g, '');
+                                // If user types a number, ensure it starts with 9
+                                if (value.length > 0 && value[0] !== '9') {
+                                    value = '9' + value.slice(0, 8);
+                                }
+                                target.value = value;
+                            }}
                             className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                         />
                     </div>

@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { appointmentSchema, type AppointmentFormData } from '@/lib/validations/appointment.validation';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
 import { format } from 'date-fns';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AppointmentModalProps {
     appointment?: Appointment;
@@ -21,10 +30,12 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
     const [professionals, setProfessionals] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [duration, setDuration] = useState<number>(60); // Default 60 minutes
 
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors },
         reset,
         watch,
@@ -55,25 +66,30 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     }, [isOpen]);
 
-    // Auto-calculate end time based on service duration
+    // Auto-set duration based on service selection
     useEffect(() => {
         if (selectedServiceId && services.length > 0) {
             const service = services.find(s => s.id === selectedServiceId);
             if (service && service.duration) {
-                const startTime = watch('startTime');
-                if (startTime) {
-                    const start = new Date(startTime);
-                    const end = new Date(start.getTime() + service.duration * 60 * 1000);
-                    const endTimeValue = format(end, "yyyy-MM-dd'T'HH:mm");
-                    // Update endTime field
-                    reset({
-                        ...watch(),
-                        endTime: endTimeValue,
-                    });
-                }
+                setDuration(service.duration);
             }
         }
-    }, [selectedServiceId, services, watch('startTime')]);
+    }, [selectedServiceId, services]);
+
+    // Auto-calculate end time based on start time and duration
+    useEffect(() => {
+        const startTime = watch('startTime');
+        if (startTime && duration) {
+            const start = new Date(startTime);
+            const end = new Date(start.getTime() + duration * 60 * 1000);
+            const endTimeValue = format(end, "yyyy-MM-dd'T'HH:mm");
+            // Update endTime field
+            reset({
+                ...watch(),
+                endTime: endTimeValue,
+            });
+        }
+    }, [watch('startTime'), duration]);
 
     const loadInitialData = async () => {
         setLoadingData(true);
@@ -149,6 +165,12 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
     if (!isOpen) return null;
 
     const isSubmitting = isCreating || isUpdating;
+    
+    // Check if all required fields are filled
+    const patientId = watch('patientId');
+    const professionalId = watch('professionalId');
+    const startTime = watch('startTime');
+    const isFormValid = !!(patientId && professionalId && startTime);
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -184,17 +206,27 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                             Paciente <span className="text-error">*</span>
                                         </label>
-                                        <select
-                                            {...register('patientId')}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-                                        >
-                                            <option value="">Seleccionar paciente...</option>
-                                            {patients.map((patient) => (
-                                                <option key={patient.id} value={patient.id}>
-                                                    {patient.firstName} {patient.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <Controller
+                                            name="patientId"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Seleccionar paciente..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {patients.map((patient) => (
+                                                            <SelectItem key={patient.id} value={patient.id}>
+                                                                {patient.firstName} {patient.lastName}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                         {errors.patientId && (
                                             <p className="mt-1 text-sm text-error">{errors.patientId.message}</p>
                                         )}
@@ -205,17 +237,27 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                             Profesional <span className="text-error">*</span>
                                         </label>
-                                        <select
-                                            {...register('professionalId')}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-                                        >
-                                            <option value="">Seleccionar profesional...</option>
-                                            {professionals.map((prof) => (
-                                                <option key={prof.id} value={prof.id}>
-                                                    {prof.firstName} {prof.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <Controller
+                                            name="professionalId"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Seleccionar profesional..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {professionals.map((prof) => (
+                                                            <SelectItem key={prof.id} value={prof.id}>
+                                                                {prof.firstName} {prof.lastName}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                         {errors.professionalId && (
                                             <p className="mt-1 text-sm text-error">{errors.professionalId.message}</p>
                                         )}
@@ -226,29 +268,47 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                             Servicio
                                         </label>
-                                        <select
-                                            {...register('serviceId')}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-                                        >
-                                            <option value="">Seleccionar servicio...</option>
-                                            {services.map((service) => (
-                                                <option key={service.id} value={service.id}>
-                                                    {service.name} ({service.duration} min)
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <Controller
+                                            name="serviceId"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value || ''}
+                                                    onValueChange={field.onChange}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Seleccionar servicio..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {services.map((service) => (
+                                                            <SelectItem key={service.id} value={service.id}>
+                                                                {service.name} ({service.duration} min)
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </div>
 
-                                    {/* Date and Time */}
+                                    {/* Date, Time and Duration */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                                 Fecha y Hora de Inicio <span className="text-error">*</span>
                                             </label>
-                                            <input
-                                                type="datetime-local"
-                                                {...register('startTime')}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+                                            <Controller
+                                                name="startTime"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <DateTimePicker
+                                                        date={field.value ? new Date(field.value) : undefined}
+                                                        onDateTimeChange={(date) => {
+                                                            field.onChange(date ? format(date, "yyyy-MM-dd'T'HH:mm") : '');
+                                                        }}
+                                                        placeholder="Seleccionar fecha y hora de inicio"
+                                                    />
+                                                )}
                                             />
                                             {errors.startTime && (
                                                 <p className="mt-1 text-sm text-error">{errors.startTime.message}</p>
@@ -257,16 +317,29 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
                                         <div>
                                             <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
-                                                Fecha y Hora de Fin <span className="text-error">*</span>
+                                                Duración <span className="text-error">*</span>
                                             </label>
-                                            <input
-                                                type="datetime-local"
-                                                {...register('endTime')}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-                                            />
-                                            {errors.endTime && (
-                                                <p className="mt-1 text-sm text-error">{errors.endTime.message}</p>
-                                            )}
+                                            <Select
+                                                value={duration.toString()}
+                                                onValueChange={(value) => setDuration(parseInt(value))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Seleccionar duración" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="15">15 minutos</SelectItem>
+                                                    <SelectItem value="30">30 minutos</SelectItem>
+                                                    <SelectItem value="45">45 minutos</SelectItem>
+                                                    <SelectItem value="60">1 hora</SelectItem>
+                                                    <SelectItem value="90">1 hora 30 min</SelectItem>
+                                                    <SelectItem value="120">2 horas</SelectItem>
+                                                    <SelectItem value="150">2 horas 30 min</SelectItem>
+                                                    <SelectItem value="180">3 horas</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="mt-1 text-xs text-[rgb(var(--text-tertiary))]">
+                                                Hora de fin: {watch('endTime') ? format(new Date(watch('endTime')), 'HH:mm') : '--:--'}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -275,10 +348,9 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                             Notas
                                         </label>
-                                        <textarea
+                                        <Textarea
                                             {...register('notes')}
                                             rows={3}
-                                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                                             placeholder="Notas adicionales..."
                                         />
                                     </div>
@@ -289,7 +361,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                         <div className="px-6 py-3 bg-[rgb(var(--bg-secondary))] sm:px-6 sm:flex sm:flex-row-reverse gap-3">
                             <button
                                 type="submit"
-                                disabled={isSubmitting || loadingData}
+                                disabled={isSubmitting || loadingData || !isFormValid}
                                 style={{
                                     background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                                 }}
