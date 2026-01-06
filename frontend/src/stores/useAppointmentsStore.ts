@@ -6,6 +6,7 @@ import type {
   UpdateAppointmentStatusDTO,
   AppointmentsQueryParams,
   CalendarViewMode,
+  AppointmentStatus,
 } from "@/types/appointment.types";
 import { appointmentsService } from "@/services/appointments.service";
 
@@ -98,6 +99,9 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
         limit: params?.limit ?? 50,
         ...state.filters,
         ...params,
+        status: (params?.status || state.filters.status) as
+          | AppointmentStatus
+          | undefined,
       };
 
       const response = await appointmentsService.getAppointments(queryParams);
