@@ -15,17 +15,29 @@ const port = process.env.PORT || 3001;
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:5173",
   "http://localhost:5173", // Always allow localhost for development
-];
+  "https://clinqapp-web.vercel.app", // Explicit Vercel URL
+].filter(Boolean); // Remove any undefined/null values
+
+console.log("🔧 CORS Configuration:");
+console.log("  Allowed Origins:", allowedOrigins);
+console.log("  FRONTEND_URL env:", process.env.FRONTEND_URL);
 
 app.use(
   cors({
     origin: (origin, callback) => {
+      console.log(`📨 CORS Request from origin: ${origin}`);
+
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log("  ✅ Allowed (no origin)");
+        return callback(null, true);
+      }
 
       if (allowedOrigins.indexOf(origin) !== -1) {
+        console.log("  ✅ Allowed");
         callback(null, true);
       } else {
+        console.log("  ❌ Blocked - not in allowed origins");
         callback(new Error("Not allowed by CORS"));
       }
     },
