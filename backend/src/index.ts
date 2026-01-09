@@ -24,7 +24,7 @@ if (missingEnvVars.length > 0) {
 }
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = Number(process.env.PORT) || 3001;
 
 // Initialize Prisma with error handling
 let prisma: PrismaClient;
@@ -100,8 +100,10 @@ app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/services", servicesRoutes);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`✅ Server running on port ${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🚀 Ready to accept connections!`);
 });
 
 export { app, prisma };
