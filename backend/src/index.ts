@@ -69,7 +69,10 @@ app.use(
         callback(null, true);
       } else {
         console.log("  ❌ Blocked - not in allowed origins");
-        callback(new Error("Not allowed by CORS"));
+        console.log("  Requested origin:", origin);
+        console.log("  Allowed origins:", allowedOrigins);
+        // Use false to reject, not Error - this allows proper CORS headers
+        callback(null, false);
       }
     },
     credentials: true,
