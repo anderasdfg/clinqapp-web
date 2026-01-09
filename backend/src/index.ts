@@ -80,7 +80,8 @@ app.use(express.json());
 
 // Handle OPTIONS requests explicitly for CORS preflight
 // This must come BEFORE routes with authentication middleware
-app.options("*", (req, res) => {
+// Use regex to match all paths (Express 5 compatible)
+app.options(/.*/, (req, res) => {
   console.log(`🔄 OPTIONS request for: ${req.path}`);
   res.status(200).end();
 });
