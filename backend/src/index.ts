@@ -64,8 +64,17 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      // Check if origin is in allowed list
+      const isAllowed = allowedOrigins.indexOf(origin) !== -1;
+
+      // Also allow any *.vercel.app domain for preview deployments
+      const isVercelDomain = origin.endsWith(".vercel.app");
+
+      if (isAllowed || isVercelDomain) {
         console.log("  ✅ Allowed");
+        if (isVercelDomain && !isAllowed) {
+          console.log("  📝 Allowed via Vercel wildcard");
+        }
         callback(null, true);
       } else {
         console.log("  ❌ Blocked - not in allowed origins");
