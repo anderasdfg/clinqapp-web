@@ -26,65 +26,24 @@ if (missingEnvVars.length > 0) {
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-// CORS Configuration - supports both development and production
-const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
-  "http://localhost:5173", // Always allow localhost for development
-  "https://clinqapp-web.vercel.app", // Explicit Vercel URL
-].filter(Boolean); // Remove any undefined/null values
+console.log("🚀 Starting ClinqApp Backend...");
+console.log("📍 Environment:", process.env.NODE_ENV || "development");
+console.log("🔌 Port:", port);
 
-console.log("🔧 CORS Configuration:");
-console.log("  Allowed Origins:", allowedOrigins);
-console.log("  FRONTEND_URL env:", process.env.FRONTEND_URL);
-
+// Simple CORS - allow all Vercel domains and localhost
 app.use(
   cors({
-    origin: (origin, callback) => {
-      console.log(`📨 CORS Request from origin: ${origin}`);
-
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) {
-        console.log("  ✅ Allowed (no origin)");
-        return callback(null, true);
-      }
-
-      // Check if origin is in allowed list
-      const isAllowed = allowedOrigins.indexOf(origin) !== -1;
-
-      // Also allow any *.vercel.app domain for preview deployments
-      const isVercelDomain = origin.endsWith(".vercel.app");
-
-      if (isAllowed || isVercelDomain) {
-        console.log("  ✅ Allowed");
-        if (isVercelDomain && !isAllowed) {
-          console.log("  📝 Allowed via Vercel wildcard");
-        }
-        callback(null, true);
-      } else {
-        console.log("  ❌ Blocked - not in allowed origins");
-        console.log("  Requested origin:", origin);
-        console.log("  Allowed origins:", allowedOrigins);
-        // Use false to reject, not Error - this allows proper CORS headers
-        callback(null, false);
-      }
-    },
+    origin: true, // Allow all origins temporarily to debug
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     exposedHeaders: ["Content-Range", "X-Content-Range"],
-    maxAge: 86400, // 24 hours - cache preflight requests
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
 app.use(express.json());
-
-// Handle OPTIONS requests explicitly for CORS preflight
-// This must come BEFORE routes with authentication middleware
-// Use regex to match all paths (Express 5 compatible)
-app.options(/.*/, (req, res) => {
-  console.log(`🔄 OPTIONS request for: ${req.path}`);
-  res.status(200).end();
-});
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
