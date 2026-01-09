@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./lib/prisma";
 
 // Load .env from backend directory
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -25,22 +25,6 @@ if (missingEnvVars.length > 0) {
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
-
-// Initialize Prisma with error handling
-let prisma: PrismaClient;
-try {
-  console.log("🔄 Initializing Prisma Client...");
-  prisma = new PrismaClient({
-    log:
-      process.env.NODE_ENV === "production"
-        ? ["error"]
-        : ["query", "error", "warn"],
-  });
-  console.log("✅ Prisma Client initialized successfully");
-} catch (error) {
-  console.error("❌ Failed to initialize Prisma Client:", error);
-  throw error;
-}
 
 // CORS Configuration - supports both development and production
 const allowedOrigins = [

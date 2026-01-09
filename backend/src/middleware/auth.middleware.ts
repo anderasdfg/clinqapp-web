@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
-import { prisma } from "../index";
+import { prisma } from "../lib/prisma";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
