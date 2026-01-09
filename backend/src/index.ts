@@ -7,9 +7,40 @@ import { PrismaClient } from "@prisma/client";
 // Load .env from backend directory
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
+// Log environment check
+console.log("🚀 Starting ClinqApp Backend...");
+console.log("📍 Environment:", process.env.NODE_ENV || "development");
+console.log("🔌 Port:", process.env.PORT || 3001);
+
+// Check critical environment variables
+const requiredEnvVars = ["DATABASE_URL", "SUPABASE_URL", "SUPABASE_ANON_KEY"];
+const missingEnvVars = requiredEnvVars.filter(
+  (varName) => !process.env[varName]
+);
+
+if (missingEnvVars.length > 0) {
+  console.error("❌ Missing required environment variables:", missingEnvVars);
+  console.error("⚠️  Application may not function correctly!");
+}
+
 const app = express();
-const prisma = new PrismaClient();
 const port = process.env.PORT || 3001;
+
+// Initialize Prisma with error handling
+let prisma: PrismaClient;
+try {
+  console.log("🔄 Initializing Prisma Client...");
+  prisma = new PrismaClient({
+    log:
+      process.env.NODE_ENV === "production"
+        ? ["error"]
+        : ["query", "error", "warn"],
+  });
+  console.log("✅ Prisma Client initialized successfully");
+} catch (error) {
+  console.error("❌ Failed to initialize Prisma Client:", error);
+  throw error;
+}
 
 // CORS Configuration - supports both development and production
 const allowedOrigins = [
