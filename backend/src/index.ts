@@ -78,6 +78,13 @@ app.use(
 
 app.use(express.json());
 
+// Handle OPTIONS requests explicitly for CORS preflight
+// This must come BEFORE routes with authentication middleware
+app.options("*", (req, res) => {
+  console.log(`🔄 OPTIONS request for: ${req.path}`);
+  res.status(200).end();
+});
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
