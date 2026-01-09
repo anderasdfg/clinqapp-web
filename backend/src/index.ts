@@ -26,10 +26,27 @@ if (missingEnvVars.length > 0) {
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-// Simple CORS - allow all Vercel domains and localhost
+// CORS Configuration - must use specific origins with credentials
 app.use(
   cors({
-    origin: true, // Allow all origins temporarily to debug
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, curl)
+      if (!origin) return callback(null, true);
+
+      // Allow all Vercel domains and localhost
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://clinqapp-web.vercel.app",
+      ];
+
+      // Check if origin is allowed or is a Vercel preview deployment
+      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
