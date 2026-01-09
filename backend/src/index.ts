@@ -26,10 +26,6 @@ if (missingEnvVars.length > 0) {
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-console.log("🚀 Starting ClinqApp Backend...");
-console.log("📍 Environment:", process.env.NODE_ENV || "development");
-console.log("🔌 Port:", port);
-
 // Simple CORS - allow all Vercel domains and localhost
 app.use(
   cors({
