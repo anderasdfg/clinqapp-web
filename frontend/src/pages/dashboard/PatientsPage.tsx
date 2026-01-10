@@ -1,9 +1,65 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePatientsStore } from '@/stores/usePatientsStore';
-import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
+import { REFERRAL_SOURCE_LABELS, ReferralSource } from '@/types/patient.types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { 
+    Search, 
+    Plus, 
+    Eye, 
+    Pencil, 
+    Trash2, 
+    MoreVertical, 
+    ChevronLeft, 
+    ChevronRight,
+    Users,
+    AlertTriangle,
+    X,
+    Filter
+} from 'lucide-react';
+import { staffService } from '@/services/staff.service';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const PatientsPage = () => {
     const {
@@ -13,7 +69,11 @@ const PatientsPage = () => {
         totalPages,
         totalPatients,
         searchQuery,
+        assignedProfessionalFilter,
+        referralSourceFilter,
         setSearchQuery,
+        setAssignedProfessionalFilter,
+        setReferralSourceFilter,
         setCurrentPage,
         fetchPatients,
         deletePatient,
@@ -21,10 +81,41 @@ const PatientsPage = () => {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
+    const [professionals, setProfessionals] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
+    
+    // Column filters
+    const [columnFilters, setColumnFilters] = useState({
+        patient: '',
+        dni: '',
+        contact: '',
+        professional: [] as string[],
+        referralSource: [] as string[],
+    });
+    
+    const [openFilterPopover, setOpenFilterPopover] = useState<string | null>(null);
 
     useEffect(() => {
         fetchPatients();
+        loadProfessionals();
     }, [fetchPatients]);
+
+    // Auto-search with debounce
+    useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            fetchPatients();
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery, fetchPatients]);
+
+    const loadProfessionals = async () => {
+        try {
+            const response = await staffService.getStaff({ limit: 100 });
+            setProfessionals(response.data);
+        } catch (error) {
+            console.error('Error loading professionals:', error);
+        }
+    };
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -48,6 +139,25 @@ const PatientsPage = () => {
         }
     };
 
+    const handleProfessionalFilterChange = (value: string) => {
+        setAssignedProfessionalFilter(value === 'all' ? null : value);
+        fetchPatients();
+    };
+
+    const handleReferralSourceFilterChange = (value: string) => {
+        setReferralSourceFilter(value === 'all' ? null : value as ReferralSource);
+        fetchPatients();
+    };
+
+    const clearFilters = () => {
+        setSearchQuery('');
+        setAssignedProfessionalFilter(null);
+        setReferralSourceFilter(null);
+        fetchPatients();
+    };
+
+    const hasActiveFilters = searchQuery || assignedProfessionalFilter || referralSourceFilter;
+
     const formatDate = (dateString?: string) => {
         if (!dateString) return '-';
         try {
@@ -57,10 +167,19 @@ const PatientsPage = () => {
         }
     };
 
+    // Prepare options for Combobox
+    const professionalOptions = [
+        { value: 'all', label: 'Todos los profesionales' },
+        ...professionals.map(prof => ({
+            value: prof.id,
+            label: `${prof.firstName} ${prof.lastName}`
+        }))
+    ];
+
     return (
-        <div className="animate-fade-in">
+        <div className="animate-fade-in space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-[rgb(var(--text-primary))] mb-2">
                         Pacientes
@@ -69,83 +188,311 @@ const PatientsPage = () => {
                         Gestiona la información de tus pacientes
                     </p>
                 </div>
-                <Link
-                    to="/dashboard/patients/new"
-                    style={{
-                        background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
-                    }}
-                    className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-lg hover:opacity-90 transition-opacity duration-200 font-medium shadow-lg"
-                >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Nuevo Paciente
-                </Link>
+                <Button asChild className="gap-2 bg-primary shadow-md">
+                    <Link to="/dashboard/patients/new">
+                        <Plus className="w-5 h-5" />
+                        Nuevo Paciente
+                    </Link>
+                </Button>
             </div>
 
-            {/* Search and Filters */}
-            <div className="card p-4 mb-6">
-                <form onSubmit={handleSearch} className="flex gap-4">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscar por nombre, DNI, teléfono o email..."
-                            className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] placeholder-[rgb(var(--text-tertiary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+            {/* Search and Filters - Single Line */}
+            <Card className="p-4">
+                <form onSubmit={handleSearch}>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Search Input */}
+                        <div className="flex-1 min-w-[100px] relative">
+                            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgb(var(--text-tertiary))] z-10 pointer-events-none" />
+                            <Input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar por nombre, DNI, teléfono o email..."
+                                className="pl-9 h-9"
+                            />
+                        </div>
+
+                        {/* Professional Filter - Combobox */}
+                        <Combobox
+                            options={professionalOptions}
+                            value={assignedProfessionalFilter || 'all'}
+                            onValueChange={handleProfessionalFilterChange}
+                            placeholder="Todos los profesionales"
+                            searchPlaceholder="Buscar profesional..."
+                            emptyText="No se encontró profesional."
+                            className="w-[220px] h-9"
                         />
+
+                        {/* Referral Source Filter */}
+                        <Select
+                            value={referralSourceFilter || 'all'}
+                            onValueChange={handleReferralSourceFilterChange}
+                        >
+                            <SelectTrigger className="w-[200px] h-9">
+                                <SelectValue placeholder="Fuente de referencia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas las fuentes</SelectItem>
+                                {Object.entries(REFERRAL_SOURCE_LABELS).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Search Button */}
+                        <Button type="submit" className="gap-2 h-9 hover:opacity-90 transition-opacity">
+                            <Search className="w-4 h-4" />
+                            Buscar
+                        </Button>
+
+                        {/* Clear Filters Button */}
+                        {hasActiveFilters && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="gap-2 hover:bg-[rgb(var(--bg-secondary))] transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                                Limpiar filtros
+                            </Button>
+                        )}
                     </div>
-                    <button
-                        type="submit"
-                        className="px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors duration-200 font-medium"
-                    >
-                        Buscar
-                    </button>
                 </form>
-            </div>
+            </Card>
 
             {/* Table */}
-            <div className="card overflow-hidden">
+            <Card>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-[rgb(var(--border-primary))]">
-                        <thead className="bg-[rgb(var(--bg-secondary))]">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    Paciente
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    DNI
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    Contacto
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    Profesional
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    Registro
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider">
-                                    Acciones
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-[rgb(var(--bg-card))] divide-y divide-[rgb(var(--border-primary))]">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                {/* Paciente Column */}
+                                <TableHead>
+                                    <div className="flex items-center gap-2">
+                                        <span>Paciente</span>
+                                        <Popover open={openFilterPopover === 'patient'} onOpenChange={(open) => setOpenFilterPopover(open ? 'patient' : null)}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                    <Filter className={`h-3.5 w-3.5 ${columnFilters.patient ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64" align="start">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-sm">Filtrar por Paciente</h4>
+                                                    <Input
+                                                        placeholder="Buscar paciente..."
+                                                        value={columnFilters.patient}
+                                                        onChange={(e) => setColumnFilters({ ...columnFilters, patient: e.target.value })}
+                                                        className="h-8"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setColumnFilters({ ...columnFilters, patient: '' });
+                                                                setOpenFilterPopover(null);
+                                                            }}
+                                                            variant="outline"
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Limpiar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => setOpenFilterPopover(null)}
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Aplicar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </TableHead>
+                                
+                                {/* DNI Column */}
+                                <TableHead>
+                                    <div className="flex items-center gap-2">
+                                        <span>DNI</span>
+                                        <Popover open={openFilterPopover === 'dni'} onOpenChange={(open) => setOpenFilterPopover(open ? 'dni' : null)}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                    <Filter className={`h-3.5 w-3.5 ${columnFilters.dni ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64" align="start">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-sm">Filtrar por DNI</h4>
+                                                    <Input
+                                                        placeholder="Buscar DNI..."
+                                                        value={columnFilters.dni}
+                                                        onChange={(e) => setColumnFilters({ ...columnFilters, dni: e.target.value })}
+                                                        className="h-8"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setColumnFilters({ ...columnFilters, dni: '' });
+                                                                setOpenFilterPopover(null);
+                                                            }}
+                                                            variant="outline"
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Limpiar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => setOpenFilterPopover(null)}
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Aplicar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </TableHead>
+                                
+                                {/* Contacto Column */}
+                                <TableHead>
+                                    <div className="flex items-center gap-2">
+                                        <span>Contacto</span>
+                                        <Popover open={openFilterPopover === 'contact'} onOpenChange={(open) => setOpenFilterPopover(open ? 'contact' : null)}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                    <Filter className={`h-3.5 w-3.5 ${columnFilters.contact ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64" align="start">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-sm">Filtrar por Contacto</h4>
+                                                    <Input
+                                                        placeholder="Buscar teléfono o email..."
+                                                        value={columnFilters.contact}
+                                                        onChange={(e) => setColumnFilters({ ...columnFilters, contact: e.target.value })}
+                                                        className="h-8"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setColumnFilters({ ...columnFilters, contact: '' });
+                                                                setOpenFilterPopover(null);
+                                                            }}
+                                                            variant="outline"
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Limpiar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => setOpenFilterPopover(null)}
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Aplicar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </TableHead>
+                                
+                                {/* Profesional Column */}
+                                <TableHead>
+                                    <div className="flex items-center gap-2">
+                                        <span>Profesional</span>
+                                        <Popover open={openFilterPopover === 'professional'} onOpenChange={(open) => setOpenFilterPopover(open ? 'professional' : null)}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                    <Filter className={`h-3.5 w-3.5 ${columnFilters.professional.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64" align="start">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-sm">Filtrar por Profesional</h4>
+                                                    <div className="max-h-48 overflow-y-auto space-y-2">
+                                                        {professionals.map((prof) => (
+                                                            <div key={prof.id} className="flex items-center space-x-2">
+                                                                <Checkbox
+                                                                    id={`prof-${prof.id}`}
+                                                                    checked={columnFilters.professional.includes(prof.id)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        if (checked) {
+                                                                            setColumnFilters({
+                                                                                ...columnFilters,
+                                                                                professional: [...columnFilters.professional, prof.id]
+                                                                            });
+                                                                        } else {
+                                                                            setColumnFilters({
+                                                                                ...columnFilters,
+                                                                                professional: columnFilters.professional.filter(id => id !== prof.id)
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`prof-${prof.id}`}
+                                                                    className="text-sm cursor-pointer"
+                                                                >
+                                                                    {prof.firstName} {prof.lastName}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex gap-2 pt-2 border-t">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setColumnFilters({ ...columnFilters, professional: [] });
+                                                                setOpenFilterPopover(null);
+                                                            }}
+                                                            variant="outline"
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Limpiar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => setOpenFilterPopover(null)}
+                                                            className="flex-1 h-8"
+                                                        >
+                                                            Aplicar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </TableHead>
+                                
+                                {/* Fecha de Registro Column */}
+                                <TableHead>Fecha de Registro</TableHead>
+                                
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {isLoading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-32 text-center">
                                         <div className="flex justify-center items-center">
                                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ) : patients.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-32 text-center">
                                         <div className="flex flex-col items-center gap-3">
-                                            <svg className="w-12 h-12 text-[rgb(var(--text-tertiary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
+                                            <Users className="w-12 h-12 text-[rgb(var(--text-tertiary))]" />
                                             <p className="text-[rgb(var(--text-secondary))]">
                                                 No se encontraron pacientes
                                             </p>
@@ -156,95 +503,105 @@ const PatientsPage = () => {
                                                 Crear primer paciente
                                             </Link>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ) : (
                                 patients.map((patient) => (
-                                    <tr key={patient.id} className="hover:bg-[rgb(var(--bg-secondary))] transition-colors duration-150">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10">
-                                                    <div
+                                    <TableRow key={patient.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarFallback
                                                         style={{
                                                             background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                                                         }}
-                                                        className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold"
+                                                        className="text-white font-semibold"
                                                     >
                                                         {patient.firstName[0]}{patient.lastName[0]}
-                                                    </div>
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-[rgb(var(--text-primary))]">
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <div className="font-medium text-[rgb(var(--text-primary))]">
                                                         {patient.firstName} {patient.lastName}
                                                     </div>
-                                                    <div className="text-sm text-[rgb(var(--text-secondary))]">
+                                                    <Badge variant="secondary" className="mt-1">
                                                         {REFERRAL_SOURCE_LABELS[patient.referralSource]}
-                                                    </div>
+                                                    </Badge>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-[rgb(var(--text-primary))]">
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-[rgb(var(--text-primary))]">
                                                 {patient.dni || '-'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <div className="text-[rgb(var(--text-primary))]">
+                                                    {patient.phone}
+                                                </div>
+                                                <div className="text-sm text-[rgb(var(--text-secondary))]">
+                                                    {patient.email || '-'}
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-[rgb(var(--text-primary))]">
-                                                {patient.phone}
-                                            </div>
-                                            <div className="text-sm text-[rgb(var(--text-secondary))]">
-                                                {patient.email || '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-[rgb(var(--text-primary))]">
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-[rgb(var(--text-primary))]">
                                                 {patient.assignedProfessional
                                                     ? `${patient.assignedProfessional.firstName} ${patient.assignedProfessional.lastName}`
                                                     : '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-[rgb(var(--text-secondary))]">
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-sm text-[rgb(var(--text-secondary))]">
                                                 {formatDate(patient.createdAt)}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    to={`/dashboard/patients/${patient.id}`}
-                                                    className="text-primary hover:text-primary-hover"
-                                                    title="Ver detalles"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </Link>
-                                                <Link
-                                                    to={`/dashboard/patients/${patient.id}/edit`}
-                                                    className="text-secondary hover:text-secondary-hover"
-                                                    title="Editar"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDeleteClick(patient.id)}
-                                                    className="text-error hover:text-error/80"
-                                                    title="Eliminar"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            to={`/dashboard/patients/${patient.id}`}
+                                                            className="flex items-center gap-2 cursor-pointer hover:bg-gray-100"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            Ver detalles
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            to={`/dashboard/patients/${patient.id}/edit`}
+                                                            className="flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                            Editar
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleDeleteClick(patient.id)}
+                                                        className="flex items-center gap-2 text-error cursor-pointer hover:bg-error/10 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Eliminar
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
                                 ))
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </div>
 
                 {/* Pagination */}
@@ -254,80 +611,72 @@ const PatientsPage = () => {
                             Mostrando {patients.length} de {totalPatients} pacientes
                         </div>
                         <div className="flex gap-2">
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => {
                                     setCurrentPage(currentPage - 1);
                                     fetchPatients({ page: currentPage - 1 });
                                 }}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded-lg border border-[rgb(var(--border-primary))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                className="gap-2 hover:bg-[rgb(var(--bg-secondary))] transition-colors"
                             >
+                                <ChevronLeft className="w-4 h-4" />
                                 Anterior
-                            </button>
-                            <span className="px-4 py-1.5 text-[rgb(var(--text-primary))]">
+                            </Button>
+                            <span className="px-4 py-2 text-sm text-[rgb(var(--text-primary))] flex items-center">
                                 Página {currentPage} de {totalPages}
                             </span>
-                            <button
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => {
                                     setCurrentPage(currentPage + 1);
                                     fetchPatients({ page: currentPage + 1 });
                                 }}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1.5 rounded-lg border border-[rgb(var(--border-primary))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                className="gap-2 hover:bg-[rgb(var(--bg-secondary))] transition-colors"
                             >
                                 Siguiente
-                            </button>
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
                         </div>
                     </div>
                 )}
-            </div>
+            </Card>
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 z-50 overflow-y-auto">
-                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                        <div className="fixed inset-0 transition-opacity bg-black/50" onClick={() => setShowDeleteModal(false)}></div>
-
-                        <div className="inline-block align-bottom bg-[rgb(var(--bg-card))] rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                            <div className="px-6 pt-5 pb-4">
-                                <div className="sm:flex sm:items-start">
-                                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-error/10 sm:mx-0 sm:h-10 sm:w-10">
-                                        <svg className="h-6 w-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                    </div>
-                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                        <h3 className="text-lg leading-6 font-medium text-[rgb(var(--text-primary))]">
-                                            Eliminar paciente
-                                        </h3>
-                                        <div className="mt-2">
-                                            <p className="text-sm text-[rgb(var(--text-secondary))]">
-                                                ¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-error/10">
+                                <AlertTriangle className="h-5 w-5 text-error" />
                             </div>
-                            <div className="px-6 py-3 bg-[rgb(var(--bg-secondary))] sm:px-6 sm:flex sm:flex-row-reverse gap-3">
-                                <button
-                                    type="button"
-                                    onClick={confirmDelete}
-                                    className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-error text-white hover:bg-error/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-error sm:ml-3 sm:w-auto sm:text-sm font-medium transition-colors duration-200"
-                                >
-                                    Eliminar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDeleteModal(false)}
-                                    className="mt-3 w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:w-auto sm:text-sm font-medium transition-colors duration-200"
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
+                            <DialogTitle>Eliminar paciente</DialogTitle>
                         </div>
-                    </div>
-                </div>
-            )}
+                        <DialogDescription>
+                            ¿Estás seguro de que deseas eliminar este paciente? Esta acción no se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowDeleteModal(false)}
+                            className="hover:bg-[rgb(var(--bg-secondary))] transition-colors"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            className="hover:opacity-90 transition-opacity"
+                        >
+                            Eliminar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

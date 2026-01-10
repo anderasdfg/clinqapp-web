@@ -6,6 +6,8 @@ import { getWeekDays, getAppointmentsForDay } from '@/lib/utils/calendar.utils';
 import AppointmentCard from '@/components/agenda/AppointmentCard';
 import AppointmentModal from '@/components/agenda/AppointmentModal';
 import AppointmentDetailModal from '@/components/agenda/AppointmentDetailModal';
+import { Button } from '@/components/ui/Button';
+import { Plus } from 'lucide-react';
 import type { Appointment } from '@/types/appointment.types';
 
 const AgendaPage = () => {
@@ -71,18 +73,13 @@ const AgendaPage = () => {
                         Gestiona tus citas y horarios
                     </p>
                 </div>
-                <button
+                <Button
                     onClick={() => setShowAppointmentModal(true)}
-                    style={{
-                        background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
-                    }}
-                    className="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-lg hover:opacity-90 transition-opacity duration-200 font-medium shadow-lg"
+                    className="gap-2 bg-primary shadow-md"
                 >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Plus className="w-5 h-5" />
                     Nueva Cita
-                </button>
+                </Button>
             </div>
 
             {/* Calendar Controls */}

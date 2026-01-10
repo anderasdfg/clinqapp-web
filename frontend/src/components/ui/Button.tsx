@@ -1,4 +1,5 @@
 import React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +12,7 @@ const buttonVariants = cva(
                 secondary: 'bg-secondary hover:bg-secondary-hover text-white border-transparent focus:ring-secondary shadow-sm hover:shadow-md transition-all duration-200',
                 outline: 'bg-transparent border border-[rgb(var(--border-secondary))] text-[rgb(var(--text-primary))] hover:border-primary hover:bg-[rgb(var(--bg-secondary))] focus:ring-primary transition-all duration-200',
                 ghost: 'bg-transparent text-primary hover:bg-primary/10 border-transparent focus:ring-primary transition-all duration-200',
+                destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent focus:ring-destructive transition-all duration-200',
             },
             size: {
                 sm: 'py-2 px-3 text-xs',
@@ -30,20 +32,33 @@ interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
     isLoading?: boolean;
+    asChild?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant, size, isLoading, children, ...props }, ref) => {
+    ({ className, variant, size, isLoading, asChild = false, children, ...props }, ref) => {
+        if (asChild) {
+            return (
+                <Slot
+                    className={cn(buttonVariants({ variant, size, className }))}
+                    ref={ref}
+                    {...props}
+                >
+                    {children}
+                </Slot>
+            );
+        }
+
         return (
             <button
-                ref={ref}
                 className={cn(buttonVariants({ variant, size, className }))}
+                ref={ref}
                 disabled={isLoading || props.disabled}
                 {...props}
             >
                 {isLoading && (
                     <span
-                        className="animate-spin inline-block size-4 border-[3px] border-current border-t-transparent rounded-full"
+                        className="animate-spin inline-block size-4 border-[3px] border-current border-t-transparent rounded-full mr-2"
                         role="status"
                         aria-label="loading"
                     ></span>

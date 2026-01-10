@@ -18,6 +18,8 @@ interface DatePickerProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  fromYear?: number
+  toYear?: number
 }
 
 export function DatePicker({
@@ -26,6 +28,8 @@ export function DatePicker({
   placeholder = "Seleccionar fecha",
   disabled = false,
   className,
+  fromYear = 1900,
+  toYear = new Date().getFullYear(),
 }: DatePickerProps) {
   return (
     <Popover>
@@ -33,7 +37,7 @@ export function DatePicker({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
+            "w-full justify-start text-left font-normal h-9",
             !date && "text-[rgb(var(--text-tertiary))]",
             className
           )}
@@ -50,6 +54,9 @@ export function DatePicker({
           onSelect={onDateChange}
           initialFocus
           locale={es}
+      captionLayout="dropdown"
+          fromYear={fromYear}
+          toYear={toYear}
         />
       </PopoverContent>
     </Popover>

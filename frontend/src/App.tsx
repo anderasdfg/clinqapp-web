@@ -16,6 +16,7 @@ import EditStaffPage from './pages/dashboard/EditStaffPage';
 import ServicesPage from './pages/dashboard/ServicesPage';
 import CreateServicePage from './pages/dashboard/CreateServicePage';
 import EditServicePage from './pages/dashboard/EditServicePage';
+import MedicalRecordsPage from './pages/dashboard/MedicalRecordsPage';
 import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
@@ -56,7 +57,7 @@ function App() {
                         <Route path="services" element={<ServicesPage />} />
                         <Route path="services/new" element={<CreateServicePage />} />
                         <Route path="services/:id/edit" element={<EditServicePage />} />
-                        <Route path="medical-records" element={<PatientsPage />} /> {/* Placeholder */}
+                        <Route path="medical-records" element={<MedicalRecordsPage />} />
                         <Route path="payment-methods" element={<PatientsPage />} /> {/* Placeholder */}
                         {/* <Route path="staff" element={<PatientsPage />} /> */} {/* Placeholder - Removed */}
                         <Route path="settings" element={<PatientsPage />} /> {/* Placeholder */}
