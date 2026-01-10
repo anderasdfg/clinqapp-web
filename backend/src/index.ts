@@ -27,29 +27,41 @@ const app = express();
 const port = Number(process.env.PORT) || 3001;
 
 // CORS Configuration - must use specific origins with credentials
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // Production frontend URL from environment
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://clinqapp-web.vercel.app",
+].filter(Boolean); // Remove undefined values
+
+console.log("🔒 CORS allowed origins:", allowedOrigins);
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, Postman, curl)
-      if (!origin) return callback(null, true);
-
-      // Allow all Vercel domains and localhost
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://clinqapp-web.vercel.app",
-      ];
+      if (!origin) {
+        console.log("✅ CORS: Allowing request with no origin");
+        return callback(null, true);
+      }
 
       // Check if origin is allowed or is a Vercel preview deployment
       if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+        console.log(`✅ CORS: Allowing origin: ${origin}`);
         callback(null, true);
       } else {
-        callback(null, false);
+        console.warn(`❌ CORS: Blocking origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ],
     exposedHeaders: ["Content-Range", "X-Content-Range"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
