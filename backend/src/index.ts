@@ -88,10 +88,29 @@ app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/services", servicesRoutes);
 
-app.listen(port, "0.0.0.0", () => {
+const server = app.listen(port, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🚀 Ready to accept connections!`);
 });
+
+// Graceful shutdown handling for Railway
+const gracefulShutdown = (signal: string) => {
+  console.log(`\n⚠️  Received ${signal}, closing server gracefully...`);
+  server.close(() => {
+    console.log("✅ Server closed");
+    prisma.$disconnect();
+    process.exit(0);
+  });
+
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error("❌ Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000);
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 export { app, prisma };
