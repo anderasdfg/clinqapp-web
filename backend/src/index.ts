@@ -41,14 +41,16 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, Postman, curl)
       if (!origin) {
-        console.log("✅ CORS: Allowing request with no origin");
         return callback(null, true);
       }
 
-      // Check if origin is allowed or is a Vercel preview deployment
-      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
-        console.log(`✅ CORS: Allowing origin: ${origin}`);
-        callback(null, true);
+      // Check if origin is allowed or is a Vercel deployment
+      const isAllowed =
+        allowedOrigins.includes(origin) || origin.endsWith(".vercel.app");
+
+      if (isAllowed) {
+        // Return the origin itself instead of 'true' to be more explicit
+        callback(null, origin);
       } else {
         console.warn(`❌ CORS: Blocking origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
@@ -61,6 +63,10 @@ app.use(
       "Authorization",
       "X-Requested-With",
       "Accept",
+      "Origin",
+      "Access-Control-Allow-Headers",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers",
     ],
     exposedHeaders: ["Content-Range", "X-Content-Range"],
     preflightContinue: false,

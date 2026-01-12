@@ -18,7 +18,6 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 // Create axios instance with interceptors
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
 });
 
 // Add auth token to requests
