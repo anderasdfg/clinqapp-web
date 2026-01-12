@@ -124,7 +124,7 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const patient = await prisma.patient.findFirst({
       where: {
@@ -249,7 +249,7 @@ export const updatePatient = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Validate data
     const validation = updatePatientSchema.safeParse(req.body);
@@ -332,7 +332,7 @@ export const deletePatient = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Check if patient exists and belongs to organization
     const existingPatient = await prisma.patient.findFirst({

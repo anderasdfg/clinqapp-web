@@ -108,7 +108,7 @@ export const getStaffById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const staff = await prisma.user.findFirst({
       where: {
@@ -246,7 +246,7 @@ export const updateStaff = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Validate data
     const validation = updateStaffSchema.safeParse(req.body);
@@ -331,7 +331,7 @@ export const deleteStaff = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Check if staff exists
     const existingStaff = await prisma.user.findFirst({
