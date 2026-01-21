@@ -51,15 +51,16 @@ interface AppointmentsState {
   updateAppointment: (id: string, data: UpdateAppointmentDTO) => Promise<void>;
   updateAppointmentStatus: (
     id: string,
-    data: UpdateAppointmentStatusDTO
+    data: UpdateAppointmentStatusDTO,
   ) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
   checkAvailability: (
     professionalId: string,
     startTime: string,
     endTime: string,
-    excludeId?: string
+    excludeId?: string,
   ) => Promise<boolean>;
+  addImagesToAppointment: (id: string, images: string[]) => Promise<void>;
 }
 
 export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
@@ -129,7 +130,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       set((state) => ({
         selectedAppointment: appointment,
         appointments: state.appointments.map((apt) =>
-          apt.id === appointment.id ? appointment : apt
+          apt.id === appointment.id ? appointment : apt,
         ),
         isLoading: false,
       }));
@@ -165,12 +166,12 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     try {
       const updatedAppointment = await appointmentsService.updateAppointment(
         id,
-        data
+        data,
       );
 
       set((state) => ({
         appointments: state.appointments.map((apt) =>
-          apt.id === id ? updatedAppointment : apt
+          apt.id === id ? updatedAppointment : apt,
         ),
         selectedAppointment:
           state.selectedAppointment?.id === id
@@ -191,13 +192,12 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       await appointmentsService.updateAppointmentStatus(id, data);
 
       // Fetch complete appointment data with relations
-      const completeAppointment = await appointmentsService.getAppointmentById(
-        id
-      );
+      const completeAppointment =
+        await appointmentsService.getAppointmentById(id);
 
       set((state) => ({
         appointments: state.appointments.map((apt) =>
-          apt.id === id ? completeAppointment : apt
+          apt.id === id ? completeAppointment : apt,
         ),
         selectedAppointment:
           state.selectedAppointment?.id === id
@@ -244,6 +244,42 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       return available;
     } catch (error) {
       console.error("Error checking availability:", error);
+      throw error;
+    }
+  },
+
+  addImagesToAppointment: async (id, images) => {
+    set({ isUpdating: true });
+    try {
+      // Get current appointment
+      const currentAppointment = get().appointments.find(
+        (apt) => apt.id === id,
+      );
+      const existingImages = currentAppointment?.images || [];
+
+      // Merge with new images
+      const allImages = [...existingImages, ...images];
+
+      // Update appointment with new images
+      await appointmentsService.updateAppointment(id, { images: allImages });
+
+      // Fetch updated appointment
+      const updatedAppointment =
+        await appointmentsService.getAppointmentById(id);
+
+      set((state) => ({
+        appointments: state.appointments.map((apt) =>
+          apt.id === id ? updatedAppointment : apt,
+        ),
+        selectedAppointment:
+          state.selectedAppointment?.id === id
+            ? updatedAppointment
+            : state.selectedAppointment,
+        isUpdating: false,
+      }));
+    } catch (error) {
+      console.error("Error adding images to appointment:", error);
+      set({ isUpdating: false });
       throw error;
     }
   },

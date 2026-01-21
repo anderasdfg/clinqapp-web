@@ -7,6 +7,7 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
+    "db:setup": "ts-node scripts/setup-database.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

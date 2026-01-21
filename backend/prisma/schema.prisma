@@ -341,6 +341,9 @@ model Appointment {
   // Reminder sent
   reminderSentAt DateTime? @map("reminder_sent_at") @db.Timestamptz
   
+  // Treatment images (Evidencia fotográfica)
+  images String[] @default([]) // Array of image URLs from Supabase Storage
+  
   // Relations
   payment Payment?
 

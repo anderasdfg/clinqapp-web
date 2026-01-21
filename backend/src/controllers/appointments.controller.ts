@@ -11,6 +11,7 @@ const createAppointmentSchema = z.object({
   startTime: z.string().datetime("Fecha y hora de inicio inválida"),
   endTime: z.string().datetime("Fecha y hora de fin inválida"),
   notes: z.string().optional(),
+  images: z.array(z.string().url("URL de imagen inválida")).optional(),
 });
 
 const updateAppointmentSchema = createAppointmentSchema.partial();
@@ -212,7 +213,7 @@ const checkAvailability = async (
   professionalId: string,
   startTime: Date,
   endTime: Date,
-  excludeAppointmentId?: string
+  excludeAppointmentId?: string,
 ) => {
   const where: any = {
     organizationId,
@@ -283,7 +284,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
       dbUser.organizationId,
       data.professionalId,
       startTime,
-      endTime
+      endTime,
     );
 
     if (!isAvailable) {
@@ -423,7 +424,7 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
         professionalId,
         startTime,
         endTime,
-        id
+        id,
       );
 
       if (!isAvailable) {
@@ -434,6 +435,9 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     }
 
     // Update appointment
+    console.log("🔍 Update data received:", JSON.stringify(data, null, 2));
+    console.log("📸 Images in data:", data.images);
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: {
@@ -479,7 +483,7 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
 // PATCH /api/appointments/:id/status - Update appointment status
 export const updateAppointmentStatus = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const dbUser = req.dbUser;
@@ -577,7 +581,7 @@ export const deleteAppointment = async (req: AuthRequest, res: Response) => {
 // GET /api/appointments/availability - Check availability for a time slot
 export const checkAppointmentAvailability = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ) => {
   try {
     const dbUser = req.dbUser;
@@ -599,7 +603,7 @@ export const checkAppointmentAvailability = async (
       professionalId as string,
       new Date(startTime as string),
       new Date(endTime as string),
-      excludeId as string | undefined
+      excludeId as string | undefined,
     );
 
     res.json({

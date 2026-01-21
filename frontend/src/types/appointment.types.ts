@@ -127,6 +127,7 @@ export interface Appointment {
   clinicalNotes?: string | null;
   cancellationReason?: string | null;
   reminderSentAt?: string | null;
+  images?: string[]; // Treatment images URLs
   // Relations
   patient?: AppointmentPatient;
   professional?: AppointmentProfessional;
@@ -151,6 +152,7 @@ export interface UpdateAppointmentDTO {
   startTime?: string;
   endTime?: string;
   notes?: string;
+  images?: string[]; // Treatment images URLs
 }
 
 export interface UpdateAppointmentStatusDTO {

@@ -32,7 +32,9 @@ import {
     Info,
     Shield,
     ShieldAlert,
-    Footprints
+    Footprints,
+    Camera,
+    X
 } from 'lucide-react';
 import {
     Dialog,
@@ -44,6 +46,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
 
 const PatientDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -52,6 +55,8 @@ const PatientDetailPage = () => {
     const { appointments, fetchAppointments } = useAppointmentsStore();
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [appointmentImages, setAppointmentImages] = useState<Map<string, string[]>>(new Map());
+    const [isUploading, setIsUploading] = useState(false);
     
     // Handle tab from URL query params
     const queryParams = new URLSearchParams(window.location.search);
@@ -73,6 +78,90 @@ const PatientDetailPage = () => {
             fetchAppointments({ patientId: id });
         }
     }, [id, fetchPatientById, fetchAppointments]);
+
+    // Load existing images from appointments
+    useEffect(() => {
+        const imagesMap = new Map<string, string[]>();
+        appointments.forEach(apt => {
+            if (apt.images && apt.images.length > 0) {
+                imagesMap.set(apt.id, apt.images);
+            }
+        });
+        setAppointmentImages(imagesMap);
+    }, [appointments]);
+
+    // Handle image upload to Supabase Storage for specific appointment
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, appointmentId: string) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        const supabase = createClient();
+        const newImageUrls: string[] = [];
+
+        try {
+            for (const file of Array.from(files)) {
+                const timestamp = Date.now();
+                const filePath = `treatments/${id}/${appointmentId}/${timestamp}-${file.name}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('treatments')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('Error uploading file:', uploadError);
+                    toast.error(`Error subiendo ${file.name}: ${uploadError.message}`);
+                    continue;
+                }
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('treatments')
+                    .getPublicUrl(filePath);
+
+                newImageUrls.push(publicUrlData.publicUrl);
+            }
+
+            // Add new images to the specific appointment in local state
+            setAppointmentImages(prev => {
+                const updated = new Map(prev);
+                const existing = updated.get(appointmentId) || [];
+                updated.set(appointmentId, [...existing, ...newImageUrls]);
+                return updated;
+            });
+            
+            // Persist to database
+            try {
+                console.log('🔄 Attempting to persist images to database...');
+                console.log('📸 Appointment ID:', appointmentId);
+                console.log('🖼️ New images to add:', newImageUrls);
+                
+                await useAppointmentsStore.getState().addImagesToAppointment(appointmentId, newImageUrls);
+                
+                console.log('✅ Images persisted successfully to database');
+            } catch (dbError) {
+                console.error('❌ Error persisting images to database:', dbError);
+                toast.error('Imágenes subidas pero error al guardar en BD');
+            }
+            
+            toast.success(`${newImageUrls.length} imagen(es) subida(s) exitosamente`);
+        } catch (error) {
+            console.error('Error during image upload:', error);
+            toast.error('Error general durante la subida de imágenes');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Remove uploaded image from specific appointment
+    const removeImage = (appointmentId: string, imageIndex: number) => {
+        setAppointmentImages(prev => {
+            const updated = new Map(prev);
+            const existing = updated.get(appointmentId) || [];
+            updated.set(appointmentId, existing.filter((_, i) => i !== imageIndex));
+            return updated;
+        });
+        toast.success('Imagen eliminada');
+    };
 
     const formatDate = (dateString?: string | null) => {
         if (!dateString) return '-';
@@ -425,6 +514,73 @@ const PatientDetailPage = () => {
                                         </Card>
                                     </div>
 
+                                    {/* Chronological Image Gallery */}
+                                    <Card className="bg-purple-50/30 border-purple-200 shadow-sm">
+                                        <CardHeader className="border-b bg-white">
+                                            <CardTitle className="text-lg flex items-center gap-2 text-purple-700">
+                                                <Camera className="w-5 h-5" />
+                                                Galería de Evidencia Fotográfica
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Imágenes cronológicas de todas las atenciones realizadas
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="pt-6">
+                                            {patientAppointments.filter(apt => apt.images && apt.images.length > 0).length === 0 ? (
+                                                <div className="text-center py-12 text-muted-foreground">
+                                                    <Camera className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                                    <p>No hay imágenes registradas en las consultas</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    {patientAppointments
+                                                        .filter(apt => apt.images && apt.images.length > 0)
+                                                        .map((apt) => (
+                                                            <div key={apt.id} className="space-y-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Badge className={APPOINTMENT_STATUS_COLORS[apt.status]}>
+                                                                            {APPOINTMENT_STATUS_LABELS[apt.status]}
+                                                                        </Badge>
+                                                                        <span className="text-sm font-semibold text-purple-900">
+                                                                            {formatDate(apt.startTime)}
+                                                                        </span>
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {apt.service?.name || 'Atención Podológica'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-xs text-muted-foreground">
+                                                                        {apt.images?.length || 0} imagen(es)
+                                                                    </span>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                                                    {apt.images?.map((imageUrl, imgIndex) => (
+                                                                        <div 
+                                                                            key={imgIndex}
+                                                                            className="relative group rounded-lg overflow-hidden border border-purple-200 shadow-sm hover:shadow-lg transition-all cursor-pointer aspect-square"
+                                                                            onClick={() => window.open(imageUrl, '_blank')}
+                                                                        >
+                                                                            <img 
+                                                                                src={imageUrl} 
+                                                                                alt={`${formatDate(apt.startTime)} - Imagen ${imgIndex + 1}`}
+                                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                                                            />
+                                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                                                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <Activity className="w-6 h-6 text-white" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <Separator />
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+
                                     <div className="flex justify-center">
                                         <Button 
                                             variant="ghost" 
@@ -570,19 +726,70 @@ const PatientDetailPage = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Activity className="w-5 h-5 text-primary" />
-                                        <h4 className="font-bold">Evidencia Clínica</h4>
+                                        <Camera className="w-5 h-5 text-primary" />
+                                        <h4 className="font-bold">Evidencia Fotográfica</h4>
                                     </div>
-                                    <Button variant="outline" size="sm" className="gap-2">
-                                        <Plus className="w-4 h-4" /> Añadir Foto
-                                    </Button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="aspect-square bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground">
-                                        <CameraIcon className="w-6 h-6 mb-1" />
-                                        <span className="text-[10px] uppercase font-bold tracking-wider">Sin fotos</span>
+                                    <div className="flex gap-2">
+                                        <label 
+                                            htmlFor="appointment-image-upload" 
+                                            className={`inline-flex items-center justify-center gap-2 h-9 px-4 py-2 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                                    <span>Subiendo...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4" />
+                                                    Añadir Foto
+                                                </>
+                                            )}
+                                        </label>
+                                        <input
+                                            id="appointment-image-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(e) => selectedAppointment && handleImageUpload(e, selectedAppointment.id)}
+                                            disabled={isUploading}
+                                            className="hidden"
+                                        />
                                     </div>
                                 </div>
+
+                                {/* Image Preview Grid - Only for selected appointment */}
+                                {selectedAppointment && appointmentImages.get(selectedAppointment.id)?.length ? (
+                                    <div className="grid grid-cols-3 gap-4 animate-in fade-in zoom-in-95 duration-300">
+                                        {appointmentImages.get(selectedAppointment.id)!.map((url, index) => (
+                                            <div 
+                                                key={index} 
+                                                className="relative group rounded-lg overflow-hidden border border-purple-200 shadow-sm hover:shadow-md transition-all"
+                                            >
+                                                <img 
+                                                    src={url} 
+                                                    alt={`Evidencia ${index + 1}`}
+                                                    className="w-full aspect-square object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(selectedAppointment.id, index)}
+                                                    className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
+                                                    title="Eliminar imagen"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="aspect-square bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground">
+                                            <Camera className="w-6 h-6 mb-1" />
+                                            <span className="text-[10px] uppercase font-bold tracking-wider">Sin fotos</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -610,19 +817,6 @@ const InfoItem = ({ label, value, icon, fullWidth = false }: {
     </div>
 );
 
-// Shorthand for simple icons missing from Lucide but needed
-const CameraIcon = (props: any) => (
-    <svg 
-        {...props} 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor" 
-        strokeWidth={2}
-    >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-);
-
 export default PatientDetailPage;
+
 
