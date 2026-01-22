@@ -7,7 +7,7 @@ import AppointmentCard from '@/components/agenda/AppointmentCard';
 import AppointmentModal from '@/components/agenda/AppointmentModal';
 import AppointmentDetailModal from '@/components/agenda/AppointmentDetailModal';
 import { Button } from '@/components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import type { Appointment } from '@/types/appointment.types';
 
 const AgendaPage = () => {
@@ -35,7 +35,8 @@ const AgendaPage = () => {
         });
 
         fetchAppointments();
-    }, [currentDate, fetchAppointments, setFilters]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentDate]); // Only depend on currentDate
 
     const weekDays = getWeekDays(currentDate);
 
@@ -73,13 +74,23 @@ const AgendaPage = () => {
                         Gestiona tus citas y horarios
                     </p>
                 </div>
-                <Button
-                    onClick={() => setShowAppointmentModal(true)}
-                    className="gap-2 bg-primary shadow-md"
-                >
-                    <Plus className="w-5 h-5" />
-                    Nueva Cita
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => fetchAppointments({}, true)}
+                        variant="outline"
+                        className="gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Actualizar
+                    </Button>
+                    <Button
+                        onClick={() => setShowAppointmentModal(true)}
+                        className="gap-2 bg-primary shadow-md"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Nueva Cita
+                    </Button>
+                </div>
             </div>
 
             {/* Calendar Controls */}

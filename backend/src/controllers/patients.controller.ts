@@ -84,16 +84,6 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
         where,
         skip,
         take: limit,
-        include: {
-          assignedProfessional: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
         orderBy: { createdAt: "desc" },
       }),
       prisma.patient.count({ where }),
@@ -132,7 +122,23 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
         organizationId: dbUser.organizationId,
         deletedAt: null,
       },
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        dni: true,
+        phone: true,
+        email: true,
+        dateOfBirth: true,
+        gender: true,
+        address: true,
+        occupation: true,
+        emergencyContact: true,
+        emergencyPhone: true,
+        referralSource: true,
+        medicalHistory: true,
+        createdAt: true,
+        updatedAt: true,
         assignedProfessional: {
           select: {
             id: true,
@@ -145,10 +151,22 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
         appointments: {
           take: 5,
           orderBy: { startTime: "desc" },
-          include: {
-            service: true,
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            notes: true,
+            service: {
+              select: {
+                id: true,
+                name: true,
+                duration: true,
+              },
+            },
             professional: {
               select: {
+                id: true,
                 firstName: true,
                 lastName: true,
               },
@@ -215,7 +233,7 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
         organizationId: dbUser.organizationId,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         email: data.email || null,
-        referralSource: data.referralSource || "OTHER",
+        referralSource: data.referralSource || undefined,
       },
       include: {
         assignedProfessional: {

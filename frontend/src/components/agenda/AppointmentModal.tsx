@@ -7,6 +7,8 @@ import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
+import { Combobox } from '@/components/ui/combobox';
+import QuickPatientModal from '@/components/patients/QuickPatientModal';
 import {
     Select,
     SelectContent,
@@ -15,6 +17,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface AppointmentModalProps {
     appointment?: Appointment;
@@ -29,8 +33,11 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
     const [professionals, setProfessionals] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
-    const [loadingData, setLoadingData] = useState(true);
+    const [loadingPatients, setLoadingPatients] = useState(false);
+    const [loadingProfessionals, setLoadingProfessionals] = useState(false);
+    const [loadingServices, setLoadingServices] = useState(false);
     const [duration, setDuration] = useState<number>(60); // Default 60 minutes
+    const [showQuickPatientCreate, setShowQuickPatientCreate] = useState(false);
 
     const {
         register,
@@ -60,9 +67,80 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
     const selectedServiceId = watch('serviceId');
 
+    // Lazy load patients
+    const loadPatients = async (force = false) => {
+        if (!force && (patients.length > 0 || loadingPatients)) return;
+        setLoadingPatients(true);
+        try {
+            await fetchPatients({ limit: 100 });
+        } catch (error) {
+            console.error('Error loading patients:', error);
+        } finally {
+            setLoadingPatients(false);
+        }
+    };
+
+    // Lazy load professionals
+    const loadProfessionals = async (force = false) => {
+        if (!force && (professionals.length > 0 || loadingProfessionals)) return;
+        setLoadingProfessionals(true);
+        try {
+            const { staffService } = await import('@/services/staff.service');
+            const staffResponse = await staffService.getStaff({ limit: 100 });
+            setProfessionals(staffResponse.data.map(staff => ({
+                id: staff.id,
+                firstName: staff.firstName,
+                lastName: staff.lastName,
+                specialty: staff.specialty || undefined,
+            })));
+        } catch (error) {
+            console.error('Error loading professionals:', error);
+        } finally {
+            setLoadingProfessionals(false);
+        }
+    };
+
+    // Lazy load services
+    const loadServices = async (force = false) => {
+        if (!force && (services.length > 0 || loadingServices)) return;
+        setLoadingServices(true);
+        try {
+            const { createClient } = await import('@/lib/supabase/client');
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session?.access_token) {
+                const servicesResponse = await fetch(`${import.meta.env.VITE_API_URL}/services?limit=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                    },
+                });
+
+                if (servicesResponse.ok) {
+                    const servicesData = await servicesResponse.json();
+                    setServices(servicesData.data.map((service: any) => ({
+                        id: service.id,
+                        name: service.name,
+                        duration: service.duration,
+                        basePrice: service.basePrice,
+                    })));
+                }
+            }
+        } catch (error) {
+            console.error('Error loading services:', error);
+        } finally {
+            setLoadingServices(false);
+        }
+    };
+
+    // Load all data in parallel when modal opens
     useEffect(() => {
         if (isOpen) {
-            loadInitialData();
+            Promise.all([
+                loadPatients(),
+                loadProfessionals(),
+                loadServices()
+            ]).catch(err => console.error('Error in parallel loading:', err));
         }
     }, [isOpen]);
 
@@ -91,50 +169,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     }, [watch('startTime'), duration]);
 
-    const loadInitialData = async () => {
-        setLoadingData(true);
-        try {
-            // Fetch patients
-            await fetchPatients({ limit: 100 });
 
-            // Fetch professionals from API
-            const { staffService } = await import('@/services/staff.service');
-            const staffResponse = await staffService.getStaff({ limit: 100 });
-            setProfessionals(staffResponse.data.map(staff => ({
-                id: staff.id,
-                firstName: staff.firstName,
-                lastName: staff.lastName,
-                specialty: staff.specialty || undefined,
-            })));
-
-            // Fetch services from API
-            const { createClient } = await import('@/lib/supabase/client');
-            const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (session?.access_token) {
-                const servicesResponse = await fetch(`${import.meta.env.VITE_API_URL}/services?limit=100`, {
-                    headers: {
-                        'Authorization': `Bearer ${session.access_token}`,
-                    },
-                });
-
-                if (servicesResponse.ok) {
-                    const servicesData = await servicesResponse.json();
-                    setServices(servicesData.data.map((service: any) => ({
-                        id: service.id,
-                        name: service.name,
-                        duration: service.duration,
-                        basePrice: service.basePrice,
-                    })));
-                }
-            }
-        } catch (error) {
-            console.error('Error loading data:', error);
-        } finally {
-            setLoadingData(false);
-        }
-    };
 
     const onSubmit = async (data: AppointmentFormData) => {
         try {
@@ -160,6 +195,15 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
     const handleClose = () => {
         reset();
         onClose();
+    };
+
+    const handlePatientCreated = async (patientId: string) => {
+        await fetchPatients({ limit: 100 });
+        reset({
+            ...watch(),
+            patientId: patientId,
+        });
+        setShowQuickPatientCreate(false);
     };
 
     if (!isOpen) return null;
@@ -195,38 +239,43 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                 </button>
                             </div>
 
-                            {loadingData ? (
-                                <div className="flex justify-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
+
+                            <div className="space-y-4">
                                     {/* Patient Selection */}
                                     <div>
                                         <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                             Paciente <span className="text-error">*</span>
                                         </label>
-                                        <Controller
-                                            name="patientId"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Seleccionar paciente..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {patients.map((patient) => (
-                                                            <SelectItem key={patient.id} value={patient.id}>
-                                                                {patient.firstName} {patient.lastName}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                        />
+                                        <div className="flex gap-2">
+                                            <Controller
+                                                name="patientId"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Combobox
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        options={patients.map((patient) => ({
+                                                            value: patient.id,
+                                                            label: `${patient.firstName} ${patient.lastName}`,
+                                                        }))}
+                                                        placeholder="Seleccionar paciente..."
+                                                        searchPlaceholder="Buscar paciente..."
+                                                        emptyText="No se encontraron pacientes"
+                                                        className="flex-1"
+                                                        isLoading={loadingPatients}
+                                                        onOpen={loadPatients}
+                                                    />
+                                                )}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setShowQuickPatientCreate(true)}
+                                                className="shrink-0"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                         {errors.patientId && (
                                             <p className="mt-1 text-sm text-error">{errors.patientId.message}</p>
                                         )}
@@ -241,21 +290,19 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                             name="professionalId"
                                             control={control}
                                             render={({ field }) => (
-                                                <Select
+                                                <Combobox
                                                     value={field.value}
                                                     onValueChange={field.onChange}
-                                                >
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Seleccionar profesional..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {professionals.map((prof) => (
-                                                            <SelectItem key={prof.id} value={prof.id}>
-                                                                {prof.firstName} {prof.lastName}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                    options={professionals.map((prof) => ({
+                                                        value: prof.id,
+                                                        label: `${prof.firstName} ${prof.lastName}`,
+                                                    }))}
+                                                    placeholder="Seleccionar profesional..."
+                                                    searchPlaceholder="Buscar profesional..."
+                                                    emptyText="No se encontraron profesionales"
+                                                    isLoading={loadingProfessionals}
+                                                    onOpen={loadProfessionals}
+                                                />
                                             )}
                                         />
                                         {errors.professionalId && (
@@ -275,9 +322,12 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                                 <Select
                                                     value={field.value || ''}
                                                     onValueChange={field.onChange}
+                                                    onOpenChange={(open) => {
+                                                        if (open) loadServices();
+                                                    }}
                                                 >
                                                     <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Seleccionar servicio..." />
+                                                        <SelectValue placeholder={loadingServices ? "Cargando servicios..." : "Seleccionar servicio..."} />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {services.map((service) => (
@@ -355,13 +405,13 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                         />
                                     </div>
                                 </div>
-                            )}
+                            
                         </div>
 
                         <div className="px-6 py-3 bg-[rgb(var(--bg-secondary))] sm:px-6 sm:flex sm:flex-row-reverse gap-3">
                             <button
                                 type="submit"
-                                disabled={isSubmitting || loadingData || !isFormValid}
+                                disabled={isSubmitting || !isFormValid}
                                 style={{
                                     background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                                 }}
@@ -384,6 +434,13 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                     </form>
                 </div>
             </div>
+
+            {/* Quick Patient Create Modal */}
+            <QuickPatientModal
+                isOpen={showQuickPatientCreate}
+                onClose={() => setShowQuickPatientCreate(false)}
+                onSuccess={handlePatientCreated}
+            />
         </div>
     );
 };

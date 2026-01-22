@@ -10,10 +10,16 @@ import type {
 } from "@/types/appointment.types";
 import { appointmentsService } from "@/services/appointments.service";
 
+// Cache TTL: 2 minutes
+const CACHE_TTL = 2 * 60 * 1000;
+
 interface AppointmentsState {
   // Data
   appointments: Appointment[];
   selectedAppointment: Appointment | null;
+
+  // Cache
+  lastFetchedAt: number | null;
 
   // UI State
   isLoading: boolean;
@@ -40,12 +46,16 @@ interface AppointmentsState {
   totalAppointments: number;
 
   // Actions
+  shouldRefetch: () => boolean;
   setViewMode: (mode: CalendarViewMode) => void;
   setCurrentDate: (date: Date) => void;
   setFilters: (filters: Partial<AppointmentsState["filters"]>) => void;
   setCurrentPage: (page: number) => void;
 
-  fetchAppointments: (params?: AppointmentsQueryParams) => Promise<void>;
+  fetchAppointments: (
+    params?: AppointmentsQueryParams,
+    forceRefresh?: boolean,
+  ) => Promise<void>;
   fetchAppointmentById: (id: string) => Promise<void>;
   createAppointment: (data: CreateAppointmentDTO) => Promise<void>;
   updateAppointment: (id: string, data: UpdateAppointmentDTO) => Promise<void>;
@@ -67,6 +77,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   // Initial state
   appointments: [],
   selectedAppointment: null,
+  lastFetchedAt: null,
   isLoading: false,
   isCreating: false,
   isUpdating: false,
@@ -77,6 +88,13 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   currentPage: 1,
   totalPages: 1,
   totalAppointments: 0,
+
+  // Check if cache is stale
+  shouldRefetch: () => {
+    const state = get();
+    if (!state.lastFetchedAt) return true;
+    return Date.now() - state.lastFetchedAt > CACHE_TTL;
+  },
 
   // Actions
   setViewMode: (mode) => set({ viewMode: mode }),
@@ -91,10 +109,16 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
 
   setCurrentPage: (page) => set({ currentPage: page }),
 
-  fetchAppointments: async (params) => {
+  fetchAppointments: async (params, forceRefresh = false) => {
+    const state = get();
+
+    // Skip if cache is fresh and not forcing refresh
+    if (!forceRefresh && !state.shouldRefetch()) {
+      return; // Use cached data
+    }
+
     set({ isLoading: true });
     try {
-      const state = get();
       const queryParams: AppointmentsQueryParams = {
         page: params?.page ?? state.currentPage,
         limit: params?.limit ?? 50,
@@ -112,6 +136,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
         currentPage: response.pagination.page,
         totalPages: response.pagination.totalPages,
         totalAppointments: response.pagination.total,
+        lastFetchedAt: Date.now(),
         isLoading: false,
       });
     } catch (error) {

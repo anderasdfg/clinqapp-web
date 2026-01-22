@@ -226,7 +226,7 @@ model Patient {
   emergencyPhone    String?   @map("emergency_phone")
   
   // Marketing
-  referralSource ReferralSource @default(OTHER) @map("referral_source")
+  referralSource ReferralSource? @map("referral_source")
   
   // Medical history (OPCIONAL - específico por especialidad)
   medicalHistory Json? @map("medical_history") @db.JsonB

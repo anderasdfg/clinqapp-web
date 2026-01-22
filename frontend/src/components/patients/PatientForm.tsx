@@ -1,8 +1,10 @@
 import { useForm, Controller } from 'react-hook-form';
+import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { patientSchema, type PatientFormData } from '@/lib/validations/patient.validation';
 import { usePatientsStore } from '@/stores/usePatientsStore';
+import { staffService } from '@/services/staff.service';
 import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
 import type { Patient } from '@/types/patient.types';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -22,6 +24,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 
 interface PatientFormProps {
     patient?: Patient;
@@ -31,6 +34,7 @@ interface PatientFormProps {
 const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
     const navigate = useNavigate();
     const { createPatient, updatePatient, isCreating, isUpdating } = usePatientsStore();
+    const [professionals, setProfessionals] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
 
     const {
         register,
@@ -58,6 +62,19 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
             }
             : undefined,
     });
+
+    // Load professionals
+    useEffect(() => {
+        const loadProfessionals = async () => {
+            try {
+                const response = await staffService.getStaff({ limit: 100 });
+                setProfessionals(response.data);
+            } catch (error) {
+                console.error('Error loading professionals:', error);
+            }
+        };
+        loadProfessionals();
+    }, []);
 
     const onSubmit = async (data: PatientFormData) => {
         try {
@@ -153,17 +170,25 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                             <Controller
                                 name="dateOfBirth"
                                 control={control}
-                                render={({ field }) => (
-                                    <DatePicker
-                                        date={field.value ? new Date(field.value) : undefined}
-                                        onDateChange={(date) => {
-                                            field.onChange(date ? date.toISOString().split('T')[0] : '');
-                                        }}
-                                        placeholder="Seleccionar fecha de nacimiento"
-                                        fromYear={1900}
-                                        toYear={new Date().getFullYear()}
-                                    />
-                                )}
+                                render={({ field }) => {
+                                    // Manually parse strings like "yyyy-MM-dd" as local dates to avoid timezone shift
+                                    const dateValue = field.value ? (() => {
+                                        const [y, m, d] = field.value.split('-').map(Number);
+                                        return new Date(y, m - 1, d);
+                                    })() : undefined;
+
+                                    return (
+                                        <DatePicker
+                                            date={dateValue}
+                                            onDateChange={(date) => {
+                                                field.onChange(date ? format(date, 'yyyy-MM-dd') : '');
+                                            }}
+                                            placeholder="Seleccionar fecha de nacimiento"
+                                            fromYear={1900}
+                                            toYear={new Date().getFullYear()}
+                                        />
+                                    );
+                                }}
                             />
                         </div>
 
@@ -335,6 +360,32 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                             {Object.entries(REFERRAL_SOURCE_LABELS).map(([value, label]) => (
                                                 <SelectItem key={value} value={value}>
                                                     {label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="assignedProfessionalId">Profesional Responsable</Label>
+                            <Controller
+                                name="assignedProfessionalId"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        value={field.value || undefined}
+                                        onValueChange={(value) => field.onChange(value === "unassigned" ? "" : value)}
+                                    >
+                                        <SelectTrigger id="assignedProfessionalId" className="h-9">
+                                            <SelectValue placeholder="Sin asignar" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                            {professionals.map((prof) => (
+                                                <SelectItem key={prof.id} value={prof.id}>
+                                                    {prof.firstName} {prof.lastName}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

@@ -2,6 +2,7 @@ import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 // Validation schemas
 const createAppointmentSchema = z.object({
@@ -34,6 +35,10 @@ const registerPaymentSchema = z.object({
   receiptNumber: z.string().optional(),
   notes: z.string().optional(),
 });
+
+// Simple in-memory cache for appointments
+const appointmentsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 30; // 30 seconds cache for agenda data
 
 // GET /api/appointments - List appointments with filters
 export const getAppointments = async (req: AuthRequest, res: Response) => {
@@ -88,20 +93,40 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
       where.status = status;
     }
 
+    // Generate cache key
+    const cacheKey = `${dbUser.organizationId}:${startDate}:${endDate}:${patientId}:${professionalId}:${status}:${page}:${limit}`;
+    const cachedEntry = appointmentsCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(
+        `🚀 Appointments: Cache HIT for org ${dbUser.organizationId}`,
+      );
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Appointments: Cache MISS for org ${dbUser.organizationId}`);
+
     // Get appointments with pagination
+    // Optimization: Skip count if we're filtering by date range (agenda view)
+    const isAgendaView = !!(startDate && endDate);
+
     const [appointments, total] = await Promise.all([
       prisma.appointment.findMany({
         where,
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          notes: true,
+          sessionNumber: true,
           patient: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
-              phone: true,
-              email: true,
             },
           },
           professional: {
@@ -109,7 +134,6 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
             },
           },
           service: {
@@ -117,26 +141,36 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
               id: true,
               name: true,
               duration: true,
-              basePrice: true,
             },
           },
-          payment: true,
+          payment: {
+            select: {
+              id: true,
+              status: true,
+              amount: true,
+            },
+          },
         },
         orderBy: { startTime: "asc" },
       }),
-      prisma.appointment.count({ where }),
+      isAgendaView ? Promise.resolve(0) : prisma.appointment.count({ where }),
     ]);
 
-    res.json({
+    const result = {
       success: true,
       data: appointments,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: isAgendaView ? appointments.length : total,
+        totalPages: isAgendaView ? 1 : Math.ceil(total / limit),
       },
-    });
+    };
+
+    // Update cache
+    appointmentsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching appointments:", error);
     res.status(500).json({ error: "Error al obtener citas" });
@@ -160,7 +194,19 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
         organizationId: dbUser.organizationId,
         deletedAt: null,
       },
-      include: {
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        notes: true,
+        clinicalNotes: true,
+        cancellationReason: true,
+        sessionNumber: true,
+        images: true,
+        reminderSentAt: true,
+        createdAt: true,
+        updatedAt: true,
         patient: {
           select: {
             id: true,
@@ -189,7 +235,17 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
             basePrice: true,
           },
         },
-        payment: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            receiptNumber: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -670,7 +726,7 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
         amount,
         method,
         status: "COMPLETED",
-        receiptNumber,
+        receiptNumber: receiptNumber || null,
         notes,
         collectedById: dbUser.id,
       },
@@ -682,6 +738,13 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
       data: payment,
     });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return res
+          .status(409)
+          .json({ error: "El número de recibo ya existe en otro pago" });
+      }
+    }
     console.error("Error registering payment:", error);
     res.status(500).json({ error: "Error al registrar pago" });
   }

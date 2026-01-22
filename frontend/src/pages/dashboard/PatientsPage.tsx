@@ -51,7 +51,8 @@ import {
     Users,
     AlertTriangle,
     X,
-    Filter
+    Filter,
+    RefreshCw
 } from 'lucide-react';
 import { staffService } from '@/services/staff.service';
 import {
@@ -93,20 +94,29 @@ const PatientsPage = () => {
     });
     
     const [openFilterPopover, setOpenFilterPopover] = useState<string | null>(null);
+    const isFirstRender = useState(true);
 
     useEffect(() => {
         fetchPatients();
         loadProfessionals();
-    }, [fetchPatients]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only run once on mount
 
-    // Auto-search with debounce
+    // Auto-search with debounce (skip on first render)
     useEffect(() => {
+        // Skip the first render to avoid duplicate fetch
+        if (isFirstRender[0]) {
+            isFirstRender[1](false);
+            return;
+        }
+
         const debounceTimer = setTimeout(() => {
             fetchPatients();
         }, 500); // Wait 500ms after user stops typing
 
         return () => clearTimeout(debounceTimer);
-    }, [searchQuery, fetchPatients]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]); // Only depend on searchQuery
 
     const loadProfessionals = async () => {
         try {
@@ -188,12 +198,22 @@ const PatientsPage = () => {
                         Gestiona la información de tus pacientes
                     </p>
                 </div>
-                <Button asChild className="gap-2 bg-primary shadow-md">
-                    <Link to="/dashboard/patients/new">
-                        <Plus className="w-5 h-5" />
-                        Nuevo Paciente
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button 
+                        onClick={() => fetchPatients({}, true)} 
+                        variant="outline"
+                        className="gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Actualizar
+                    </Button>
+                    <Button asChild className="gap-2 bg-primary shadow-md">
+                        <a href="/dashboard/patients/new">
+                            <Plus className="w-5 h-5" />
+                            Nuevo Paciente
+                        </a>
+                    </Button>
+                </div>
             </div>
 
             {/* Search and Filters - Single Line */}
