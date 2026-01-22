@@ -15,7 +15,7 @@ console.log("🔌 Port:", process.env.PORT || 3001);
 // Check critical environment variables
 const requiredEnvVars = ["DATABASE_URL", "SUPABASE_URL", "SUPABASE_ANON_KEY"];
 const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName]
+  (varName) => !process.env[varName],
 );
 
 if (missingEnvVars.length > 0) {
@@ -71,7 +71,7 @@ app.use(
     exposedHeaders: ["Content-Range", "X-Content-Range"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -86,6 +86,7 @@ import patientsRoutes from "./routes/patients.routes";
 import appointmentsRoutes from "./routes/appointments.routes";
 import staffRoutes from "./routes/staff.routes";
 import servicesRoutes from "./routes/services.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
 
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/organization", organizationRoutes);
@@ -93,6 +94,7 @@ app.use("/api/patients", patientsRoutes);
 app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/services", servicesRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const server = app.listen(port, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${port}`);
