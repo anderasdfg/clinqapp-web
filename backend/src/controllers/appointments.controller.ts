@@ -67,12 +67,17 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
     };
 
     // Date range filter
-    if (startDate && endDate) {
+    if (
+      startDate &&
+      endDate &&
+      !isNaN(new Date(startDate).getTime()) &&
+      !isNaN(new Date(endDate).getTime())
+    ) {
       where.startTime = {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
-    } else if (startDate) {
+    } else if (startDate && !isNaN(new Date(startDate).getTime())) {
       where.startTime = {
         gte: new Date(startDate),
       };
@@ -121,12 +126,16 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
           endTime: true,
           status: true,
           notes: true,
+          clinicalNotes: true,
+          images: true,
           sessionNumber: true,
+          patientId: true,
           patient: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
+              phone: true,
             },
           },
           professional: {
@@ -134,6 +143,7 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
               id: true,
               firstName: true,
               lastName: true,
+              specialty: true,
             },
           },
           service: {
@@ -141,6 +151,7 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
               id: true,
               name: true,
               duration: true,
+              basePrice: true,
             },
           },
           payment: {

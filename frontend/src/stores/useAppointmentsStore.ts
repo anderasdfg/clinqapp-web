@@ -46,7 +46,7 @@ interface AppointmentsState {
   totalAppointments: number;
 
   // Actions
-  shouldRefetch: () => boolean;
+  shouldRefetch: (params?: AppointmentsQueryParams) => boolean;
   setViewMode: (mode: CalendarViewMode) => void;
   setCurrentDate: (date: Date) => void;
   setFilters: (filters: Partial<AppointmentsState["filters"]>) => void;
@@ -90,10 +90,33 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   totalAppointments: 0,
 
   // Check if cache is stale
-  shouldRefetch: () => {
+  shouldRefetch: (newParams?: AppointmentsQueryParams) => {
     const state = get();
     if (!state.lastFetchedAt) return true;
-    return Date.now() - state.lastFetchedAt > CACHE_TTL;
+
+    // Check if TTL expired
+    const isStale = Date.now() - state.lastFetchedAt > CACHE_TTL;
+    if (isStale) return true;
+
+    // If new params are provided, check if they match current filters
+    if (newParams) {
+      const currentFilters = state.filters;
+      // Compare meaningful filters
+      if (
+        (newParams.patientId &&
+          newParams.patientId !== currentFilters.patientId) ||
+        (newParams.professionalId &&
+          newParams.professionalId !== currentFilters.professionalId) ||
+        (newParams.status && newParams.status !== currentFilters.status) ||
+        (newParams.startDate &&
+          newParams.startDate !== currentFilters.startDate) ||
+        (newParams.endDate && newParams.endDate !== currentFilters.endDate)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   },
 
   // Actions
@@ -113,17 +136,25 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     const state = get();
 
     // Skip if cache is fresh and not forcing refresh
-    if (!forceRefresh && !state.shouldRefetch()) {
+    if (!forceRefresh && !state.shouldRefetch(params)) {
       return; // Use cached data
     }
 
     set({ isLoading: true });
     try {
+      const mergedFilters = params
+        ? { ...state.filters, ...params }
+        : state.filters;
+
+      // Remove undefined values to avoid sending them as "undefined" strings in URL
+      const cleanFilters = Object.fromEntries(
+        Object.entries(mergedFilters).filter(([_, v]) => v !== undefined),
+      );
+
       const queryParams: AppointmentsQueryParams = {
         page: params?.page ?? state.currentPage,
         limit: params?.limit ?? 50,
-        ...state.filters,
-        ...params,
+        ...cleanFilters,
         status: (params?.status || state.filters.status) as
           | AppointmentStatus
           | undefined,
@@ -131,13 +162,22 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
 
       const response = await appointmentsService.getAppointments(queryParams);
 
-      set({
-        appointments: response.data,
-        currentPage: response.pagination.page,
-        totalPages: response.pagination.totalPages,
-        totalAppointments: response.pagination.total,
-        lastFetchedAt: Date.now(),
-        isLoading: false,
+      set((state) => {
+        const nextFilters = cleanFilters;
+
+        // Check if filters actually changed
+        const filtersChanged =
+          JSON.stringify(nextFilters) !== JSON.stringify(state.filters);
+
+        return {
+          appointments: response.data,
+          currentPage: response.pagination.page,
+          totalPages: response.pagination.totalPages,
+          totalAppointments: response.pagination.total,
+          lastFetchedAt: Date.now(),
+          isLoading: false,
+          filters: filtersChanged ? nextFilters : state.filters,
+        };
       });
     } catch (error) {
       console.error("Error fetching appointments:", error);

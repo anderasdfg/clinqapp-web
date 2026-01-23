@@ -75,7 +75,11 @@ const PatientDetailPage = () => {
     useEffect(() => {
         if (id) {
             fetchPatientById(id);
-            fetchAppointments({ patientId: id });
+            fetchAppointments({ 
+                patientId: id,
+                startDate: undefined,
+                endDate: undefined
+            }, true); // Force refresh
         }
     }, [id, fetchPatientById, fetchAppointments]);
 
@@ -197,9 +201,9 @@ const PatientDetailPage = () => {
         }
     };
 
-    // Filter appointments for this patient
+    // Filter appointments for this patient - being more robust with property naming
     const patientAppointments = appointments
-        .filter(apt => apt.patientId === id)
+        .filter(apt => apt.patientId === id || (apt as any).patient?.id === id)
         .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
     
     const completedAppointments = patientAppointments.filter(apt => apt.status === 'COMPLETED');
