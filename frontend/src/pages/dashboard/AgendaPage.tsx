@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale';
 import { getWeekDays, getAppointmentsForDay } from '@/lib/utils/calendar.utils';
 import AppointmentCard from '@/components/agenda/AppointmentCard';
 import AppointmentModal from '@/components/agenda/AppointmentModal';
-import AppointmentDetailModal from '@/components/agenda/AppointmentDetailModal';
+import ClinicalWorkspaceSheet from '@/components/agenda/ClinicalWorkspaceSheet';
 import { Button } from '@/components/ui/Button';
 import { Plus, RefreshCw } from 'lucide-react';
 import type { Appointment } from '@/types/appointment.types';
@@ -55,11 +55,6 @@ const AgendaPage = () => {
     const handleAppointmentClick = (appointment: Appointment) => {
         setSelectedAppointment(appointment);
         setShowDetailModal(true);
-    };
-
-    const handleEditAppointment = () => {
-        setShowDetailModal(false);
-        setShowAppointmentModal(true);
     };
 
     return (
@@ -206,15 +201,14 @@ const AgendaPage = () => {
                 }}
             />
 
-            {/* Appointment Detail Modal */}
-            <AppointmentDetailModal
+            {/* Clinical Workspace Sheet */}
+            <ClinicalWorkspaceSheet
                 appointment={selectedAppointment}
                 isOpen={showDetailModal}
                 onClose={() => {
                     setShowDetailModal(false);
                     setSelectedAppointment(null);
                 }}
-                onEdit={handleEditAppointment}
             />
         </div>
     );

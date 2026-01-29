@@ -12,6 +12,7 @@ const createAppointmentSchema = z.object({
   startTime: z.string().datetime("Fecha y hora de inicio inválida"),
   endTime: z.string().datetime("Fecha y hora de fin inválida"),
   notes: z.string().optional(),
+  clinicalNotes: z.string().optional(),
   images: z.array(z.string().url("URL de imagen inválida")).optional(),
 });
 
@@ -226,6 +227,7 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
             phone: true,
             email: true,
             dateOfBirth: true,
+            medicalHistory: true,
           },
         },
         professional: {

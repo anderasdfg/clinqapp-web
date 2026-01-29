@@ -1,3 +1,5 @@
+import { PodiatryHistoryData } from "@/lib/validations/medical-record.validation";
+
 // Appointment Status Enum
 export enum AppointmentStatus {
   PENDING = "PENDING",
@@ -78,6 +80,9 @@ export interface AppointmentPatient {
   phone: string;
   email?: string | null;
   dateOfBirth?: string | null;
+  emergencyContact?: string | null;
+  emergencyPhone?: string | null;
+  medicalHistory?: PodiatryHistoryData;
 }
 
 // Professional info (minimal)
@@ -152,7 +157,9 @@ export interface UpdateAppointmentDTO {
   startTime?: string;
   endTime?: string;
   notes?: string;
+  clinicalNotes?: string;
   images?: string[]; // Treatment images URLs
+  status?: AppointmentStatus;
 }
 
 export interface UpdateAppointmentStatusDTO {

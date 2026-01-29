@@ -188,7 +188,7 @@ const MedicalRecordsPage = () => {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button size="sm" variant="outline" className="gap-2 h-8" asChild>
-                                                    <Link to={`/dashboard/patients/${patient.id}?tab=medical-record`}>
+                                                    <Link to={`/app/dashboard/patients/${patient.id}?tab=medical-record`}>
                                                         <Eye className="w-4 h-4" />
                                                         Ver Historia
                                                     </Link>
