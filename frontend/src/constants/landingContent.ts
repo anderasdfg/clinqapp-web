@@ -3,7 +3,6 @@ import {
   Calendar,
   FileText,
   ArrowRight,
-  PlayCircle,
   Sparkles,
   Mail,
   Phone,
