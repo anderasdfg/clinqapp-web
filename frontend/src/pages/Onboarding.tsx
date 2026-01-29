@@ -168,7 +168,7 @@ const Onboarding = () => {
             if (result.success) {
                 // Clear onboarding store after successful completion
                 reset();
-                navigate('/dashboard');
+                navigate('/app/dashboard');
             } else {
                 setError(result.error);
             }

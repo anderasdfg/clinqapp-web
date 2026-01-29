@@ -35,6 +35,7 @@ interface ServicesState {
   deleteService: (id: string) => Promise<void>;
   setSelectedService: (service: Service | null) => void;
   clearError: () => void;
+  reset: () => void;
 }
 
 export const useServicesStore = create<ServicesState>((set, get) => ({
@@ -165,4 +166,21 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
 
   setSelectedService: (service) => set({ selectedService: service }),
   clearError: () => set({ error: null }),
+  reset: () =>
+    set({
+      services: [],
+      selectedService: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
+      pagination: {
+        page: 1,
+        limit: 50,
+        total: 0,
+        totalPages: 0,
+      },
+      lastFetchedAt: null,
+    }),
 }));

@@ -11,7 +11,7 @@ import type {
   AppointmentsQueryParams,
   AvailabilityCheckParams,
 } from "@/types/appointment.types";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
@@ -22,7 +22,6 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
-  const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -37,7 +36,7 @@ export const appointmentsService = {
    * Get list of appointments with optional filters
    */
   async getAppointments(
-    params?: AppointmentsQueryParams
+    params?: AppointmentsQueryParams,
   ): Promise<AppointmentsListResponse> {
     const response = await api.get<AppointmentsListResponse>("/appointments", {
       params,
@@ -66,11 +65,11 @@ export const appointmentsService = {
    */
   async updateAppointment(
     id: string,
-    data: UpdateAppointmentDTO
+    data: UpdateAppointmentDTO,
   ): Promise<Appointment> {
     const response = await api.put<AppointmentResponse>(
       `/appointments/${id}`,
-      data
+      data,
     );
     return response.data.data;
   },
@@ -80,11 +79,11 @@ export const appointmentsService = {
    */
   async updateAppointmentStatus(
     id: string,
-    data: UpdateAppointmentStatusDTO
+    data: UpdateAppointmentStatusDTO,
   ): Promise<Appointment> {
     const response = await api.patch<AppointmentResponse>(
       `/appointments/${id}/status`,
-      data
+      data,
     );
     return response.data.data;
   },
@@ -102,7 +101,7 @@ export const appointmentsService = {
   async checkAvailability(params: AvailabilityCheckParams): Promise<boolean> {
     const response = await api.get<AvailabilityResponse>(
       "/appointments/availability",
-      { params }
+      { params },
     );
     return response.data.available;
   },

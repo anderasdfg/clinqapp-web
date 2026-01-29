@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import type {
   StaffListResponse,
   StaffResponse,
@@ -15,7 +15,6 @@ const api = axios.create({
 
 // Add auth interceptor
 api.interceptors.request.use(async (config) => {
-  const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -52,7 +51,7 @@ export const staffService = {
   // Update staff member
   async updateStaff(
     id: string,
-    data: Partial<StaffFormData>
+    data: Partial<StaffFormData>,
   ): Promise<StaffResponse> {
     const response = await api.put(`/staff/${id}`, data);
     return response.data;
@@ -60,7 +59,7 @@ export const staffService = {
 
   // Delete staff member (soft delete)
   async deleteStaff(
-    id: string
+    id: string,
   ): Promise<{ success: boolean; message: string }> {
     const response = await api.delete(`/staff/${id}`);
     return response.data;

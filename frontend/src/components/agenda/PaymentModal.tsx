@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { supabase } from '@/lib/supabase/client';
 import { PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types/appointment.types';
 import type { Appointment } from '@/types/appointment.types';
 
@@ -35,8 +36,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
     const onSubmit = async (data: PaymentFormData) => {
         setIsSubmitting(true);
         try {
-            const { createClient } = await import('@/lib/supabase/client');
-            const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session?.access_token) {
@@ -51,7 +50,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                     'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
-                    amount: Number(data.amount), // Convert to number explicitly
+                    amount: Number(data.amount),
                     method: data.method,
                     receiptNumber: data.receiptNumber,
                     notes: data.notes,
@@ -78,7 +77,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
 
                 if (!confirmResponse.ok) {
                     console.error('Error auto-confirming appointment');
-                    // Don't throw error, payment was successful
                 }
             }
 
@@ -119,7 +117,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                             </div>
 
                             <div className="space-y-4">
-                                {/* Patient Info */}
                                 <div className="p-3 bg-[rgb(var(--bg-secondary))] rounded-lg">
                                     <p className="text-sm text-[rgb(var(--text-secondary))]">Paciente</p>
                                     <p className="font-medium text-[rgb(var(--text-primary))]">
@@ -132,7 +129,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     )}
                                 </div>
 
-                                {/* Amount */}
                                 <div>
                                     <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                         Monto (S/) <span className="text-error">*</span>
@@ -152,7 +148,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     )}
                                 </div>
 
-                                {/* Payment Method */}
                                 <div>
                                     <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                         Método de Pago <span className="text-error">*</span>
@@ -172,7 +167,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     )}
                                 </div>
 
-                                {/* Receipt Number */}
                                 <div>
                                     <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                         Número de Recibo (Opcional)
@@ -185,7 +179,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     />
                                 </div>
 
-                                {/* Notes */}
                                 <div>
                                     <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
                                         Notas (Opcional)

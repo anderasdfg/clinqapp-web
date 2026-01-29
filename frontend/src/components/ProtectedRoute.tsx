@@ -1,32 +1,28 @@
 import { Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { AuthService } from '@/services/auth.service';
+import { useUserStore } from '@/stores/useUserStore';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const { user, isLoading } = useUserStore();
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            const user = await AuthService.getUser();
-            setIsAuthenticated(!!user);
-        };
-        checkAuth();
-    }, []);
-
-    if (isAuthenticated === null) {
+    if (isLoading) {
         // Loading state
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="min-h-screen flex items-center justify-center bg-[rgb(var(--bg-primary))]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="text-sm text-[rgb(var(--text-secondary))] animate-pulse">
+                        Verificando sesión...
+                    </p>
+                </div>
             </div>
         );
     }
 
-    if (!isAuthenticated) {
+    if (!user) {
         return <Navigate to="/app/login" replace />;
     }
 

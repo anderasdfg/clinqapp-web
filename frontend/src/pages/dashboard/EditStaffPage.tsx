@@ -57,7 +57,7 @@ const EditStaffPage = () => {
 
         try {
             await updateStaff(id, data);
-            navigate('/dashboard/staff');
+            navigate('/app/dashboard/staff');
         } catch (error) {
             console.error('Error updating staff:', error);
         }
@@ -75,7 +75,7 @@ const EditStaffPage = () => {
         <div className="animate-fade-in max-w-3xl">
             <div className="mb-6">
                 <button
-                    onClick={() => navigate('/dashboard/staff')}
+                    onClick={() => navigate('/app/dashboard/staff')}
                     className="flex items-center gap-2 text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] mb-4"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,7 +218,7 @@ const EditStaffPage = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate('/dashboard/staff')}
+                            onClick={() => navigate('/app/dashboard/staff')}
                             className="px-6 py-2.5 border border-[rgb(var(--border-primary))] text-[rgb(var(--text-primary))] rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors font-medium"
                         >
                             Cancelar

@@ -208,7 +208,7 @@ const PatientsPage = () => {
                         Actualizar
                     </Button>
                     <Button asChild className="gap-2 bg-primary shadow-md">
-                        <a href="/dashboard/patients/new">
+                        <a href="/app/dashboard/patients/new">
                             <Plus className="w-5 h-5" />
                             Nuevo Paciente
                         </a>
@@ -517,7 +517,7 @@ const PatientsPage = () => {
                                                 No se encontraron pacientes
                                             </p>
                                             <Link
-                                                to="/dashboard/patients/new"
+                                                to="/app/dashboard/patients/new"
                                                 className="text-primary hover:text-primary-hover font-medium"
                                             >
                                                 Crear primer paciente
@@ -591,7 +591,7 @@ const PatientsPage = () => {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem asChild>
                                                         <Link
-                                                            to={`/dashboard/patients/${patient.id}`}
+                                                            to={`/app/dashboard/patients/${patient.id}`}
                                                             className="flex items-center gap-2 cursor-pointer hover:bg-gray-100"
                                                         >
                                                             <Eye className="w-4 h-4" />
@@ -600,7 +600,7 @@ const PatientsPage = () => {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <Link
-                                                            to={`/dashboard/patients/${patient.id}/edit`}
+                                                            to={`/app/dashboard/patients/${patient.id}/edit`}
                                                             className="flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <Pencil className="w-4 h-4" />

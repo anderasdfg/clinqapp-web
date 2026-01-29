@@ -29,6 +29,7 @@ interface StaffState {
   deleteStaff: (id: string) => Promise<void>;
   setSelectedStaff: (staff: StaffMember | null) => void;
   clearError: () => void;
+  reset: () => void;
 }
 
 export const useStaffStore = create<StaffState>((set, get) => ({
@@ -137,4 +138,21 @@ export const useStaffStore = create<StaffState>((set, get) => ({
 
   setSelectedStaff: (staff) => set({ selectedStaff: staff }),
   clearError: () => set({ error: null }),
+  reset: () =>
+    set({
+      staff: [],
+      selectedStaff: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
+      pagination: {
+        page: 1,
+        limit: 50,
+        total: 0,
+        totalPages: 0,
+      },
+      lastFetchedAt: null,
+    }),
 }));

@@ -9,7 +9,10 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: 'rgb(var(--color-primary) / <alpha-value>)',
+                primary: {
+                    DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+                    foreground: 'rgb(var(--primary-foreground) / <alpha-value>)',
+                },
                 'primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
                 secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
                 'secondary-hover': 'rgb(var(--color-secondary-hover) / <alpha-value>)',

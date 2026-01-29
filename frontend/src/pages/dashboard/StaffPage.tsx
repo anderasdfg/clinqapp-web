@@ -46,7 +46,7 @@ const StaffPage = () => {
                         <span className="font-semibold text-[rgb(var(--text-primary))]">{pagination.total}</span> profesionales
                     </div>
                     <Link
-                        to="/dashboard/staff/new"
+                        to="/app/dashboard/staff/new"
                         style={{
                             background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                         }}
@@ -192,7 +192,7 @@ const StaffPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link
-                                                    to={`/dashboard/staff/${member.id}/edit`}
+                                                    to={`/app/dashboard/staff/${member.id}/edit`}
                                                     className="text-primary hover:text-primary-hover"
                                                     title="Editar"
                                                 >

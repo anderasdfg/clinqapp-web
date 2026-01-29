@@ -53,7 +53,7 @@ const ServicesPage = () => {
                         <span className="font-semibold text-[rgb(var(--text-primary))]">{pagination.total}</span> servicios
                     </div>
                     <Link
-                        to="/dashboard/services/new"
+                        to="/app/dashboard/services/new"
                         style={{
                             background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                         }}
@@ -129,7 +129,7 @@ const ServicesPage = () => {
                         </p>
                         <div className="mt-6">
                             <Link
-                                to="/dashboard/services/new"
+                                to="/app/dashboard/services/new"
                                 style={{
                                     background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                                 }}
@@ -209,7 +209,7 @@ const ServicesPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end gap-2">
                                                 <Link
-                                                    to={`/dashboard/services/${service.id}/edit`}
+                                                    to={`/app/dashboard/services/${service.id}/edit`}
                                                     className="text-primary hover:text-primary-hover"
                                                     title="Editar"
                                                 >

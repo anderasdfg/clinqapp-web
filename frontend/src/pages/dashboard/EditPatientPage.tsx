@@ -29,7 +29,7 @@ const EditPatientPage = () => {
                     Paciente no encontrado
                 </p>
                 <button
-                    onClick={() => navigate('/dashboard/patients')}
+                    onClick={() => navigate('/app/dashboard/patients')}
                     className="text-primary hover:text-primary-hover font-medium"
                 >
                     Volver a la lista

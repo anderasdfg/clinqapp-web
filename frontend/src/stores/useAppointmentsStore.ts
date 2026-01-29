@@ -71,6 +71,7 @@ interface AppointmentsState {
     excludeId?: string,
   ) => Promise<boolean>;
   addImagesToAppointment: (id: string, images: string[]) => Promise<void>;
+  reset: () => void;
 }
 
 export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
@@ -348,4 +349,20 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       throw error;
     }
   },
+  reset: () =>
+    set({
+      appointments: [],
+      selectedAppointment: null,
+      lastFetchedAt: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      viewMode: "week",
+      currentDate: new Date(),
+      filters: {},
+      currentPage: 1,
+      totalPages: 1,
+      totalAppointments: 0,
+    }),
 }));

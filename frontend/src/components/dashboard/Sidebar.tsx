@@ -3,8 +3,7 @@ import { NAVIGATION_GROUPS, NAVIGATION_ICONS } from '@/lib/constants/navigation'
 import logoRectangle from '@/assets/images/logos/logo-rectangle.png';
 import { cn } from '@/lib/utils/cn';
 import { AuthService } from '@/services/auth.service';
-import { useUserStore } from '@/stores/useUserStore';
-import { useOnboardingStore } from '@/stores/useOnboardingStore';
+import { resetAllStores } from '@/lib/utils/store-utils';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -15,8 +14,6 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const clearUser = useUserStore((state) => state.clearUser);
-    const resetOnboarding = useOnboardingStore((state) => state.reset);
 
     const isActive = (path: string) => {
         return location.pathname === path;
@@ -24,20 +21,13 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
 
     const handleLogout = async () => {
         try {
-            // Call logout service
             await AuthService.logout();
-            // Clear user store
-            clearUser();
-            // Clear onboarding store to prevent data persistence across users
-            resetOnboarding();
-            // Redirect to login
-            navigate('/login');
+            resetAllStores();
+            navigate('/app/login');
         } catch (error) {
             console.error('Error during logout:', error);
-            // Even if there's an error, clear local state and redirect
-            clearUser();
-            resetOnboarding();
-            navigate('/login');
+            resetAllStores();
+            navigate('/app/login');
         }
     };
 

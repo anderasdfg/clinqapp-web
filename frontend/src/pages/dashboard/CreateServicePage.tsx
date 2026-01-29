@@ -36,7 +36,7 @@ const CreateServicePage = () => {
     const onSubmit = async (data: ServiceFormData) => {
         try {
             await createService(data);
-            navigate('/dashboard/services');
+            navigate('/app/dashboard/services');
         } catch (error) {
             console.error('Error creating service:', error);
         }
@@ -46,7 +46,7 @@ const CreateServicePage = () => {
         <div className="animate-fade-in max-w-3xl">
             <div className="mb-6">
                 <button
-                    onClick={() => navigate('/dashboard/services')}
+                    onClick={() => navigate('/app/dashboard/services')}
                     className="flex items-center gap-2 text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] mb-4"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,7 +177,7 @@ const CreateServicePage = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate('/dashboard/services')}
+                            onClick={() => navigate('/app/dashboard/services')}
                             className="px-6 py-2.5 border border-[rgb(var(--border-primary))] text-[rgb(var(--text-primary))] rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors font-medium"
                         >
                             Cancelar

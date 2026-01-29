@@ -8,6 +8,10 @@ import {
   Phone,
   MapPin,
   Send,
+  Target,
+  MessageCircle,
+  CreditCard,
+  RefreshCw,
 } from "lucide-react";
 
 // Images
@@ -39,7 +43,7 @@ export const landingContent = {
       line2: "y Visual",
     },
     description:
-      "El primer SaaS diseñado para podólogos. Gestiona citas, ingresos y, sobre todo, la evidencia visual de tus pacientes en un solo lugar.",
+      "La primera herramienta diseñada para podólogos. Gestiona citas, ingresos y, sobre todo, la evidencia visual de tus pacientes en un solo lugar.",
     ctas: {
       primary: {
         text: "Prueba Gratis 14 Días",
@@ -109,10 +113,10 @@ export const landingContent = {
       },
     ],
     features: [
-      { icon: "🎯", text: "14 días de prueba gratis" },
-      { icon: "💬", text: "Soporte 24/7" },
-      { icon: "💳", text: "Sin tarjeta de crédito" },
-      { icon: "🔄", text: "Cancela cuando quieras" },
+      { icon: Target, text: "14 días de prueba gratis" },
+      { icon: MessageCircle, text: "Soporte 24/7" },
+      { icon: CreditCard, text: "Sin tarjeta de crédito" },
+      { icon: RefreshCw, text: "Cancela cuando quieras" },
     ],
   },
   trust: {
@@ -269,7 +273,7 @@ export const landingContent = {
       },
     },
     brand: {
-      description: "El SaaS líder para clínicas podológicas en España",
+      description: "La herramienta líder para clínicas podológicas en Perú",
     },
     sections: [
       {

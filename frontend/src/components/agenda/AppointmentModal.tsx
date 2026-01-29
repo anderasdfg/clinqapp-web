@@ -20,6 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
+import { supabase } from '@/lib/supabase/client';
+
 interface AppointmentModalProps {
     appointment?: Appointment;
     isOpen: boolean;
@@ -105,8 +107,6 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         if (!force && (services.length > 0 || loadingServices)) return;
         setLoadingServices(true);
         try {
-            const { createClient } = await import('@/lib/supabase/client');
-            const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
             if (session?.access_token) {
@@ -133,14 +133,11 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     };
 
-    // Load all data in parallel when modal opens
+    // Load initial data if necessary
     useEffect(() => {
         if (isOpen) {
-            Promise.all([
-                loadPatients(),
-                loadProfessionals(),
-                loadServices()
-            ]).catch(err => console.error('Error in parallel loading:', err));
+            loadPatients();
+            loadProfessionals();
         }
     }, [isOpen]);
 

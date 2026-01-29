@@ -8,7 +8,7 @@ import type {
   DeletePatientResponse,
   PatientsQueryParams,
 } from "@/types/patient.types";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
@@ -19,7 +19,6 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
-  const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -34,7 +33,7 @@ export const patientsService = {
    * Get list of patients with optional filters
    */
   async getPatients(
-    params?: PatientsQueryParams
+    params?: PatientsQueryParams,
   ): Promise<PatientsListResponse> {
     const response = await api.get<PatientsListResponse>("/patients", {
       params,

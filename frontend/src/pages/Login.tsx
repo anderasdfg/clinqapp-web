@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AuthService } from '@/services/auth.service';
+import { useUserStore } from '@/stores/useUserStore';
 import { ValidationMessages } from '@/lib/constants/messages';
 import logoIcon from '@/assets/images/logos/logo-icon.png';
 import doctor1 from '@/assets/images/doctor-1.png';
@@ -28,6 +29,13 @@ const Login = () => {
 
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const user = useUserStore((state) => state.user);
+
+    useEffect(() => {
+        if (user) {
+            navigate('/app/dashboard/home');
+        }
+    }, [user, navigate]);
 
     const {
         register,

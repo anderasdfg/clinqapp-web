@@ -1,12 +1,15 @@
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NAVIGATION_ICONS } from '@/lib/constants/navigation';
 import { cn } from '@/lib/utils/cn';
+import { useUserStore } from '@/stores/useUserStore';
 
 interface NavbarProps {
     onToggleSidebar: () => void;
 }
 
 const Navbar = ({ onToggleSidebar }: NavbarProps) => {
+    const user = useUserStore((state) => state.user);
+
     const renderIcon = (iconName: string, className?: string) => {
         const pathData = NAVIGATION_ICONS[iconName];
         return (
@@ -68,14 +71,14 @@ const Navbar = ({ onToggleSidebar }: NavbarProps) => {
                     <div className="flex items-center gap-3 pl-3 border-l border-[rgb(var(--border-primary))]">
                         <div className="hidden sm:block text-right">
                             <p className="text-sm font-medium text-[rgb(var(--text-primary))]">
-                                Usuario
+                                {user?.fullName || 'Usuario'}
                             </p>
                             <p className="text-xs text-[rgb(var(--text-secondary))]">
-                                Médico
+                                {user?.role === 'OWNER' ? 'Administrador' : 'Personal'}
                             </p>
                         </div>
-                        <button className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-semibold hover:scale-105 transition-transform duration-200">
-                            U
+                        <button className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-semibold hover:scale-105 transition-transform duration-200 uppercase">
+                            {user?.firstName?.[0] || 'U'}
                         </button>
                     </div>
                 </div>

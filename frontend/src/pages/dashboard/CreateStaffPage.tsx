@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
 import { UserRole, USER_ROLE_LABELS } from '@/types/staff.types';
+import { supabase } from '@/lib/supabase/client';
 
 const staffSchema = z.object({
     firstName: z.string().min(1, 'Nombre es requerido'),
@@ -40,8 +41,6 @@ const CreateStaffPage = () => {
 
         try {
             // Create user in Supabase Auth
-            const { createClient } = await import('@/lib/supabase/client');
-            const supabase = createClient();
 
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: data.email,
@@ -92,7 +91,7 @@ const CreateStaffPage = () => {
                 throw new Error(errorData.error || 'Error al crear personal');
             }
 
-            navigate('/dashboard/staff');
+            navigate('/app/dashboard/staff');
         } catch (err) {
             console.error('Error creating staff:', err);
             setError(err instanceof Error ? err.message : 'Error al crear personal');
@@ -105,7 +104,7 @@ const CreateStaffPage = () => {
         <div className="animate-fade-in max-w-3xl">
             <div className="mb-6">
                 <button
-                    onClick={() => navigate('/dashboard/staff')}
+                    onClick={() => navigate('/app/dashboard/staff')}
                     className="flex items-center gap-2 text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] mb-4"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -270,7 +269,7 @@ const CreateStaffPage = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => navigate('/dashboard/staff')}
+                            onClick={() => navigate('/app/dashboard/staff')}
                             className="px-6 py-2.5 border border-[rgb(var(--border-primary))] text-[rgb(var(--text-primary))] rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors font-medium"
                         >
                             Cancelar

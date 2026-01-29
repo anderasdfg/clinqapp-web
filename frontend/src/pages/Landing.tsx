@@ -1,3 +1,4 @@
+import Navbar from '../components/landing/Navbar';
 import HeroSection from '../components/landing/HeroSection';
 import BenefitsSection from '../components/landing/BenefitsSection';
 import TrustSection from '../components/landing/TrustSection';
@@ -15,6 +16,7 @@ export default function Landing() {
       <div className="liquid-orb liquid-orb-violet w-72 h-72 bottom-20 left-1/4 animate-float" style={{ animationDelay: '10s' }} />
       
       {/* Content */}
+      <Navbar />
       <HeroSection />
       <BenefitsSection />
       <TrustSection />

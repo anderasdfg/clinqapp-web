@@ -21,11 +21,14 @@ import MedicalRecordsPage from './pages/dashboard/MedicalRecordsPage';
 import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
+import { AuthProvider } from './components/auth/AuthProvider';
+
 function App() {
     return (
         <ThemeProvider>
-            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Routes>
+            <AuthProvider>
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <Routes>
                     {/* Landing Page */}
                     <Route path="/" element={<Landing />} />
                     
@@ -68,6 +71,7 @@ function App() {
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </Router>
+            </AuthProvider>
         </ThemeProvider>
     );
 }

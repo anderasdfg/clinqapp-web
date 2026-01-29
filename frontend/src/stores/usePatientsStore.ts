@@ -49,6 +49,7 @@ interface PatientsState {
   setCurrentPage: (page: number) => void;
   clearSelectedPatient: () => void;
   clearError: () => void;
+  reset: () => void;
 }
 
 export const usePatientsStore = create<PatientsState>((set, get) => ({
@@ -223,4 +224,23 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
   clearError: () => {
     set({ error: null });
   },
+
+  reset: () =>
+    set({
+      patients: [],
+      selectedPatient: null,
+      lastFetchedAt: null,
+      currentPage: 1,
+      totalPages: 1,
+      totalPatients: 0,
+      limit: 10,
+      searchQuery: "",
+      assignedProfessionalFilter: null,
+      referralSourceFilter: null,
+      isLoading: false,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+      error: null,
+    }),
 }));

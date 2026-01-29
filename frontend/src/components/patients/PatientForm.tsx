@@ -87,7 +87,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
             if (onSuccess) {
                 onSuccess();
             } else {
-                navigate('/dashboard/patients');
+                navigate('/app/dashboard/patients');
             }
         } catch (error) {
             console.error('Error saving patient:', error);

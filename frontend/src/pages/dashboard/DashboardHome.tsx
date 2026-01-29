@@ -155,7 +155,7 @@ const DashboardHome = () => {
             variant="ghost" 
             size="sm" 
             className="text-primary gap-1"
-            onClick={() => navigate("/dashboard/agenda")}
+            onClick={() => navigate("/app/dashboard/agenda")}
           >
             Ver toda la agenda <ArrowRight className="w-4 h-4" />
           </Button>
@@ -209,13 +209,18 @@ const DashboardHome = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
-                          Dr. {cita.professional.firstName}
+                          Dr(a). {cita.professional.firstName}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={cita.status === 'CONFIRMED' ? 'default' : 'outline'}>
+                        <Badge variant={
+                          cita.status === 'CONFIRMED' ? 'success' : 
+                          cita.status === 'PENDING' ? 'warning' : 'outline'
+                        }>
                           {cita.status === 'PENDING' ? 'Pendiente' : 
-                           cita.status === 'CONFIRMED' ? 'Confirmado' : cita.status}
+                           cita.status === 'CONFIRMED' ? 'Confirmado' : 
+                           cita.status === 'COMPLETED' ? 'Completada' :
+                           cita.status === 'CANCELLED' ? 'Cancelada' : cita.status}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -223,7 +228,7 @@ const DashboardHome = () => {
                           size="sm" 
                           variant="ghost" 
                           className="text-zinc-400 hover:text-primary"
-                          onClick={() => navigate(`/dashboard/agenda`)} // In a real app we might open the specific appointment
+                          onClick={() => navigate(`/app/dashboard/agenda`)} // In a real app we might open the specific appointment
                         >
                           Ver Detalle
                         </Button>

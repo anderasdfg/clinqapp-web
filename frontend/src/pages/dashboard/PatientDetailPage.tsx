@@ -46,7 +46,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
 import { toast } from 'sonner';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 const PatientDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -100,16 +100,15 @@ const PatientDetailPage = () => {
         if (!files || files.length === 0) return;
 
         setIsUploading(true);
-        const supabase = createClient();
         const newImageUrls: string[] = [];
 
         try {
             for (const file of Array.from(files)) {
-                const timestamp = Date.now();
-                const filePath = `treatments/${id}/${appointmentId}/${timestamp}-${file.name}`;
-
+                const fileName = `${Date.now()}-${file.name}`;
+                const filePath = `appointments/${id}/${appointmentId}/${fileName}`;
+                
                 const { error: uploadError } = await supabase.storage
-                    .from('treatments')
+                    .from("appointments")
                     .upload(filePath, file);
 
                 if (uploadError) {
@@ -119,7 +118,7 @@ const PatientDetailPage = () => {
                 }
 
                 const { data: publicUrlData } = supabase.storage
-                    .from('treatments')
+                    .from('appointments')
                     .getPublicUrl(filePath);
 
                 newImageUrls.push(publicUrlData.publicUrl);
@@ -225,7 +224,7 @@ const PatientDetailPage = () => {
                 <p className="text-[rgb(var(--text-secondary))] mb-6">
                     El registro que buscas no existe o ha sido eliminado.
                 </p>
-                <Button variant="outline" onClick={() => navigate('/dashboard/patients')}>
+                <Button variant="outline" onClick={() => navigate('/app/dashboard/patients')}>
                     Volver a la lista
                 </Button>
             </Card>
@@ -240,7 +239,7 @@ const PatientDetailPage = () => {
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => navigate('/dashboard/patients')}
+                        onClick={() => navigate('/app/dashboard/patients')}
                         className="rounded-full h-10 w-10"
                     >
                         <ChevronLeft className="w-6 h-6" />
@@ -278,7 +277,7 @@ const PatientDetailPage = () => {
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" className="gap-2" asChild>
-                        <Link to={`/dashboard/patients/${id}/edit`}>
+                        <Link to={`/app/dashboard/patients/${id}/edit`}>
                             <Pencil className="w-4 h-4" />
                             Editar Perfil
                         </Link>
@@ -640,7 +639,7 @@ const PatientDetailPage = () => {
                                                         </h4>
                                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                             <User className="w-3.5 h-3.5" />
-                                                            Dr. {apt.professional?.firstName} {apt.professional?.lastName}
+                                                            Dr(a). {apt.professional?.firstName} {apt.professional?.lastName}
                                                         </div>
                                                         {apt.clinicalNotes ? (
                                                             <p className="text-sm text-[rgb(var(--text-primary))] mt-4 line-clamp-3 bg-white p-3 rounded-md border italic">
@@ -694,7 +693,7 @@ const PatientDetailPage = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold uppercase text-muted-foreground">Profesional</label>
-                                    <p className="font-medium text-lg">Dr. {selectedAppointment.professional?.firstName} {selectedAppointment.professional?.lastName}</p>
+                                    <p className="font-medium text-lg">Dr(a). {selectedAppointment.professional?.firstName} {selectedAppointment.professional?.lastName}</p>
                                 </div>
                             </div>
 
