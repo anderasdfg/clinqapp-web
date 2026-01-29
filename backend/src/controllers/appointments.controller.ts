@@ -312,7 +312,10 @@ const checkAvailability = async (
     where.id = { not: excludeAppointmentId };
   }
 
-  const overlapping = await prisma.appointment.findFirst({ where });
+  const overlapping = await prisma.appointment.findFirst({
+    where,
+    select: { id: true }, // Only need to know if it exists
+  });
 
   return overlapping === null;
 };

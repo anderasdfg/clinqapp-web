@@ -60,7 +60,7 @@ const Register = () => {
             if (result.success) {
                 setSuccessMessage(result.message || 'Cuenta creada exitosamente');
                 setTimeout(() => {
-                    navigate('/login');
+                    navigate('/app/login');
                 }, 3000);
             } else {
                 setError(result.error || 'Error al registrarse');
@@ -305,7 +305,7 @@ const Register = () => {
                             ¿Ya tienes una cuenta?
                         </span>{' '}
                         <Link
-                            to="/login"
+                            to="/app/login"
                             className="font-semibold text-secondary hover:text-secondary-hover transition-colors duration-200"
                         >
                             Inicia Sesión

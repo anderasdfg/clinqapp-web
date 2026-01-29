@@ -1,0 +1,208 @@
+/* ===================================
+   LIQUID GLASS DESIGN SYSTEM - ClinqApp
+   Real System Colors & Glassmorphism
+   =================================== */
+
+/* Glass Morphism Effects */
+.glass-card {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    border-radius: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08);
+    transform: translateY(-2px);
+}
+
+.glass-card-strong {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    border-radius: 2rem;
+}
+
+/* Liquid Gradient Buttons - Real ClinqApp Colors */
+.glass-button {
+    background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    border: none;
+    border-radius: 9999px; /* Fully rounded */
+    color: white;
+}
+
+.glass-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: 0.5s;
+}
+
+.glass-button:hover::before {
+    left: 100%;
+}
+
+.glass-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+}
+
+.glass-button-secondary {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 9999px; /* Fully rounded */
+    transition: all 0.3s ease;
+}
+
+.glass-button-secondary:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+}
+
+/* Liquid Orbs - Real ClinqApp Colors */
+.liquid-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.liquid-orb-cyan {
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, rgba(6, 182, 212, 0) 70%);
+}
+
+.liquid-orb-purple {
+    background: radial-gradient(circle, rgba(217, 70, 239, 0.25) 0%, rgba(217, 70, 239, 0) 70%);
+}
+
+.liquid-orb-violet {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0) 70%);
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(30px, 50px);
+    }
+}
+
+/* Glass Overlays */
+.glass-overlay {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Frosted Glass Effect */
+.frosted-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Dirty Glass (Problem State) */
+.dirty-glass {
+    background: rgba(200, 200, 200, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(150, 150, 150, 0.3);
+    opacity: 0.7;
+}
+
+/* Clean Glass (Solution State) */
+.clean-glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Refraction Effect */
+.refraction-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.refraction-effect::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* 3D Icon Effect */
+.icon-3d {
+    perspective: 1000px;
+}
+
+.icon-3d > div {
+    transition: transform 0.3s ease;
+}
+
+.icon-3d:hover > div {
+    transform: rotateY(10deg) rotateX(-5deg);
+}
+
+/* Gradient Text - ClinqApp Style */
+.gradient-text {
+    background: linear-gradient(to right, #06b6d4, #d946ef);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Medical Blue Gradient */
+.medical-gradient {
+  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .glass-card,
+  .glass-card-strong {
+    border-radius: 16px;
+  }
+
+  .liquid-orb {
+    filter: blur(40px);
+  }
+}

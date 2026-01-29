@@ -33,6 +33,11 @@ const createPatientSchema = z.object({
 
 const updatePatientSchema = createPatientSchema.partial();
 
+// Simple in-memory cache for patients
+const patientsCache = new Map<string, { data: any; timestamp: number }>();
+const patientCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 2; // 2 minutes cache for patient data
+
 // GET /api/patients - List all patients
 export const getPatients = async (req: AuthRequest, res: Response) => {
   try {
@@ -78,18 +83,48 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
       where.referralSource = referralSource;
     }
 
-    // Get patients with pagination
+    // Generate cache key
+    const cacheKey = `${dbUser.organizationId}:${search}:${assignedProfessionalId}:${referralSource}:${page}:${limit}`;
+    const cachedEntry = patientsCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(`🚀 Patients: Cache HIT for org ${dbUser.organizationId}`);
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Patients: Cache MISS for org ${dbUser.organizationId}`);
+
+    // Get patients with pagination - optimized with select
     const [patients, total] = await Promise.all([
       prisma.patient.findMany({
         where,
         skip,
         take: limit,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          dni: true,
+          phone: true,
+          email: true,
+          dateOfBirth: true,
+          gender: true,
+          referralSource: true,
+          createdAt: true,
+          assignedProfessional: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
         orderBy: { createdAt: "desc" },
       }),
       prisma.patient.count({ where }),
     ]);
 
-    res.json({
+    const result = {
       success: true,
       data: patients,
       pagination: {
@@ -98,7 +133,12 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    // Update cache
+    patientsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching patients:", error);
     res.status(500).json({ error: "Error al obtener pacientes" });
@@ -115,6 +155,17 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
     }
 
     const id = req.params.id as string;
+
+    // Check cache first
+    const cacheKey = `${dbUser.organizationId}:${id}`;
+    const cachedEntry = patientCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(`🚀 Patient: Cache HIT for patient ${id}`);
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Patient: Cache MISS for patient ${id}`);
 
     const patient = await prisma.patient.findFirst({
       where: {
@@ -151,6 +202,7 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
         appointments: {
           take: 5,
           orderBy: { startTime: "desc" },
+          where: { deletedAt: null },
           select: {
             id: true,
             startTime: true,
@@ -180,10 +232,15 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Paciente no encontrado" });
     }
 
-    res.json({
+    const result = {
       success: true,
       data: patient,
-    });
+    };
+
+    // Update cache
+    patientCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching patient:", error);
     res.status(500).json({ error: "Error al obtener paciente" });
@@ -246,6 +303,9 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
         },
       },
     });
+
+    // Invalidate cache
+    patientsCache.clear();
 
     res.status(201).json({
       success: true,
@@ -330,6 +390,10 @@ export const updatePatient = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    patientsCache.clear();
+    patientCache.delete(`${dbUser.organizationId}:${id}`);
+
     res.json({
       success: true,
       message: "Paciente actualizado exitosamente",
@@ -370,6 +434,10 @@ export const deletePatient = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    // Invalidate cache
+    patientsCache.clear();
+    patientCache.delete(`${dbUser.organizationId}:${id}`);
 
     res.json({
       success: true,

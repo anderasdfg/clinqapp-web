@@ -50,10 +50,10 @@ const Login = () => {
 
                 if (needsOnboarding) {
                     // Redirect to onboarding if organization is temporary
-                    navigate('/onboarding');
+                    navigate('/app/onboarding');
                 } else {
                     // Redirect to dashboard if onboarding is completed
-                    navigate('/dashboard');
+                    navigate('/app/dashboard');
                 }
             } else {
                 setError(result.error || 'Error al iniciar sesión');
@@ -241,7 +241,7 @@ const Login = () => {
                             ¿No tienes una cuenta?
                         </span>{' '}
                         <Link
-                            to="/register"
+                            to="/app/register"
                             className="font-semibold text-secondary hover:text-secondary-hover transition-colors duration-200"
                         >
                             Regístrate

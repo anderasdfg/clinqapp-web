@@ -137,7 +137,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
 
     // Skip if cache is fresh and not forcing refresh
     if (!forceRefresh && !state.shouldRefetch(params)) {
-      return; // Use cached data
+      return;
     }
 
     set({ isLoading: true });

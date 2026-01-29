@@ -3,6 +3,10 @@ import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 
+// Simple in-memory cache for dashboard stats
+const dashboardCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60; // 1 minute cache for dashboard (frequently accessed, but changes often)
+
 export const getStats = async (req: AuthRequest, res: Response) => {
   try {
     const dbUser = req.dbUser;
@@ -12,6 +16,18 @@ export const getStats = async (req: AuthRequest, res: Response) => {
     }
 
     const organizationId = dbUser.organizationId;
+
+    // Check cache first
+    const cacheKey = `${organizationId}`;
+    const cachedEntry = dashboardCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(`🚀 Dashboard: Cache HIT for org ${organizationId}`);
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Dashboard: Cache MISS for org ${organizationId}`);
+
     const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
@@ -61,7 +77,7 @@ export const getStats = async (req: AuthRequest, res: Response) => {
           },
         }),
 
-        // 4. Próximas Citas (Hoy)
+        // 4. Próximas Citas (Hoy) - optimized with select
         prisma.appointment.findMany({
           where: {
             organizationId,
@@ -77,7 +93,11 @@ export const getStats = async (req: AuthRequest, res: Response) => {
             startTime: "asc",
           },
           take: 5,
-          include: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
             patient: {
               select: {
                 firstName: true,
@@ -95,7 +115,7 @@ export const getStats = async (req: AuthRequest, res: Response) => {
 
     const ingresosMes = Number(ingresosMesData._sum.amount || 0);
 
-    res.json({
+    const result = {
       success: true,
       data: {
         ingresosMes,
@@ -103,7 +123,12 @@ export const getStats = async (req: AuthRequest, res: Response) => {
         pacientesNuevosMes,
         proximasCitas,
       },
-    });
+    };
+
+    // Update cache
+    dashboardCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
     res

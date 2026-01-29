@@ -11,6 +11,12 @@ try {
       { level: "error", emit: "stdout" },
       { level: "warn", emit: "stdout" },
     ],
+    // Connection pooling optimization
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 
   // Log queries with timing if in dev

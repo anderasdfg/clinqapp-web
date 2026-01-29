@@ -18,6 +18,10 @@ const createStaffSchema = z.object({
 
 const updateStaffSchema = createStaffSchema.partial();
 
+// Simple in-memory cache for staff
+const staffCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 3; // 3 minutes cache for staff (rarely change)
+
 // GET /api/staff - List all staff members
 export const getStaff = async (req: AuthRequest, res: Response) => {
   try {
@@ -61,6 +65,17 @@ export const getStaff = async (req: AuthRequest, res: Response) => {
       where.role = role;
     }
 
+    // Generate cache key
+    const cacheKey = `${dbUser.organizationId}:${search}:${role}:${page}:${limit}`;
+    const cachedEntry = staffCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(`🚀 Staff: Cache HIT for org ${dbUser.organizationId}`);
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Staff: Cache MISS for org ${dbUser.organizationId}`);
+
     // Get staff with pagination
     const [staff, total] = await Promise.all([
       prisma.user.findMany({
@@ -83,7 +98,7 @@ export const getStaff = async (req: AuthRequest, res: Response) => {
       prisma.user.count({ where }),
     ]);
 
-    res.json({
+    const result = {
       success: true,
       data: staff,
       pagination: {
@@ -92,7 +107,12 @@ export const getStaff = async (req: AuthRequest, res: Response) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    // Update cache
+    staffCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching staff:", error);
     res.status(500).json({ error: "Error al obtener personal" });
@@ -226,6 +246,9 @@ export const createStaffWithAuth = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    staffCache.clear();
+
     res.status(201).json({
       success: true,
       message: "Personal creado exitosamente",
@@ -311,6 +334,9 @@ export const updateStaff = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    staffCache.clear();
+
     res.json({
       success: true,
       message: "Personal actualizado exitosamente",
@@ -353,6 +379,9 @@ export const deleteStaff = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    // Invalidate cache
+    staffCache.clear();
 
     res.json({
       success: true,

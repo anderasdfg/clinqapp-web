@@ -15,6 +15,10 @@ const createServiceSchema = z.object({
 
 const updateServiceSchema = createServiceSchema.partial();
 
+// Simple in-memory cache for services
+const servicesCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes cache for services (rarely change)
+
 // GET /api/services - List all services
 export const getServices = async (req: AuthRequest, res: Response) => {
   try {
@@ -51,6 +55,17 @@ export const getServices = async (req: AuthRequest, res: Response) => {
       where.isActive = isActive === "true";
     }
 
+    // Generate cache key
+    const cacheKey = `${dbUser.organizationId}:${search}:${isActive}:${page}:${limit}`;
+    const cachedEntry = servicesCache.get(cacheKey);
+
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+      console.log(`🚀 Services: Cache HIT for org ${dbUser.organizationId}`);
+      return res.json(cachedEntry.data);
+    }
+
+    console.log(`🔍 Services: Cache MISS for org ${dbUser.organizationId}`);
+
     // Get services with pagination
     const [services, total] = await Promise.all([
       prisma.service.findMany({
@@ -72,7 +87,7 @@ export const getServices = async (req: AuthRequest, res: Response) => {
       prisma.service.count({ where }),
     ]);
 
-    res.json({
+    const result = {
       success: true,
       data: services,
       pagination: {
@@ -81,7 +96,12 @@ export const getServices = async (req: AuthRequest, res: Response) => {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    // Update cache
+    servicesCache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+    res.json(result);
   } catch (error) {
     console.error("Error fetching services:", error);
     res.status(500).json({ error: "Error al obtener servicios" });
@@ -154,6 +174,9 @@ export const createService = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    servicesCache.clear();
+
     res.status(201).json({
       success: true,
       message: "Servicio creado exitosamente",
@@ -213,6 +236,9 @@ export const updateService = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    servicesCache.clear();
+
     res.json({
       success: true,
       message: "Servicio actualizado exitosamente",
@@ -253,6 +279,9 @@ export const deleteService = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    // Invalidate cache
+    servicesCache.clear();
 
     res.json({
       success: true,

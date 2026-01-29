@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
@@ -23,13 +24,16 @@ import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 function App() {
     return (
         <ThemeProvider>
-            <Router>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    {/* Landing Page */}
+                    <Route path="/" element={<Landing />} />
+                    
+                    {/* App Routes */}
+                    <Route path="/app/login" element={<Login />} />
+                    <Route path="/app/register" element={<Register />} />
                     <Route
-                        path="/onboarding/*"
+                        path="/app/onboarding/*"
                         element={
                             <ProtectedRoute>
                                 <Onboarding />
@@ -37,7 +41,7 @@ function App() {
                         }
                     />
                     <Route
-                        path="/dashboard"
+                        path="/app/dashboard"
                         element={
                             <ProtectedRoute>
                                 <Dashboard />
@@ -59,7 +63,6 @@ function App() {
                         <Route path="services/:id/edit" element={<EditServicePage />} />
                         <Route path="medical-records" element={<MedicalRecordsPage />} />
                         <Route path="payment-methods" element={<PatientsPage />} /> {/* Placeholder */}
-                        {/* <Route path="staff" element={<PatientsPage />} /> */} {/* Placeholder - Removed */}
                         <Route path="settings" element={<PatientsPage />} /> {/* Placeholder */}
                     </Route>
                     <Route path="*" element={<NotFound />} />

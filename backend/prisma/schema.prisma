@@ -149,6 +149,7 @@ model User {
   @@index([authId])
   @@index([email])
   @@index([dni])
+  @@index([organizationId, role, deletedAt])
 }
 
 // ============================================
@@ -248,6 +249,9 @@ model Patient {
   @@index([organizationId])
   @@index([assignedProfessionalId])
   @@index([deletedAt])
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, createdAt])
+  @@index([phone])
 }
 
 // ============================================
@@ -286,6 +290,7 @@ model Service {
 
   @@map("services")
   @@index([organizationId])
+  @@index([organizationId, deletedAt, isActive])
 }
 
 // ============================================
@@ -353,6 +358,10 @@ model Appointment {
   @@index([professionalId])
   @@index([startTime])
   @@index([status])
+  @@index([organizationId, startTime, status])
+  @@index([organizationId, deletedAt])
+  @@index([patientId, deletedAt])
+  @@index([professionalId, startTime])
 }
 
 // ============================================
