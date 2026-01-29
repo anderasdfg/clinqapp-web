@@ -12,7 +12,7 @@ import {
 
 // Images
 import logoIcon from "@/assets/images/logos/logo-icon.png";
-import heroMockup from "/Users/anderleycandela/.gemini/antigravity/brain/8a3c7d1a-6275-49a4-b43f-6aa28a311de2/clinqapp_dashboard_mockup_1769658346778.png";
+import heroMockup from "@/assets/images/landing/hero-mockup.png";
 import clinicalPhoto from "@/assets/images/landing/clinical-photography.png";
 import smartCalendar from "@/assets/images/landing/smart-calendar.png";
 import digitalRecords from "@/assets/images/landing/digital-records.png";
