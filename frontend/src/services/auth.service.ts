@@ -7,7 +7,6 @@ import type {
 } from "@/types/auth.types";
 import { AuthMessages } from "@/lib/constants/messages";
 import { AppConfig } from "@/lib/config/app.config";
-import { AppConfig } from "@/lib/config/app.config";
 import { logger } from "@/lib/utils/logger";
 import { mapSupabaseAuthError } from "@/lib/errors/auth-errors";
 import type { User, Organization } from "@/stores/useUserStore";
