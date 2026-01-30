@@ -3,12 +3,14 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { X, Phone, Trash2, Camera, AlertTriangle } from 'lucide-react';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
-import { Appointment, AppointmentStatus } from '@/types/appointment.types';
+import { Appointment, AppointmentStatus, APPOINTMENT_STATUS_LABELS, PaymentStatus } from '@/types/appointment.types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase/client';
+
 import PaymentModal from './PaymentModal';
+import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
 
 interface ClinicalWorkspaceSheetProps {
   appointment: Appointment | null;
@@ -16,14 +18,14 @@ interface ClinicalWorkspaceSheetProps {
   onClose: () => void;
 }
 
-const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorkspaceSheetProps) => {
+const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorkspaceSheetProps) => { /* Refactored ClinicalWorkspaceSheet */
   const { updateAppointment, fetchAppointmentById, isUpdating, appointments } = useAppointmentsStore();
   const [currentImages, setCurrentImages] = useState<string[]>([]);
   const [clinicalNotes, setClinicalNotes] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('attention');
   
-  // Fetch full appointment details on mount/open to get medicalHistory
   // Fetch full appointment details on mount/open to get medicalHistory
   useEffect(() => {
     if (isOpen && appointment) {
@@ -97,8 +99,14 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
               images: currentImages,
               ...(status && { status })
           });
+          
           if (status === AppointmentStatus.COMPLETED) {
-             setShowPaymentModal(true);
+             const isPaid = currentAppointmentRaw.payment?.status === PaymentStatus.COMPLETED;
+             if (isPaid) {
+                onClose();
+             } else {
+                setShowPaymentModal(true);
+             }
           } else {
              onClose();
           }
@@ -116,7 +124,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed right-0 top-0 h-full w-full sm:w-[600px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
+        <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[85vw] lg:w-[800px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
           
           {/* Header (Sticky Top) */}
           <div className="p-6 border-b flex items-start justify-between bg-background/95 backdrop-blur z-10 sticky top-0">
@@ -137,7 +145,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                         appointment.status === 'CONFIRMED' ? 'default' : 
                         appointment.status === 'COMPLETED' ? 'success' : 'secondary'
                     }>
-                        {appointment.status}
+                        {APPOINTMENT_STATUS_LABELS[appointment.status]}
                     </Badge>
                  </div>
               </div>
@@ -157,7 +165,11 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
           </div>
 
           {/* Body with Tabs */}
-          <Tabs.Root defaultValue="attention" className="flex-1 flex flex-col overflow-hidden">
+          <Tabs.Root 
+            value={activeTab} 
+            onValueChange={setActiveTab} 
+            className="flex-1 flex flex-col overflow-hidden"
+          >
              <div className="px-6 border-b">
                  <Tabs.List className="flex gap-6">
                      <Tabs.Trigger value="attention" className="py-3 text-sm font-medium text-muted-foreground border-b-2 border-transparent data-[state=active]:text-primary data-[state=active]:border-primary transition-colors">
@@ -172,7 +184,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                  </Tabs.List>
              </div>
 
-             <div className="flex-1 overflow-y-auto bg-muted/5 p-6">
+             <div className="flex-1 overflow-y-auto bg-muted/5 p-6 pb-20">
                  {/* Tab 1: ATENCIÓN */}
                  <Tabs.Content value="attention" className="space-y-6 outline-none animate-in fade-in-50">
                     {!hasMedicalHistory && (
@@ -183,8 +195,13 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                                      Paciente sin Historia Clínica Base
                                  </p>
                              </div>
-                             {/* Placeholder functionality for creating history */}
-                             <Button variant="outline" size="sm" className="bg-white dark:bg-transparent border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100">
+                             {/* Create History Button */}
+                             <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="bg-white dark:bg-transparent border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100"
+                                onClick={() => setActiveTab('data')}
+                             >
                                  Crear Historia
                              </Button>
                         </div>
@@ -207,7 +224,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                         </label>
                         
                         {/* EvidenceUploader Component Inline */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                              {currentImages.map((url, idx) => (
                                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border bg-background">
                                      <img src={url} alt={`Evidencia ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
@@ -221,7 +238,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                              
                              <label className={`
                                 flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed
-                                cursor-pointer transition-colors
+                                cursor-pointer transition-colors h-40
                                 ${uploading ? 'bg-muted opacity-50 cursor-not-allowed' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5'}
                              `}>
                                  <input 
@@ -249,46 +266,24 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                  <Tabs.Content value="history" className="outline-none animate-in fade-in-50">
                     <div className="space-y-4">
                         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Línea de Tiempo</h3>
-                        {/* Simple timeline based on filtering appointments for this patient would go here. 
-                            For now, we can prompt or mock, but request didn't specify implementing the full timeline logic fetching.
-                            We'll leave a placeholder or we would need to fetch patient's appointment history. 
-                         */}
                          <div className="text-center py-10 text-muted-foreground">
                              <p>Historial de citas se cargará aquí...</p>
-                             {/* In a real implementation we would map over `appointments` filtered by patientId */}
                          </div>
                     </div>
                  </Tabs.Content>
 
                  {/* Tab 3: DATOS */}
-                 <Tabs.Content value="data" className="outline-none animate-in fade-in-50">
-                     <div className="space-y-6">
-                        {hasMedicalHistory ? (
-                            <div className="prose prose-sm max-w-none">
-                                <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
-                                    {JSON.stringify(medicalHistory, null, 2)}
-                                </pre>
-                                {/* Here we would render the medical history properly structured */}
-                            </div>
-                        ) : (
-                             <div className="text-center py-10 text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
-                                 <p>No hay datos médicos registrados.</p>
-                             </div>
-                        )}
-
-                        <div className="space-y-4 pt-6 border-t">
-                            <h4 className="font-medium">Contacto de Emergencia</h4>
-                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                 <div>
-                                     <span className="text-muted-foreground block">Nombre</span>
-                                     <span>{patient?.emergencyContact || '-'}</span>
-                                 </div>
-                                 <div>
-                                     <span className="text-muted-foreground block">Teléfono</span>
-                                     <span>{patient?.emergencyPhone || '-'}</span>
-                                 </div>
-                             </div>
-                        </div>
+                 <Tabs.Content value="data" className="outline-none animate-in fade-in-50 h-full">
+                     <div className="h-full overflow-y-auto px-1">
+                        <PodiatryHistoryForm 
+                            patientId={patient?.id || currentAppointmentRaw.patientId} 
+                            initialData={medicalHistory} // Pasa los datos si existen para editar
+                            onSuccess={() => {
+                                fetchAppointmentById(appointment.id); // Recarga para quitar la alerta amarilla
+                                setActiveTab('attention'); // Vuelve a la atención automáticamente
+                            }}
+                            onCancel={() => setActiveTab('attention')}
+                        />
                      </div>
                  </Tabs.Content>
              </div>
@@ -309,7 +304,9 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
                 disabled={isUpdating}
                 onClick={() => handleSave(AppointmentStatus.COMPLETED)}
              >
-                 Finalizar y Cobrar
+                 {currentAppointmentRaw.payment?.status === PaymentStatus.COMPLETED 
+                    ? 'Finalizar Atención' 
+                    : 'Finalizar y Cobrar'}
              </Button>
           </div>
 

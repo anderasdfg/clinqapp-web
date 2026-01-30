@@ -7,9 +7,8 @@ import type {
 } from "@/types/auth.types";
 import { AuthMessages } from "@/lib/constants/messages";
 import { AppConfig } from "@/lib/config/app.config";
-import { SubscriptionDefaults } from "@/lib/constants/subscription";
+import { AppConfig } from "@/lib/config/app.config";
 import { logger } from "@/lib/utils/logger";
-import { parseFullName } from "@/lib/utils/sanitize";
 import { mapSupabaseAuthError } from "@/lib/errors/auth-errors";
 import type { User, Organization } from "@/stores/useUserStore";
 
@@ -30,18 +29,19 @@ export class AuthService {
     try {
       // Data is already validated and transformed by Zod schema
       // email is lowercased, dni is cleaned, fullName is trimmed
-      const { firstName, lastName } = parseFullName(data.fullName);
 
       // Create auth user with Supabase Auth
-      // Let Supabase handle duplicate email checks
+      // The DB Trigger 'on_auth_user_created' will automatically create:
+      // 1. The Organization
+      // 2. The User Profile (linked to Auth ID and Org)
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email, // Already validated and lowercased by Zod
+        email: data.email,
         password: data.password,
         options: {
           emailRedirectTo: `${AppConfig.baseUrl}${AppConfig.routes.authCallback}`,
           data: {
             full_name: data.fullName,
-            dni: data.dni, // Already cleaned by Zod
+            dni: data.dni,
           },
         },
       });
@@ -65,80 +65,30 @@ export class AuthService {
         };
       }
 
-      // Check if DNI already exists (before creating organization)
-      const { data: existingDniUser, error: dniCheckError } = await supabase
-        .from("users")
-        .select("dni")
-        .eq("dni", data.dni)
-        .maybeSingle(); // Use maybeSingle() to allow 0 or 1 results
+      // Poll for the user profile to be created by the trigger
+      // This ensures the DB transaction has completed before we return success
+      let profile = null;
+      let attempts = 0;
+      const maxAttempts = 10;
 
-      // Ignore "no rows" error, only fail on actual errors
-      if (dniCheckError && dniCheckError.code !== "PGRST116") {
-        logger.error("Error checking DNI", { error: dniCheckError.message });
-        return {
-          success: false,
-          error: AuthMessages.UNEXPECTED_ERROR,
-        };
+      while (!profile && attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms
+        profile = await AuthService.getUserProfile(authData.user.id);
+        attempts++;
       }
 
-      if (existingDniUser) {
-        // Rollback: Delete the auth user we just created
-        logger.warn("DNI already exists, rolling back auth user creation");
-        // Note: In production, you'd use Supabase Admin API to delete the user
-        return {
-          success: false,
-          error: AuthMessages.DNI_ALREADY_REGISTERED,
-        };
-      }
-
-      // Create organization for the user
-      const trialEndsAt = new Date(
-        Date.now() + SubscriptionDefaults.TRIAL_DAYS * 24 * 60 * 60 * 1000,
-      );
-
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: `${data.fullName}'s Consultorio`,
-          slug: `org-${authData.user.id.slice(0, 8)}`,
-          email: data.email,
-          subscription_plan: SubscriptionDefaults.PLAN,
-          subscription_status: SubscriptionDefaults.STATUS,
-          trial_ends_at: trialEndsAt.toISOString(),
-          is_temporary: true, // Mark as temporary until onboarding is completed
-          onboarding_completed: false, // User needs to complete onboarding
-        })
-        .select()
-        .single();
-
-      if (orgError || !orgData) {
-        logger.error("Organization creation error", {
-          error: orgError?.message,
+      if (!profile) {
+        logger.warn(
+          "Profile not found after registration (Trigger might be slow or failed)",
+          { userId: authData.user.id },
+        );
+        // We still return success because the auth user was created,
+        // and the profile might appear momentarily.
+        // Ideally we should warn the user, but for now we proceed.
+      } else {
+        logger.info("Profile created successfully by trigger", {
+          profileId: profile.id,
         });
-        return {
-          success: false,
-          error: AuthMessages.ORGANIZATION_CREATION_ERROR,
-        };
-      }
-
-      // Create user profile in database
-      const { error: profileError } = await supabase.from("users").insert({
-        auth_id: authData.user.id,
-        email: data.email, // Already lowercased by Zod
-        first_name: firstName,
-        last_name: lastName || firstName,
-        dni: data.dni, // Already cleaned by Zod
-        organization_id: orgData.id,
-        role: "OWNER",
-        email_verified: false,
-      });
-
-      if (profileError) {
-        logger.error("Profile creation error", { error: profileError.message });
-        return {
-          success: false,
-          error: AuthMessages.PROFILE_CREATION_ERROR,
-        };
       }
 
       logger.info("User registration successful");

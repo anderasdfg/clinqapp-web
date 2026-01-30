@@ -21,6 +21,7 @@ import MedicalRecordsPage from './pages/dashboard/MedicalRecordsPage';
 import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
+import AuthCallback from './pages/auth/AuthCallback';
 import { AuthProvider } from './components/auth/AuthProvider';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
                     <Route path="/" element={<Landing />} />
                     
                     {/* App Routes */}
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/app/login" element={<Login />} />
                     <Route path="/app/register" element={<Register />} />
                     <Route

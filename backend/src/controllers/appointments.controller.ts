@@ -206,30 +206,8 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
         organizationId: dbUser.organizationId,
         deletedAt: null,
       },
-      select: {
-        id: true,
-        startTime: true,
-        endTime: true,
-        status: true,
-        notes: true,
-        clinicalNotes: true,
-        cancellationReason: true,
-        sessionNumber: true,
-        images: true,
-        reminderSentAt: true,
-        createdAt: true,
-        updatedAt: true,
-        patient: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            email: true,
-            dateOfBirth: true,
-            medicalHistory: true,
-          },
-        },
+      include: {
+        patient: true,
         professional: {
           select: {
             id: true,
@@ -239,26 +217,8 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
             specialty: true,
           },
         },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            duration: true,
-            basePrice: true,
-          },
-        },
-        payment: {
-          select: {
-            id: true,
-            amount: true,
-            method: true,
-            status: true,
-            receiptNumber: true,
-            notes: true,
-            createdAt: true,
-          },
-        },
+        service: true,
+        payment: true,
       },
     });
 
