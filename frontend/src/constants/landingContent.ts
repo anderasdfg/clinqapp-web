@@ -43,7 +43,7 @@ export const landingContent = {
       line2: "y Visual",
     },
     description:
-      "La primera herramienta diseñada para podólogos. Gestiona citas, ingresos y, sobre todo, la evidencia visual de tus pacientes en un solo lugar.",
+      "La primera herramienta diseñada para podólogos. \nGestiona citas, ingresos y, sobre todo, \nla evidencia visual de tus pacientes en un solo lugar.",
     ctas: {
       primary: {
         text: "Prueba Gratis 14 Días",

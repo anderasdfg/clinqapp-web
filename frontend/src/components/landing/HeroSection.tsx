@@ -1,17 +1,24 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { landingContent } from '../../constants/landingContent';
 
+gsap.registerPlugin(ScrollTrigger);
+
 const { hero } = landingContent;
-const { badge, title, ctas, socialProof, mockup, stats } = hero;
+const { badge, title, ctas, socialProof } = hero;
 
 export default function HeroSection() {
   const heroRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const mockupRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
+  // Entrance animations
   useEffect(() => {
     // GSAP Animations
     const ctx = gsap.context(() => {
@@ -46,25 +53,59 @@ export default function HeroSection() {
         delay: 0.5,
       });
 
-      // Floating animation for mockup
+      /* // Floating animation for mockup
       gsap.to(mockupRef.current, {
         y: -15,
         duration: 2.5,
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
-      });
+      }); */
     }, heroRef);
 
     return () => ctx.revert();
   }, []);
+
+  // Scrollytelling video synchronization
+  useGSAP(() => {
+    if (!isVideoLoaded || !videoRef.current || !heroRef.current) return;
+    
+    // Only initialize ScrollTrigger on desktop (min-width: 1024px)
+    const mm = gsap.matchMedia();
+    const video = videoRef.current;
+    video.currentTime = 0;
+
+    mm.add("(min-width: 1024px)", () => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "+=200%", // 200% scroll distance
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1,
+        }
+      });
+
+      tl.fromTo(
+        video,
+        { currentTime: 0 },
+        {
+          currentTime: video.duration || 0,
+          ease: "none",
+        }
+      );
+    });
+
+    return () => mm.revert();
+  }, { dependencies: [isVideoLoaded], scope: heroRef });
 
   return (
     <section ref={heroRef} className="relative pt-32 pb-32 px-6 md:px-12 lg:px-24">
       {/* Hero Content */}
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
         {/* Left Column - Text */}
-        <div className="space-y-8">
+        <div className="space-y-8 z-50">
           <div className="inline-block">
             <div className="glass-card px-4 py-2 text-sm text-brand-cyan font-medium flex items-center gap-2">
               <badge.icon className="w-4 h-4" />
@@ -78,7 +119,7 @@ export default function HeroSection() {
             <div>{title.line2}</div>
           </h1>
 
-          <p className="text-xl text-gray-600 leading-relaxed">
+          <p className="text-xl text-gray-600 leading-relaxed whitespace-pre-line">
             {hero.description}
           </p>
 
@@ -115,27 +156,18 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Right Column - Mockup */}
-        <div ref={mockupRef} className="relative">
-          <div className="glass-card-strong p-8 refraction-effect">
-            <img 
-              src={mockup.src} 
-              alt={mockup.alt} 
-              className="w-full h-auto drop-shadow-2xl rounded-xl"
+        {/* Right Column - Video Scrollytelling */}
+        <div ref={mockupRef} className="relative hidden lg:flex items-center justify-center lg:justify-end">
+          <div className="w-full max-w-[850px] lg:scale-[1.5] lg:origin-center transition-transform duration-1000">
+            <video
+              ref={videoRef}
+              src="/output_web.webm"
+              muted
+              playsInline
+              preload="auto"
+              onLoadedMetadata={() => setIsVideoLoaded(true)}
+              className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.18)] pointer-events-none"
             />
-          </div>
-          
-          {/* Floating Stats Card */}
-          <div className="absolute -bottom-6 -left-6 glass-card p-6 max-w-xs animate-bounce">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center text-white text-2xl">
-                {stats.emoji}
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">{stats.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.value}</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
