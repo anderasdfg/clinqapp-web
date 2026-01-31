@@ -7,8 +7,13 @@ import {
     Loader2,
     Phone,
     Trash2,
-    AlertTriangle
+    AlertTriangle,
+    Calendar,
+    User,
+    Clock
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { Appointment, AppointmentStatus, APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS, PAYMENT_STATUS } from '@/types/appointment.types';
 import { Badge } from '@/components/ui/badge';
@@ -31,25 +36,33 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
   const [clinicalNotes, setClinicalNotes] = useState('');
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('attention');
+  const [isLoading, setIsLoading] = useState(true);
   
   // Fetch full appointment details on mount/open to get medicalHistory
   useEffect(() => {
     if (isOpen && appointment) {
+        setIsLoading(true);
         // Optimistic update from props first
          setClinicalNotes(appointment.clinicalNotes || '');
          setCurrentImages(appointment.images || []);
 
         const loadDetails = async () => {
-            await fetchAppointmentById(appointment.id);
-            const updated = useAppointmentsStore.getState().appointments.find(a => a.id === appointment.id);
-            if (updated) {
-                 setClinicalNotes(updated.clinicalNotes || '');
-                 setCurrentImages(updated.images || []);
+            try {
+                await fetchAppointmentById(appointment.id);
+                const updated = useAppointmentsStore.getState().appointments.find(a => a.id === appointment.id);
+                if (updated) {
+                     setClinicalNotes(updated.clinicalNotes || '');
+                     setCurrentImages(updated.images || []);
+                }
+            } catch (error) {
+                console.error('Error loading detail:', error);
+            } finally {
+                setIsLoading(false);
             }
         };
         loadDetails();
     }
-  }, [isOpen, appointment, fetchAppointmentById]);
+  }, [isOpen, appointment?.id, fetchAppointmentById]);
 
   if (!appointment) return null;
 
@@ -140,6 +153,54 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[85vw] lg:w-[800px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
           
+          {isLoading ? (
+            <div className="flex-1 flex flex-col">
+              {/* Skeleton Header */}
+              <div className="p-6 border-b flex items-start justify-between bg-background animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-muted" />
+                  <div className="space-y-2">
+                    <div className="h-6 w-48 bg-muted rounded" />
+                    <div className="h-4 w-24 bg-muted rounded" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-10 w-10 rounded-full bg-muted" />
+                  <div className="h-10 w-10 rounded-full bg-muted" />
+                </div>
+              </div>
+
+              {/* Skeleton Tabs */}
+              <div className="px-6 border-b flex gap-6">
+                <div className="h-11 w-20 bg-muted/50 rounded-t" />
+                <div className="h-11 w-20 bg-muted/50 rounded-t" />
+                <div className="h-11 w-20 bg-muted/50 rounded-t" />
+              </div>
+
+              {/* Skeleton Content */}
+              <div className="p-6 space-y-6 flex-1 bg-muted/5 animate-pulse">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 bg-muted rounded" />
+                  <div className="h-48 w-full bg-muted/50 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-4 w-40 bg-muted rounded" />
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="aspect-square bg-muted/50 rounded-lg" />
+                    <div className="aspect-square bg-muted/50 rounded-lg" />
+                    <div className="aspect-square bg-muted/50 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Skeleton Footer */}
+              <div className="p-4 border-t bg-background flex gap-3 animate-pulse">
+                <div className="flex-1 h-10 bg-muted rounded-md" />
+                <div className="flex-1 h-10 bg-muted rounded-md" />
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Header (Sticky Top) */}
           <div className="p-6 border-b flex items-start justify-between bg-background/95 backdrop-blur z-10 sticky top-0">
             <div className="flex items-center gap-4">
@@ -279,22 +340,98 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                         </div>
                     </div>
                  </Tabs.Content>
-                 
-                 {/* Tab 2: HISTORIAL */}
-                 <Tabs.Content value="history" className="outline-none animate-in fade-in-50">
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Línea de Tiempo</h3>
-                         <div className="text-center py-10 text-muted-foreground">
-                             <p>Historial de citas se cargará aquí...</p>
+                                  {/* Tab 2: HISTORIAL */}
+                  <Tabs.Content value="history" className="outline-none animate-in fade-in-50">
+                     <div className="space-y-6">
+                         <div className="flex items-center justify-between">
+                             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Historial de Citas</h3>
+                             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                                 {patient?.appointments?.length || 0} Registros
+                             </span>
                          </div>
-                    </div>
-                 </Tabs.Content>
+                         
+                         <div className="relative space-y-4 ml-3">
+                             {/* Timeline Line */}
+                             <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-muted-foreground/20" />
+                             
+                             {patient?.appointments?.map((appt) => {
+                                 const isCurrent = appt.id === appointment.id;
+                                 return (
+                                     <div key={appt.id} className="relative pl-8">
+                                         {/* Timeline Node */}
+                                         <div className={`absolute left-[-4px] top-2.5 h-2.5 w-2.5 rounded-full border-2 bg-background transition-colors ${
+                                             isCurrent ? 'border-primary scale-125' : 'border-muted-foreground/30'
+                                         }`} />
+                                         
+                                         <div className={`
+                                             group p-4 rounded-xl border transition-all duration-200
+                                             ${isCurrent 
+                                                 ? 'bg-primary/5 border-primary/20 shadow-sm' 
+                                                 : 'bg-background hover:bg-muted/30 border-muted hover:border-muted-foreground/30'}
+                                         `}>
+                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                 <div className="space-y-1">
+                                                     <div className="flex items-center gap-2">
+                                                         <span className="text-sm font-bold text-foreground">
+                                                             {format(new Date(appt.startTime), "dd MMM yyyy", { locale: es })}
+                                                         </span>
+                                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                             <Clock className="w-3 h-3" />
+                                                             {format(new Date(appt.startTime), "HH:mm")}
+                                                         </span>
+                                                     </div>
+                                                     <div className="flex flex-col">
+                                                         <span className="text-sm font-medium text-foreground">
+                                                             {appt.service?.name || 'Servicio no especificado'}
+                                                         </span>
+                                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                             <User className="w-3 h-3" />
+                                                             {appt.professional?.firstName} {appt.professional?.lastName}
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                                 
+                                                 <div className="flex items-center gap-3">
+                                                     <Badge variant={
+                                                         appt.status === APPOINTMENT_STATUS.CONFIRMED ? 'default' : 
+                                                         appt.status === APPOINTMENT_STATUS.COMPLETED ? 'success' : 'secondary'
+                                                     } className="text-[10px] h-5">
+                                                         {APPOINTMENT_STATUS_LABELS[appt.status]}
+                                                     </Badge>
+                                                     {isCurrent && (
+                                                         <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Cita Actual</span>
+                                                     )}
+                                                 </div>
+                                             </div>
+                                             
+                                             {appt.clinicalNotes && (
+                                                 <div className="mt-3 pt-3 border-t border-dashed border-muted-foreground/20">
+                                                     <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                                                         "{appt.clinicalNotes}"
+                                                     </p>
+                                                 </div>
+                                             )}
+                                         </div>
+                                     </div>
+                                 );
+                             })}
+
+                             {(!patient?.appointments || patient.appointments.length === 0) && (
+                                 <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-2xl border border-dashed">
+                                     <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                     <p className="text-sm">No hay citas anteriores registradas</p>
+                                 </div>
+                             )}
+                         </div>
+                     </div>
+                  </Tabs.Content>
 
                  {/* Tab 3: DATOS */}
                  <Tabs.Content value="data" className="outline-none animate-in fade-in-50 h-full">
                      <div className="h-full overflow-y-auto px-1">
                         <PodiatryHistoryForm 
                             patientId={patient?.id || currentAppointmentRaw.patientId} 
+                            patientContext={patient} // Nueva prop para datos personales
                             initialData={medicalHistory} // Pasa los datos si existen para editar
                             onSuccess={() => {
                                 fetchAppointmentById(appointment.id); // Recarga para quitar la alerta amarilla
@@ -341,6 +478,8 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                 </>
              )}
           </div>
+            </>
+          )}
 
         </Dialog.Content>
       </Dialog.Portal>

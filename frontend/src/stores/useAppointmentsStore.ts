@@ -23,6 +23,7 @@ interface AppointmentsState {
 
   // UI State
   isLoading: boolean;
+  isLoadingDetail: boolean;
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
@@ -80,6 +81,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   selectedAppointment: null,
   lastFetchedAt: null,
   isLoading: false,
+  isLoadingDetail: false,
   isCreating: false,
   isUpdating: false,
   isDeleting: false,
@@ -188,7 +190,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   },
 
   fetchAppointmentById: async (id) => {
-    set({ isLoading: true });
+    set({ isLoadingDetail: true });
     try {
       const appointment = await appointmentsService.getAppointmentById(id);
 
@@ -198,11 +200,11 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
         appointments: state.appointments.map((apt) =>
           apt.id === appointment.id ? appointment : apt,
         ),
-        isLoading: false,
+        isLoadingDetail: false,
       }));
     } catch (error) {
       console.error("Error fetching appointment:", error);
-      set({ isLoading: false });
+      set({ isLoadingDetail: false });
       throw error;
     }
   },

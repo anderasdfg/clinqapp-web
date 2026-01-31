@@ -19,15 +19,23 @@ import {
     RotateCcw
 } from 'lucide-react';
 
+import { AppointmentPatient } from '@/types/appointment.types';
+
 interface PodiatryHistoryFormProps {
     patientId: string;
+    patientContext?: AppointmentPatient;
     initialData?: any;
     onSuccess?: () => void;
     onCancel?: () => void;
 }
 
-const PodiatryHistoryForm = ({ patientId, initialData, onSuccess, onCancel }: PodiatryHistoryFormProps) => {
+const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess, onCancel }: PodiatryHistoryFormProps) => {
     const { updatePatient, isUpdating } = usePatientsStore();
+    
+    // Auto-calculate age for display or use
+    const age = patientContext?.dateOfBirth 
+        ? new Date().getFullYear() - new Date(patientContext.dateOfBirth).getFullYear() 
+        : null;
 
     const {
         register,
@@ -73,7 +81,11 @@ const PodiatryHistoryForm = ({ patientId, initialData, onSuccess, onCancel }: Po
                         <Activity className="w-5 h-5" />
                         Antecedentes Sistémicos
                     </CardTitle>
-                    <CardDescription>Condiciones médicas generales que afectan la salud del pie</CardDescription>
+                    <CardDescription>
+                        {patientContext?.firstName} {patientContext?.lastName} 
+                        {age ? ` • ${age} años` : ''} 
+                        {patientContext?.occupation ? ` • ${patientContext.occupation}` : ''}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

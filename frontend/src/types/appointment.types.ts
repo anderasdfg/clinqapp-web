@@ -96,9 +96,11 @@ export interface AppointmentPatient {
   phone: string;
   email?: string | null;
   dateOfBirth?: string | null;
+  occupation?: string | null;
   emergencyContact?: string | null;
   emergencyPhone?: string | null;
   medicalHistory?: PodiatryHistoryData;
+  appointments?: Appointment[];
 }
 
 // Professional info (minimal)

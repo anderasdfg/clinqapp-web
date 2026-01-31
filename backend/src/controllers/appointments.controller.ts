@@ -226,7 +226,25 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
         deletedAt: null,
       },
       include: {
-        patient: true,
+        patient: {
+          include: {
+            appointments: {
+              take: 10,
+              orderBy: { startTime: "desc" },
+              include: {
+                service: true,
+                professional: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                payment: true,
+              },
+            },
+          },
+        },
         professional: {
           select: {
             id: true,
