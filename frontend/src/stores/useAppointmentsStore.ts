@@ -255,11 +255,8 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
   updateAppointmentStatus: async (id, data) => {
     set({ isUpdating: true });
     try {
-      await appointmentsService.updateAppointmentStatus(id, data);
-
-      // Fetch complete appointment data with relations
       const completeAppointment =
-        await appointmentsService.getAppointmentById(id);
+        await appointmentsService.updateAppointmentStatus(id, data);
 
       set((state) => ({
         appointments: state.appointments.map((apt) =>

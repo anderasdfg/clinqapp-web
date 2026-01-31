@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
-import { X, Phone, Trash2, Camera, AlertTriangle } from 'lucide-react';
+import { 
+    Camera, 
+    X,
+    Loader2,
+    Phone,
+    Trash2,
+    AlertTriangle
+} from 'lucide-react';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { Appointment, AppointmentStatus, APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS, PAYMENT_STATUS } from '@/types/appointment.types';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +22,7 @@ interface ClinicalWorkspaceSheetProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
-  onShowPayment?: (appointment: Appointment) => void;
+  onShowPayment?: (appointment: Appointment, postPaymentStatus?: AppointmentStatus) => void;
 }
 
 const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }: ClinicalWorkspaceSheetProps) => { /* Refactored ClinicalWorkspaceSheet */
@@ -48,6 +55,12 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
 
   // Find the most up-to-date appointment object from store or props
   const currentAppointmentRaw = appointments.find(a => a.id === appointment.id) || appointment;
+
+  const isReadOnly = ([
+    APPOINTMENT_STATUS.COMPLETED,
+    APPOINTMENT_STATUS.CANCELLED,
+    APPOINTMENT_STATUS.NO_SHOW
+  ] as AppointmentStatus[]).includes(currentAppointmentRaw.status);
 
   // We need to ensure we have the medicalHistory which might come from the fetch
   const patient = currentAppointmentRaw.patient;
@@ -104,7 +117,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
              if (isPaid) {
                 onClose();
              } else if (onShowPayment) {
-                onShowPayment(currentAppointmentRaw);
+                onShowPayment(currentAppointmentRaw, APPOINTMENT_STATUS.COMPLETED);
              } else {
                 onClose();
              }
@@ -143,8 +156,8 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                         {patient?.dateOfBirth ? `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} años` : 'Edad N/A'}
                     </span>
                     <Badge variant={
-                        appointment.status === 'CONFIRMED' ? 'default' : 
-                        appointment.status === 'COMPLETED' ? 'success' : 'secondary'
+                        appointment.status === APPOINTMENT_STATUS.CONFIRMED ? 'default' : 
+                        appointment.status === APPOINTMENT_STATUS.COMPLETED ? 'success' : 'secondary'
                     }>
                         {APPOINTMENT_STATUS_LABELS[appointment.status]}
                     </Badge>
@@ -196,15 +209,16 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                                      Paciente sin Historia Clínica Base
                                  </p>
                              </div>
-                             {/* Create History Button */}
-                             <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="bg-white dark:bg-transparent border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100"
-                                onClick={() => setActiveTab('data')}
-                             >
-                                 Crear Historia
-                             </Button>
+                             {!isReadOnly && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="bg-white dark:bg-transparent border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100"
+                                    onClick={() => setActiveTab('data')}
+                                >
+                                    Crear Historia
+                                </Button>
+                             )}
                         </div>
                     )}
 
@@ -213,8 +227,9 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                         <Textarea 
                             value={clinicalNotes}
                             onChange={(e) => setClinicalNotes(e.target.value)}
-                            placeholder="Evolución del paciente..." 
-                            className="min-h-[200px] resize-none text-base p-4 bg-background shadow-sm border-muted focus:border-primary transition-colors"
+                            placeholder={isReadOnly ? "No hay evolución registrada" : "Evolución del paciente..."} 
+                            disabled={isReadOnly}
+                            className="min-h-[200px] resize-none text-base p-4 bg-background shadow-sm border-muted focus:border-primary transition-colors disabled:opacity-80"
                         />
                     </div>
 
@@ -237,28 +252,30 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                                  </div>
                              ))}
                              
-                             <label className={`
-                                flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed
-                                cursor-pointer transition-colors h-40
-                                ${uploading ? 'bg-muted opacity-50 cursor-not-allowed' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5'}
-                             `}>
-                                 <input 
-                                    type="file" 
-                                    multiple 
-                                    accept="image/*" 
-                                    className="hidden" 
-                                    onChange={handleImageUpload}
-                                    disabled={uploading}
-                                 />
-                                 {uploading ? (
-                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                                 ) : (
-                                    <>
-                                        <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                                        <span className="text-xs text-center text-muted-foreground px-2">Subir fotos</span>
-                                    </>
-                                 )}
-                             </label>
+                             {!isReadOnly && (
+                                 <label className={`
+                                    flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed
+                                    cursor-pointer transition-colors h-40
+                                    ${uploading ? 'bg-muted opacity-50 cursor-not-allowed' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5'}
+                                 `}>
+                                     <input 
+                                        type="file" 
+                                        multiple 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                        onChange={handleImageUpload}
+                                        disabled={uploading}
+                                     />
+                                     {uploading ? (
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                                     ) : (
+                                        <>
+                                            <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                                            <span className="text-xs text-center text-muted-foreground px-2">Subir fotos</span>
+                                        </>
+                                     )}
+                                 </label>
+                             )}
                         </div>
                     </div>
                  </Tabs.Content>
@@ -292,23 +309,37 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
 
           {/* Footer (Sticky Bottom) */}
           <div className="p-4 border-t bg-background flex flex-col sm:flex-row gap-3">
-             <Button 
-                variant="outline" 
-                className="flex-1"
-                disabled={isUpdating}
-                onClick={() => handleSave()}
-             >
-                 Guardar Borrador
-             </Button>
-             <Button 
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                disabled={isUpdating}
-                onClick={() => handleSave(APPOINTMENT_STATUS.COMPLETED)}
-             >
-                 {currentAppointmentRaw.payment?.status === PAYMENT_STATUS.COMPLETED 
-                    ? 'Finalizar Atención' 
-                    : 'Finalizar y Cobrar'}
-             </Button>
+             {isReadOnly ? (
+                <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={onClose}
+                >
+                    Cerrar
+                </Button>
+             ) : (
+                <>
+                    <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        disabled={isUpdating}
+                        onClick={() => handleSave()}
+                    >
+                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Guardar Borrador
+                    </Button>
+                    <Button 
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        disabled={isUpdating}
+                        onClick={() => handleSave(APPOINTMENT_STATUS.COMPLETED)}
+                    >
+                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {currentAppointmentRaw.payment?.status === PAYMENT_STATUS.COMPLETED 
+                            ? 'Finalizar Atención' 
+                            : 'Finalizar y Cobrar'}
+                    </Button>
+                </>
+             )}
           </div>
 
         </Dialog.Content>

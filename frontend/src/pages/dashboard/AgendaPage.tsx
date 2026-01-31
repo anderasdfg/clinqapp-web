@@ -9,7 +9,8 @@ import ClinicalWorkspaceSheet from '@/components/agenda/ClinicalWorkspaceSheet';
 import PaymentModal from '@/components/agenda/PaymentModal';
 import { Button } from '@/components/ui/Button';
 import { Plus, RefreshCw } from 'lucide-react';
-import type { Appointment } from '@/types/appointment.types';
+import type { Appointment, AppointmentStatus } from '@/types/appointment.types';
+import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS } from '@/types/appointment.types';
 
 const AgendaPage = () => {
     const {
@@ -25,6 +26,7 @@ const AgendaPage = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [postPaymentStatus, setPostPaymentStatus] = useState<AppointmentStatus | null>(null);
 
     useEffect(() => {
         // Fetch appointments for current week
@@ -57,6 +59,18 @@ const AgendaPage = () => {
     const handleAppointmentClick = (appointment: Appointment) => {
         setSelectedAppointment(appointment);
         setShowDetailModal(true);
+    };
+
+    const handleStatusUpdate = async (appointmentId: string, status: AppointmentStatus) => {
+        try {
+            await useAppointmentsStore.getState().updateAppointmentStatus(appointmentId, { status });
+            const { toast } = await import('sonner');
+            toast.success(`Cita marcada como: ${APPOINTMENT_STATUS_LABELS[status]}`);
+        } catch (error) {
+            console.error('Error updating appointment status:', error);
+            const { toast } = await import('sonner');
+            toast.error('Error al actualizar el estado de la cita');
+        }
     };
 
     return (
@@ -179,6 +193,12 @@ const AgendaPage = () => {
                                                                 key={appointment.id}
                                                                 appointment={appointment}
                                                                 onClick={() => handleAppointmentClick(appointment)}
+                                                                onShowPayment={(appointment, status) => {
+                                                                    setSelectedAppointment(appointment);
+                                                                    setPostPaymentStatus(status || null);
+                                                                    setShowPaymentModal(true);
+                                                                }}
+                                                                onStatusUpdate={handleStatusUpdate}
                                                             />
                                                         ))
                                                     }
@@ -210,8 +230,9 @@ const AgendaPage = () => {
                     setShowDetailModal(false);
                     setSelectedAppointment(null);
                 }}
-                onShowPayment={(appointment) => {
+                onShowPayment={(appointment: Appointment, status?: AppointmentStatus) => {
                     setSelectedAppointment(appointment);
+                    setPostPaymentStatus(status || null);
                     setShowDetailModal(false); // Close workspace
                     setShowPaymentModal(true); // Open payment
                 }}
@@ -226,10 +247,26 @@ const AgendaPage = () => {
                         setShowPaymentModal(false);
                         setSelectedAppointment(null);
                     }}
-                    onPaymentRegistered={() => {
+                    onPaymentRegistered={async () => {
+                        if (postPaymentStatus && selectedAppointment) {
+                            try {
+                                await useAppointmentsStore.getState().updateAppointmentStatus(selectedAppointment.id, {
+                                    status: postPaymentStatus
+                                });
+                                
+                                if (postPaymentStatus === APPOINTMENT_STATUS.CONFIRMED) {
+                                    const { toast } = await import('sonner');
+                                    toast.success('Pago registrado. Cita confirmada.');
+                                }
+                            } catch (error) {
+                                console.error('Error updating status after payment:', error);
+                            }
+                        }
+                        
                         fetchAppointments({}, true); // Refresh data
                         setShowPaymentModal(false);
                         setSelectedAppointment(null);
+                        setPostPaymentStatus(null);
                     }}
                 />
             )}

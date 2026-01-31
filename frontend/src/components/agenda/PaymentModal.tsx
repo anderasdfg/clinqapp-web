@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '@/lib/supabase/client';
-import { PaymentMethod, PAYMENT_METHOD_LABELS, PAYMENT_METHOD, APPOINTMENT_STATUS } from '@/types/appointment.types';
+import { PaymentMethod, PAYMENT_METHOD_LABELS, PAYMENT_METHOD } from '@/types/appointment.types';
 import type { Appointment } from '@/types/appointment.types';
 
 interface PaymentModalProps {
@@ -60,24 +60,6 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Error al registrar pago');
-            }
-
-            // Auto-confirm appointment if it's in PENDING status
-            if (appointment.status === APPOINTMENT_STATUS.PENDING) {
-                const confirmResponse = await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment.id}/status`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`,
-                    },
-                    body: JSON.stringify({
-                        status: APPOINTMENT_STATUS.CONFIRMED,
-                    }),
-                });
-
-                if (!confirmResponse.ok) {
-                    console.error('Error auto-confirming appointment');
-                }
             }
 
             reset();

@@ -16,7 +16,18 @@ const createAppointmentSchema = z.object({
   images: z.array(z.string().url("URL de imagen inválida")).optional(),
 });
 
-const updateAppointmentSchema = createAppointmentSchema.partial();
+const updateAppointmentSchema = createAppointmentSchema.partial().extend({
+  status: z
+    .enum([
+      "PENDING",
+      "CONFIRMED",
+      "COMPLETED",
+      "CANCELLED",
+      "NO_SHOW",
+      "RESCHEDULED",
+    ])
+    .optional(),
+});
 
 const updateStatusSchema = z.object({
   status: z.enum([
@@ -40,6 +51,14 @@ const registerPaymentSchema = z.object({
 // Simple in-memory cache for appointments
 const appointmentsCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 30; // 30 seconds cache for agenda data
+const invalidateCache = (organizationId: string) => {
+  const keysContext = Array.from(appointmentsCache.keys());
+  for (const key of keysContext) {
+    if (key.startsWith(`${organizationId}:`)) {
+      appointmentsCache.delete(key);
+    }
+  }
+};
 
 // GET /api/appointments - List appointments with filters
 export const getAppointments = async (req: AuthRequest, res: Response) => {
@@ -388,6 +407,9 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    // Invalidate cache
+    invalidateCache(dbUser.organizationId);
+
     res.status(201).json({
       success: true,
       message: "Cita creada exitosamente",
@@ -467,22 +489,36 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
     }
 
     // Update appointment
-    console.log("🔍 Update data received:", JSON.stringify(data, null, 2));
-    console.log("📸 Images in data:", data.images);
+    console.log(`🔍 [PUT] Update ID: ${id} | Org: ${dbUser.organizationId}`);
+    console.log("🔍 Raw body:", JSON.stringify(req.body, null, 2));
+    console.log("🔍 Validated data:", JSON.stringify(data, null, 2));
+
+    const updateData: any = {
+      ...data,
+      startTime: data.startTime ? new Date(data.startTime) : undefined,
+      endTime: data.endTime ? new Date(data.endTime) : undefined,
+    };
+
+    // Explicitly set status to ensure it's not lost
+    if (data.status) {
+      updateData.status = data.status;
+    }
+
+    console.log(
+      "🔍 Final updateData for Prisma:",
+      JSON.stringify(updateData, null, 2),
+    );
 
     const appointment = await prisma.appointment.update({
       where: { id },
-      data: {
-        ...data,
-        startTime: data.startTime ? new Date(data.startTime) : undefined,
-        endTime: data.endTime ? new Date(data.endTime) : undefined,
-      },
+      data: updateData,
       include: {
         patient: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
+            phone: true,
           },
         },
         professional: {
@@ -490,16 +526,31 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
             id: true,
             firstName: true,
             lastName: true,
+            specialty: true,
           },
         },
         service: {
           select: {
             id: true,
             name: true,
+            duration: true,
+            basePrice: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
           },
         },
       },
     });
+
+    console.log(`✅ [PUT] DB Response Status: ${appointment.status}`);
+
+    // Invalidate cache
+    invalidateCache(dbUser.organizationId);
 
     res.json({
       success: true,
@@ -551,13 +602,55 @@ export const updateAppointmentStatus = async (
     }
 
     // Update status
+    console.log(`🔍 [PATCH] Status update for ${id} to ${status}`);
     const appointment = await prisma.appointment.update({
       where: { id },
       data: {
         status,
         cancellationReason: status === "CANCELLED" ? cancellationReason : null,
       },
+      include: {
+        // ... same includes as above
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+        professional: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+            basePrice: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+          },
+        },
+      },
     });
+
+    console.log(
+      `✅ [PATCH] Update success. Status in DB now: ${appointment.status}`,
+    );
+
+    // Invalidate cache
+    invalidateCache(dbUser.organizationId);
 
     res.json({
       success: true,
@@ -599,6 +692,9 @@ export const deleteAppointment = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    // Invalidate cache
+    invalidateCache(dbUser.organizationId);
 
     res.json({
       success: true,
@@ -707,6 +803,9 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
         collectedById: dbUser.id,
       },
     });
+
+    // Invalidate cache
+    invalidateCache(dbUser.organizationId);
 
     res.status(201).json({
       success: true,
