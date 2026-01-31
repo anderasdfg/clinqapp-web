@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { servicesService } from "@/services/services.service";
 import type { Service } from "@/types/service.types";
+import type {
+  CreateServiceDTO,
+  UpdateServiceDTO,
+} from "@/types/dto/service.dto";
 
 interface ServicesState {
   services: Service[];
@@ -30,8 +34,8 @@ interface ServicesState {
     forceRefresh?: boolean,
   ) => Promise<void>;
   fetchServiceById: (id: string) => Promise<void>;
-  createService: (data: any) => Promise<void>;
-  updateService: (id: string, data: any) => Promise<void>;
+  createService: (data: CreateServiceDTO) => Promise<void>;
+  updateService: (id: string, data: UpdateServiceDTO) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
   setSelectedService: (service: Service | null) => void;
   clearError: () => void;

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useOnboardingStore } from '@/stores/useOnboardingStore';
 import { OnboardingService } from '@/services/onboarding.service';
-import { basicClinicDataSchema } from '@/lib/validations/onboarding';
+import { basicClinicDataSchema, type BasicClinicData } from '@/lib/validations/onboarding';
 import { ServiceTemplate } from '@/lib/constants/service-templates';
 import { DAYS_OF_WEEK, PAYMENT_METHODS, CONSULTATION_TYPES } from '@/lib/constants/onboarding';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -75,7 +75,7 @@ const Onboarding = () => {
     const [selectedServices, setSelectedServices] = useState<ServiceTemplate[]>([]);
 
     // Handlers
-    const onStep1Submit = (data: any) => {
+    const onStep1Submit = (data: BasicClinicData) => {
         setBasicData(data);
         nextStep();
     };

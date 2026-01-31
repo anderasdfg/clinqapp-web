@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { staffService } from "@/services/staff.service";
 import type { StaffMember } from "@/types/staff.types";
+import type { UpdateStaffDTO } from "@/types/dto/staff.dto";
 
 interface StaffState {
   staff: StaffMember[];
@@ -25,7 +26,7 @@ interface StaffState {
     forceRefresh?: boolean,
   ) => Promise<void>;
   fetchStaffById: (id: string) => Promise<void>;
-  updateStaff: (id: string, data: Partial<StaffMember>) => Promise<void>;
+  updateStaff: (id: string, data: UpdateStaffDTO) => Promise<void>;
   deleteStaff: (id: string) => Promise<void>;
   setSelectedStaff: (staff: StaffMember | null) => void;
   clearError: () => void;

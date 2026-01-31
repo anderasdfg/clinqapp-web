@@ -1,17 +1,12 @@
 // Staff/Professional Types
 
-export enum UserRole {
-  OWNER = "OWNER",
-  PROFESSIONAL = "PROFESSIONAL",
-  RECEPTIONIST = "RECEPTIONIST",
-  PATIENT = "PATIENT",
-}
+export type UserRole = "OWNER" | "PROFESSIONAL" | "RECEPTIONIST" | "PATIENT";
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
-  [UserRole.OWNER]: "Propietario",
-  [UserRole.PROFESSIONAL]: "Profesional",
-  [UserRole.RECEPTIONIST]: "Recepcionista",
-  [UserRole.PATIENT]: "Paciente",
+  OWNER: "Propietario",
+  PROFESSIONAL: "Profesional",
+  RECEPTIONIST: "Recepcionista",
+  PATIENT: "Paciente",
 };
 
 export interface StaffMember {
@@ -27,15 +22,12 @@ export interface StaffMember {
   updatedAt?: string;
 }
 
-export interface StaffFormData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string | null;
-  specialty?: string | null;
-  licenseNumber?: string | null;
-  role: UserRole;
-}
+// Re-export DTOs from dto folder for convenience
+export type {
+  CreateStaffDTO,
+  UpdateStaffDTO,
+  StaffQueryDTO,
+} from "./dto/staff.dto";
 
 export interface StaffListResponse {
   success: boolean;

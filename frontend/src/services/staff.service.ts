@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase/client";
 import type {
   StaffListResponse,
   StaffResponse,
-  StaffFormData,
+  UpdateStaffDTO,
 } from "@/types/staff.types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -43,16 +43,13 @@ export const staffService = {
   },
 
   // Create staff member (currently not implemented in backend)
-  async createStaff(data: StaffFormData): Promise<StaffResponse> {
+  async createStaff(data: UpdateStaffDTO): Promise<StaffResponse> {
     const response = await api.post("/staff", data);
     return response.data;
   },
 
   // Update staff member
-  async updateStaff(
-    id: string,
-    data: Partial<StaffFormData>,
-  ): Promise<StaffResponse> {
+  async updateStaff(id: string, data: UpdateStaffDTO): Promise<StaffResponse> {
     const response = await api.put(`/staff/${id}`, data);
     return response.data;
   },

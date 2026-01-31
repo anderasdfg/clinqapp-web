@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase/client";
 import type {
   ServiceListResponse,
   ServiceResponse,
-  ServiceFormData,
+  CreateServiceDTO,
+  UpdateServiceDTO,
 } from "@/types/service.types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -43,7 +44,7 @@ export const servicesService = {
   },
 
   // Create service
-  async createService(data: ServiceFormData): Promise<ServiceResponse> {
+  async createService(data: CreateServiceDTO): Promise<ServiceResponse> {
     const response = await api.post("/services", data);
     return response.data;
   },
@@ -51,7 +52,7 @@ export const servicesService = {
   // Update service
   async updateService(
     id: string,
-    data: Partial<ServiceFormData>,
+    data: UpdateServiceDTO,
   ): Promise<ServiceResponse> {
     const response = await api.put(`/services/${id}`, data);
     return response.data;

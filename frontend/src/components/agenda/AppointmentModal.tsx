@@ -5,6 +5,8 @@ import { appointmentSchema, type AppointmentFormData } from '@/lib/validations/a
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
+import type { StaffMember } from '@/types/staff.types';
+import type { Service } from '@/types/service.types';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { Combobox } from '@/components/ui/combobox';
@@ -29,12 +31,27 @@ interface AppointmentModalProps {
     defaultDate?: Date;
 }
 
+// Simplified types for dropdown data
+interface ProfessionalOption {
+    id: string;
+    firstName: string;
+    lastName: string;
+    specialty?: string;
+}
+
+interface ServiceOption {
+    id: string;
+    name: string;
+    duration: number;
+    basePrice: number;
+}
+
 const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: AppointmentModalProps) => {
     const { createAppointment, updateAppointment, isCreating, isUpdating } = useAppointmentsStore();
     const { patients, fetchPatients } = usePatientsStore();
 
-    const [professionals, setProfessionals] = useState<any[]>([]);
-    const [services, setServices] = useState<any[]>([]);
+    const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
+    const [services, setServices] = useState<ServiceOption[]>([]);
     const [loadingPatients, setLoadingPatients] = useState(false);
     const [loadingProfessionals, setLoadingProfessionals] = useState(false);
     const [loadingServices, setLoadingServices] = useState(false);
@@ -118,7 +135,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
                 if (servicesResponse.ok) {
                     const servicesData = await servicesResponse.json();
-                    setServices(servicesData.data.map((service: any) => ({
+                    setServices(servicesData.data.map((service: Service) => ({
                         id: service.id,
                         name: service.name,
                         duration: service.duration,
