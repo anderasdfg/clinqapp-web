@@ -1,13 +1,12 @@
-// Enums
-export enum ReferralSource {
-  WEBSITE = "WEBSITE",
-  INSTAGRAM = "INSTAGRAM",
-  TIKTOK = "TIKTOK",
-  FACEBOOK = "FACEBOOK",
-  GOOGLE = "GOOGLE",
-  WORD_OF_MOUTH = "WORD_OF_MOUTH",
-  OTHER = "OTHER",
-}
+// Enums - Export as type for consistency with DTOs
+export type ReferralSource =
+  | "WEBSITE"
+  | "INSTAGRAM"
+  | "TIKTOK"
+  | "FACEBOOK"
+  | "GOOGLE"
+  | "WORD_OF_MOUTH"
+  | "OTHER";
 
 // User type (simplified for patient relations)
 export interface User {
@@ -53,29 +52,17 @@ export interface Patient {
   assignedProfessional?: User;
   assignedProfessionalId?: string;
   appointments?: Appointment[];
-  medicalHistory?: any; // Structured podiatry JSON
+  medicalHistory?: Record<string, unknown>; // Structured podiatry JSON
   createdAt: string;
   updatedAt: string;
 }
 
-// Create/Update patient DTO
-export interface CreatePatientDTO {
-  firstName: string;
-  lastName: string;
-  dni?: string;
-  phone: string;
-  email?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  occupation?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  referralSource?: ReferralSource;
-  assignedProfessionalId?: string;
-}
-
-export type UpdatePatientDTO = Partial<CreatePatientDTO>;
+// Re-export DTOs from dto folder for convenience
+export type {
+  CreatePatientDTO,
+  UpdatePatientDTO,
+  PatientsQueryDTO,
+} from "./dto/patient.dto";
 
 // API Response types
 export interface PatientsListResponse {
@@ -111,11 +98,11 @@ export interface PatientsQueryParams {
 
 // Labels for referral sources (for UI)
 export const REFERRAL_SOURCE_LABELS: Record<ReferralSource, string> = {
-  [ReferralSource.WEBSITE]: "Sitio Web",
-  [ReferralSource.INSTAGRAM]: "Instagram",
-  [ReferralSource.TIKTOK]: "TikTok",
-  [ReferralSource.FACEBOOK]: "Facebook",
-  [ReferralSource.GOOGLE]: "Google",
-  [ReferralSource.WORD_OF_MOUTH]: "Recomendación",
-  [ReferralSource.OTHER]: "Otro",
+  WEBSITE: "Sitio Web",
+  INSTAGRAM: "Instagram",
+  TIKTOK: "TikTok",
+  FACEBOOK: "Facebook",
+  GOOGLE: "Google",
+  WORD_OF_MOUTH: "Recomendación",
+  OTHER: "Otro",
 };

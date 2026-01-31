@@ -1,74 +1,64 @@
 import { PodiatryHistoryData } from "@/lib/validations/medical-record.validation";
 
-// Appointment Status Enum
-export enum AppointmentStatus {
-  PENDING = "PENDING",
-  CONFIRMED = "CONFIRMED",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-  NO_SHOW = "NO_SHOW",
-  RESCHEDULED = "RESCHEDULED",
-}
+// Appointment Status Type
+export type AppointmentStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW"
+  | "RESCHEDULED";
 
-// Payment Method Enum
-export enum PaymentMethod {
-  CASH = "CASH",
-  CARD = "CARD",
-  TRANSFER = "TRANSFER",
-  YAPE = "YAPE",
-  PLIN = "PLIN",
-  //CULQI = "CULQI",
-}
+// Payment Method Type
+export type PaymentMethod =
+  | "CASH"
+  | "CARD"
+  | "BANK_TRANSFER"
+  | "YAPE"
+  | "PLIN"
+  | "OTHER";
 
-// Payment Status Enum
-export enum PaymentStatus {
-  PENDING = "PENDING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  REFUNDED = "REFUNDED",
-}
+// Payment Status Type
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 
 // Status labels in Spanish
 export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
-  [AppointmentStatus.PENDING]: "Pendiente",
-  [AppointmentStatus.CONFIRMED]: "Confirmada",
-  [AppointmentStatus.COMPLETED]: "Completada",
-  [AppointmentStatus.CANCELLED]: "Cancelada",
-  [AppointmentStatus.NO_SHOW]: "No Asistió",
-  [AppointmentStatus.RESCHEDULED]: "Reprogramada",
+  PENDING: "Pendiente",
+  CONFIRMED: "Confirmada",
+  COMPLETED: "Completada",
+  CANCELLED: "Cancelada",
+  NO_SHOW: "No Asistió",
+  RESCHEDULED: "Reprogramada",
 };
 
 // Payment Method labels in Spanish
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  [PaymentMethod.CASH]: "Efectivo",
-  [PaymentMethod.CARD]: "Tarjeta",
-  [PaymentMethod.TRANSFER]: "Transferencia",
-  [PaymentMethod.YAPE]: "Yape",
-  [PaymentMethod.PLIN]: "Plin",
-  //[PaymentMethod.CULQI]: 'Culqi',
+  CASH: "Efectivo",
+  CARD: "Tarjeta",
+  BANK_TRANSFER: "Transferencia",
+  YAPE: "Yape",
+  PLIN: "Plin",
+  OTHER: "Otro",
 };
 
 // Payment Status labels in Spanish
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  [PaymentStatus.PENDING]: "Pendiente",
-  [PaymentStatus.COMPLETED]: "Pagado",
-  [PaymentStatus.FAILED]: "Fallido",
-  [PaymentStatus.REFUNDED]: "Reembolsado",
+  PENDING: "Pendiente",
+  COMPLETED: "Pagado",
+  FAILED: "Fallido",
+  REFUNDED: "Reembolsado",
 };
 
 // Status colors for UI
 export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
-  [AppointmentStatus.PENDING]:
+  PENDING:
     "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-  [AppointmentStatus.CONFIRMED]:
-    "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  [AppointmentStatus.COMPLETED]:
+  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+  COMPLETED:
     "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  [AppointmentStatus.CANCELLED]:
-    "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-  [AppointmentStatus.NO_SHOW]:
-    "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
-  [AppointmentStatus.RESCHEDULED]:
+  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+  NO_SHOW: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+  RESCHEDULED:
     "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
 };
 
@@ -140,32 +130,15 @@ export interface Appointment {
   payment?: AppointmentPayment | null;
 }
 
-// DTOs
-export interface CreateAppointmentDTO {
-  patientId: string;
-  professionalId: string;
-  serviceId?: string;
-  startTime: string;
-  endTime: string;
-  notes?: string;
-}
-
-export interface UpdateAppointmentDTO {
-  patientId?: string;
-  professionalId?: string;
-  serviceId?: string;
-  startTime?: string;
-  endTime?: string;
-  notes?: string;
-  clinicalNotes?: string;
-  images?: string[]; // Treatment images URLs
-  status?: AppointmentStatus;
-}
-
-export interface UpdateAppointmentStatusDTO {
-  status: AppointmentStatus;
-  cancellationReason?: string;
-}
+// Re-export DTOs from dto folder for convenience
+export type {
+  CreateAppointmentDTO,
+  UpdateAppointmentDTO,
+  UpdateAppointmentStatusDTO,
+  RegisterPaymentDTO,
+  CheckAvailabilityDTO,
+  AppointmentsQueryDTO,
+} from "./dto/appointment.dto";
 
 // API Response types
 export interface AppointmentResponse {

@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import type { Patient, PatientsQueryParams } from "@/types/patient.types";
+import type {
+  Patient,
+  PatientsQueryParams,
+  CreatePatientDTO,
+  UpdatePatientDTO,
+} from "@/types/patient.types";
 import { patientsService } from "@/services/patients.service";
 
 // Cache TTL: 2 minutes
@@ -40,8 +45,8 @@ interface PatientsState {
     forceRefresh?: boolean,
   ) => Promise<void>;
   fetchPatientById: (id: string) => Promise<void>;
-  createPatient: (data: any) => Promise<Patient>;
-  updatePatient: (id: string, data: any) => Promise<Patient>;
+  createPatient: (data: CreatePatientDTO) => Promise<Patient>;
+  updatePatient: (id: string, data: UpdatePatientDTO) => Promise<Patient>;
   deletePatient: (id: string) => Promise<void>;
   setSearchQuery: (query: string) => void;
   setAssignedProfessionalFilter: (professionalId: string | null) => void;
@@ -136,7 +141,7 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
   },
 
   // Create patient
-  createPatient: async (data: any) => {
+  createPatient: async (data: CreatePatientDTO) => {
     set({ isCreating: true, error: null });
     try {
       const patient = await patientsService.createPatient(data);
@@ -156,7 +161,7 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
   },
 
   // Update patient
-  updatePatient: async (id: string, data: any) => {
+  updatePatient: async (id: string, data: UpdatePatientDTO) => {
     set({ isUpdating: true, error: null });
     try {
       const patient = await patientsService.updatePatient(id, data);
