@@ -6,6 +6,7 @@ import { getWeekDays, getAppointmentsForDay } from '@/lib/utils/calendar.utils';
 import AppointmentCard from '@/components/agenda/AppointmentCard';
 import AppointmentModal from '@/components/agenda/AppointmentModal';
 import ClinicalWorkspaceSheet from '@/components/agenda/ClinicalWorkspaceSheet';
+import PaymentModal from '@/components/agenda/PaymentModal';
 import { Button } from '@/components/ui/Button';
 import { Plus, RefreshCw } from 'lucide-react';
 import type { Appointment } from '@/types/appointment.types';
@@ -22,6 +23,7 @@ const AgendaPage = () => {
 
     const [showAppointmentModal, setShowAppointmentModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
     useEffect(() => {
@@ -201,7 +203,6 @@ const AgendaPage = () => {
                 }}
             />
 
-            {/* Clinical Workspace Sheet */}
             <ClinicalWorkspaceSheet
                 appointment={selectedAppointment}
                 isOpen={showDetailModal}
@@ -209,7 +210,29 @@ const AgendaPage = () => {
                     setShowDetailModal(false);
                     setSelectedAppointment(null);
                 }}
+                onShowPayment={(appointment) => {
+                    setSelectedAppointment(appointment);
+                    setShowDetailModal(false); // Close workspace
+                    setShowPaymentModal(true); // Open payment
+                }}
             />
+
+            {/* Payment Modal */}
+            {selectedAppointment && (
+                <PaymentModal
+                    appointment={selectedAppointment}
+                    isOpen={showPaymentModal}
+                    onClose={() => {
+                        setShowPaymentModal(false);
+                        setSelectedAppointment(null);
+                    }}
+                    onPaymentRegistered={() => {
+                        fetchAppointments({}, true); // Refresh data
+                        setShowPaymentModal(false);
+                        setSelectedAppointment(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

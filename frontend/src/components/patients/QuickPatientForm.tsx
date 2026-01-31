@@ -38,14 +38,11 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
     const onSubmit = async (data: QuickPatientFormData) => {
         try {
             const patient = await createPatient({
-                ...data,
-                // Optional fields - send empty strings for backend
-                dni: '',
-                dateOfBirth: '',
-                address: '',
-                occupation: '',
-                emergencyContact: '',
-                emergencyPhone: '',
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phone: data.phone,
+                // Only include email if it's not empty
+                ...(data.email && { email: data.email }),
             });
 
             onSuccess(patient.id);

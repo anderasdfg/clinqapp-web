@@ -87,6 +87,7 @@ import appointmentsRoutes from "./routes/appointments.routes";
 import staffRoutes from "./routes/staff.routes";
 import servicesRoutes from "./routes/services.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
+import schedulesRoutes from "./routes/schedules.routes";
 
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/organization", organizationRoutes);
@@ -95,6 +96,7 @@ app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/schedules", schedulesRoutes);
 
 const server = app.listen(port, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${port}`);

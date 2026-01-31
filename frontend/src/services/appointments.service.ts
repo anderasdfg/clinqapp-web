@@ -11,6 +11,10 @@ import type {
   AppointmentsQueryParams,
   AvailabilityCheckParams,
 } from "@/types/appointment.types";
+import type {
+  AvailableSlotsParams,
+  AvailableSlotsResponse,
+} from "@/types/schedule.types";
 import { supabase } from "@/lib/supabase/client";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -104,5 +108,18 @@ export const appointmentsService = {
       { params },
     );
     return response.data.available;
+  },
+
+  /**
+   * Get available time slots for a professional on a specific date
+   */
+  async getAvailableSlots(
+    params: AvailableSlotsParams,
+  ): Promise<AvailableSlotsResponse> {
+    const response = await api.get<AvailableSlotsResponse>(
+      "/appointments/available-slots",
+      { params },
+    );
+    return response.data;
   },
 };

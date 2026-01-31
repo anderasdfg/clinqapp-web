@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { appointmentSchema, type AppointmentFormData } from '@/lib/validations/appointment.validation';
@@ -6,10 +6,11 @@ import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
 import type { Service } from '@/types/service.types';
-import { format } from 'date-fns';
-import { DateTimePicker } from '@/components/ui/DateTimePicker';
-import { Combobox } from '@/components/ui/combobox';
-import QuickPatientModal from '@/components/patients/QuickPatientModal';
+import { format, isValid as isValidDate } from 'date-fns';
+import {
+    Dialog,
+    DialogContent,
+} from '@/components/ui/dialog';
 import {
     Select,
     SelectContent,
@@ -18,10 +19,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus } from 'lucide-react';
+import { Plus, Clock, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Combobox } from '@/components/ui/combobox';
 
 import { supabase } from '@/lib/supabase/client';
+import { appointmentsService } from '@/services/appointments.service';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { TimePicker } from '@/components/ui/TimePicker';
+import { TimeSlot } from '@/types/schedule.types';
+import QuickPatientModal from '@/components/patients/QuickPatientModal';
+import { cn } from '@/lib/utils/cn';
 
 interface AppointmentModalProps {
     appointment?: Appointment;
@@ -35,27 +43,29 @@ interface ProfessionalOption {
     id: string;
     firstName: string;
     lastName: string;
-    specialty?: string;
-}
-
-interface ServiceOption {
-    id: string;
-    name: string;
-    duration: number;
-    basePrice: number;
+    specialty?: string | null;
 }
 
 const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: AppointmentModalProps) => {
-    const { createAppointment, updateAppointment, isCreating, isUpdating } = useAppointmentsStore();
+    const { 
+        createAppointment, 
+        updateAppointment, 
+        isCreating,
+        isUpdating,
+        fetchAppointments 
+    } = useAppointmentsStore();
+    
     const { patients, fetchPatients } = usePatientsStore();
-
     const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
-    const [services, setServices] = useState<ServiceOption[]>([]);
-    const [loadingPatients, setLoadingPatients] = useState(false);
+    const [services, setServices] = useState<Service[]>([]);
     const [loadingProfessionals, setLoadingProfessionals] = useState(false);
     const [loadingServices, setLoadingServices] = useState(false);
+    const [loadingPatients, setLoadingPatients] = useState(false);
+    const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
     const [duration, setDuration] = useState<number>(60); // Default 60 minutes
     const [showQuickPatientCreate, setShowQuickPatientCreate] = useState(false);
+    const [isTimeSelected, setIsTimeSelected] = useState(false);
 
     const {
         register,
@@ -64,26 +74,50 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         formState: { errors },
         reset,
         watch,
+        setValue,
     } = useForm<AppointmentFormData>({
         resolver: zodResolver(appointmentSchema),
         defaultValues: appointment
             ? {
                 patientId: appointment.patientId,
                 professionalId: appointment.professionalId,
-                serviceId: appointment.serviceId || '',
-                startTime: appointment.startTime.slice(0, 16), // Format for datetime-local
-                endTime: appointment.endTime.slice(0, 16),
+                serviceId: appointment.serviceId || undefined,
+                startTime: format(new Date(appointment.startTime), "yyyy-MM-dd'T'HH:mm"),
+                endTime: format(new Date(appointment.endTime), "yyyy-MM-dd'T'HH:mm"),
                 notes: appointment.notes || '',
             }
-            : defaultDate
-                ? {
-                    startTime: format(defaultDate, "yyyy-MM-dd'T'HH:mm"),
-                    endTime: format(new Date(defaultDate.getTime() + 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm"),
-                }
-                : undefined,
+            : {
+                patientId: '',
+                professionalId: '',
+                serviceId: '',
+                startTime: '',
+                endTime: '',
+                notes: '',
+            },
     });
 
     const selectedServiceId = watch('serviceId');
+    const selectedProfessionalId = watch('professionalId');
+    const selectedStartTime = watch('startTime');
+    const selectedEndTime = watch('endTime');
+    const selectedPatientId = watch('patientId');
+
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+        selectedStartTime ? new Date(selectedStartTime) : defaultDate || new Date()
+    );
+
+    // Form validity check for the submit button
+    const isFormValid = useMemo(() => {
+        return !!(
+            selectedPatientId &&
+            selectedProfessionalId &&
+            selectedServiceId &&
+            selectedStartTime &&
+            isTimeSelected &&
+            selectedDate &&
+            isValidDate(new Date(selectedStartTime))
+        );
+    }, [selectedPatientId, selectedProfessionalId, selectedServiceId, selectedStartTime, isTimeSelected, selectedDate]);
 
     // Lazy load patients
     const loadPatients = async (force = false) => {
@@ -98,19 +132,20 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     };
 
-    // Lazy load professionals
-    const loadProfessionals = async (force = false) => {
-        if (!force && (professionals.length > 0 || loadingProfessionals)) return;
+    const loadProfessionals = async () => {
+        if (professionals.length > 0 || loadingProfessionals) return;
         setLoadingProfessionals(true);
         try {
-            const { staffService } = await import('@/services/staff.service');
-            const staffResponse = await staffService.getStaff({ limit: 100 });
-            setProfessionals(staffResponse.data.map(staff => ({
-                id: staff.id,
-                firstName: staff.firstName,
-                lastName: staff.lastName,
-                specialty: staff.specialty || undefined,
-            })));
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/staff`, {
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setProfessionals(data.data);
+            }
         } catch (error) {
             console.error('Error loading professionals:', error);
         } finally {
@@ -118,29 +153,19 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     };
 
-    // Lazy load services
-    const loadServices = async (force = false) => {
-        if (!force && (services.length > 0 || loadingServices)) return;
+    const loadServices = async () => {
+        if (services.length > 0 || loadingServices) return;
         setLoadingServices(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
-
-            if (session?.access_token) {
-                const servicesResponse = await fetch(`${import.meta.env.VITE_API_URL}/services?limit=100`, {
-                    headers: {
-                        'Authorization': `Bearer ${session.access_token}`,
-                    },
-                });
-
-                if (servicesResponse.ok) {
-                    const servicesData = await servicesResponse.json();
-                    setServices(servicesData.data.map((service: Service) => ({
-                        id: service.id,
-                        name: service.name,
-                        duration: service.duration,
-                        basePrice: service.basePrice,
-                    })));
-                }
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/services`, {
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setServices(data.data);
             }
         } catch (error) {
             console.error('Error loading services:', error);
@@ -149,69 +174,87 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         }
     };
 
-    // Load initial data if necessary
+    // Load available slots
     useEffect(() => {
-        if (isOpen) {
-            loadPatients();
-            loadProfessionals();
+        if (selectedProfessionalId && selectedDate) {
+            const fetchSlots = async () => {
+                setLoadingSlots(true);
+                try {
+                    const response = await appointmentsService.getAvailableSlots({
+                        professionalId: selectedProfessionalId,
+                        date: format(selectedDate, 'yyyy-MM-dd'),
+                        duration: duration,
+                    });
+                    setAvailableSlots(response.data.availableSlots);
+                } catch (error) {
+                    console.error('Error fetching available slots:', error);
+                } finally {
+                    setLoadingSlots(false);
+                }
+            };
+            fetchSlots();
+        } else {
+            setAvailableSlots([]); // Clear slots if professional or date is not selected
         }
-    }, [isOpen]);
+    }, [selectedProfessionalId, selectedDate, duration]);
 
-    // Auto-set duration based on service selection
+    // Update duration if service changes
     useEffect(() => {
-        if (selectedServiceId && services.length > 0) {
+        if (selectedServiceId) {
             const service = services.find(s => s.id === selectedServiceId);
-            if (service && service.duration) {
+            if (service) {
                 setDuration(service.duration);
             }
         }
     }, [selectedServiceId, services]);
 
-    // Auto-calculate end time based on start time and duration
+    // Update endTime when startTime or duration changes
     useEffect(() => {
-        const startTime = watch('startTime');
-        if (startTime && duration) {
-            const start = new Date(startTime);
-            const end = new Date(start.getTime() + duration * 60 * 1000);
-            const endTimeValue = format(end, "yyyy-MM-dd'T'HH:mm");
-            // Update endTime field
-            reset({
-                ...watch(),
-                endTime: endTimeValue,
-            });
+        if (selectedStartTime && isValidDate(new Date(selectedStartTime))) {
+            const start = new Date(selectedStartTime);
+            const end = new Date(start.getTime() + duration * 60000);
+            setValue('endTime', format(end, "yyyy-MM-dd'T'HH:mm"));
         }
-    }, [watch('startTime'), duration]);
+    }, [selectedStartTime, duration, setValue]);
 
-
-
-    const onSubmit = async (data: AppointmentFormData) => {
-        try {
-            const appointmentData = {
-                ...data,
-                startTime: new Date(data.startTime).toISOString(),
-                endTime: new Date(data.endTime).toISOString(),
-            };
-
+    // Load initial data if necessary and reset form
+    useEffect(() => {
+        if (isOpen) {
+            loadProfessionals();
+            loadServices();
             if (appointment) {
-                await updateAppointment(appointment.id, appointmentData);
+                const start = new Date(appointment.startTime);
+                const end = new Date(appointment.endTime);
+                const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+                setDuration(diffMinutes);
+                setSelectedDate(start);
+                setIsTimeSelected(true);
+                reset({
+                    patientId: appointment.patientId,
+                    professionalId: appointment.professionalId,
+                    serviceId: appointment.serviceId || undefined,
+                    startTime: format(start, "yyyy-MM-dd'T'HH:mm"),
+                    endTime: format(end, "yyyy-MM-dd'T'HH:mm"),
+                    notes: appointment.notes || '',
+                });
             } else {
-                await createAppointment(appointmentData);
+                const initialDate = defaultDate || new Date();
+                setSelectedDate(initialDate);
+                setIsTimeSelected(false);
+                reset({
+                    patientId: '',
+                    professionalId: '',
+                    serviceId: '',
+                    startTime: '',
+                    endTime: '',
+                    notes: '',
+                });
             }
-
-            reset();
-            onClose();
-        } catch (error) {
-            console.error('Error saving appointment:', error);
         }
-    };
-
-    const handleClose = () => {
-        reset();
-        onClose();
-    };
+    }, [isOpen, appointment, reset, defaultDate]);
 
     const handlePatientCreated = async (patientId: string) => {
-        await fetchPatients({ limit: 100 });
+        await loadPatients(true); // Force reload to get the newly created patient
         reset({
             ...watch(),
             patientId: patientId,
@@ -219,44 +262,61 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
         setShowQuickPatientCreate(false);
     };
 
-    if (!isOpen) return null;
+    const onSubmit = async (data: AppointmentFormData) => {
+        if (!isFormValid) return;
+        try {
+            // Transform dates to full ISO for backend validation (Zod .datetime())
+            const payload = {
+                ...data,
+                startTime: new Date(data.startTime).toISOString(),
+                endTime: new Date(data.endTime).toISOString(),
+            };
 
-    const isSubmitting = isCreating || isUpdating;
-    
-    // Check if all required fields are filled
-    const patientId = watch('patientId');
-    const professionalId = watch('professionalId');
-    const startTime = watch('startTime');
-    const isFormValid = !!(patientId && professionalId && startTime);
+            if (appointment) {
+                await updateAppointment(appointment.id, payload as any);
+            } else {
+                await createAppointment(payload as any);
+            }
+            await fetchAppointments(); // Refresh agenda
+            onClose();
+        } catch (error) {
+            console.error('Error saving appointment:', error);
+        }
+    };
+
+    // Helper to format date safely
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return '--:--';
+        const d = new Date(dateStr);
+        if (!isValidDate(d)) return '--:--';
+        return format(d, formatStr);
+    };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div className="fixed inset-0 transition-opacity bg-black/50" onClick={handleClose}></div>
-
-                <div className="inline-block align-bottom bg-[rgb(var(--bg-card))] rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="px-6 pt-5 pb-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-semibold text-[rgb(var(--text-primary))]">
-                                    {appointment ? 'Editar Cita' : 'Nueva Cita'}
-                                </h3>
-                                <button
-                                    type="button"
-                                    onClick={handleClose}
-                                    className="text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]"
-                                >
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-border shadow-2xl">
+                    <div className="flex flex-col h-full max-h-[90vh]">
+                        {/* Header with Sidebar Gradient */}
+                        <div className="flex items-center justify-between p-4 border-b border-white/10 gradient-primary text-white">
+                            <h2 className="text-xl font-bold tracking-tight">
+                                {appointment ? 'Editar cita' : 'Nueva cita'}
+                            </h2>
+                            <button
+                                onClick={onClose}
+                                className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
 
 
-                            <div className="space-y-4">
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <form id="appointment-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                                <div className="space-y-4">
                                     {/* Patient Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
+                                        <label className="block text-sm font-medium text-foreground mb-2">
                                             Paciente <span className="text-error">*</span>
                                         </label>
                                         <div className="flex gap-2">
@@ -284,7 +344,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                                 type="button"
                                                 variant="outline"
                                                 onClick={() => setShowQuickPatientCreate(true)}
-                                                className="shrink-0"
+                                                className="shrink-0 border-dashed"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </Button>
@@ -296,7 +356,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
                                     {/* Professional Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
+                                        <label className="block text-sm font-medium text-foreground mb-2">
                                             Profesional <span className="text-error">*</span>
                                         </label>
                                         <Controller
@@ -325,8 +385,8 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
                                     {/* Service Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
-                                            Servicio
+                                        <label className="block text-sm font-medium text-foreground mb-2">
+                                            Servicio <span className="text-error">*</span>
                                         </label>
                                         <Controller
                                             name="serviceId"
@@ -355,21 +415,81 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                     </div>
 
                                     {/* Date, Time and Duration */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
-                                                Fecha y Hora de Inicio <span className="text-error">*</span>
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                        <div className="lg:col-span-12 xl:col-span-5 space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-foreground mb-2">
+                                                    Fecha de la Cita <span className="text-error">*</span>
+                                                </label>
+                                                <DatePicker
+                                                    date={selectedDate}
+                                                    onDateChange={(date) => {
+                                                        setSelectedDate(date);
+                                                        if (date && selectedStartTime && isValidDate(new Date(selectedStartTime))) {
+                                                            const currentStartTime = new Date(selectedStartTime);
+                                                            const newStartTime = new Date(date);
+                                                            newStartTime.setHours(currentStartTime.getHours(), currentStartTime.getMinutes());
+                                                            setValue('startTime', format(newStartTime, "yyyy-MM-dd'T'HH:mm"));
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-foreground mb-2">
+                                                    Duración <span className="text-error">*</span>
+                                                </label>
+                                                <Select
+                                                    value={duration.toString()}
+                                                    onValueChange={(value) => setDuration(parseInt(value))}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Seleccionar duración" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="15">15 minutos</SelectItem>
+                                                        <SelectItem value="30">30 minutos</SelectItem>
+                                                        <SelectItem value="45">45 minutos</SelectItem>
+                                                        <SelectItem value="60">1 hora</SelectItem>
+                                                        <SelectItem value="90">1 hora 30 min</SelectItem>
+                                                        <SelectItem value="120">2 horas</SelectItem>
+                                                        <SelectItem value="150">2 horas 30 min</SelectItem>
+                                                        <SelectItem value="180">3 horas</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <div className="mt-2 p-3 bg-muted/30 rounded-md border border-dashed border-border flex items-center justify-between transition-colors">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] uppercase text-muted-foreground font-bold leading-tight">Finaliza</span>
+                                                        <span className="text-sm font-semibold text-primary">
+                                                            {isTimeSelected ? safeFormat(selectedEndTime, 'h:mm a') : '--:--'}
+                                                        </span>
+                                                    </div>
+                                                    <Clock className="h-4 w-4 text-muted-foreground opacity-50" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="lg:col-span-12 xl:col-span-7">
+                                            <label className="block text-sm font-medium text-foreground mb-2">
+                                                Seleccionar Horario <span className="text-error">*</span>
                                             </label>
                                             <Controller
                                                 name="startTime"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <DateTimePicker
-                                                        date={field.value ? new Date(field.value) : undefined}
-                                                        onDateTimeChange={(date) => {
-                                                            field.onChange(date ? format(date, "yyyy-MM-dd'T'HH:mm") : '');
+                                                    <TimePicker
+                                                        value={isTimeSelected ? safeFormat(field.value, 'HH:mm') : ''}
+                                                        slots={availableSlots}
+                                                        loading={loadingSlots}
+                                                        onChange={(time) => {
+                                                            if (selectedDate) {
+                                                                const [hours, minutes] = time.split(':').map(Number);
+                                                                const newStartTime = new Date(selectedDate);
+                                                                newStartTime.setHours(hours, minutes, 0, 0);
+                                                                field.onChange(format(newStartTime, "yyyy-MM-dd'T'HH:mm"));
+                                                                setIsTimeSelected(true);
+                                                            }
                                                         }}
-                                                        placeholder="Seleccionar fecha y hora de inicio"
                                                     />
                                                 )}
                                             />
@@ -377,84 +497,65 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                                 <p className="mt-1 text-sm text-error">{errors.startTime.message}</p>
                                             )}
                                         </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
-                                                Duración <span className="text-error">*</span>
-                                            </label>
-                                            <Select
-                                                value={duration.toString()}
-                                                onValueChange={(value) => setDuration(parseInt(value))}
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Seleccionar duración" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="15">15 minutos</SelectItem>
-                                                    <SelectItem value="30">30 minutos</SelectItem>
-                                                    <SelectItem value="45">45 minutos</SelectItem>
-                                                    <SelectItem value="60">1 hora</SelectItem>
-                                                    <SelectItem value="90">1 hora 30 min</SelectItem>
-                                                    <SelectItem value="120">2 horas</SelectItem>
-                                                    <SelectItem value="150">2 horas 30 min</SelectItem>
-                                                    <SelectItem value="180">3 horas</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <p className="mt-1 text-xs text-[rgb(var(--text-tertiary))]">
-                                                Hora de fin: {watch('endTime') ? format(new Date(watch('endTime')), 'HH:mm') : '--:--'}
-                                            </p>
-                                        </div>
                                     </div>
 
                                     {/* Notes */}
                                     <div>
-                                        <label className="block text-sm font-medium text-[rgb(var(--text-primary))] mb-2">
+                                        <label className="block text-sm font-medium text-foreground mb-2">
                                             Notas
                                         </label>
                                         <Textarea
                                             {...register('notes')}
-                                            rows={3}
+                                            rows={2}
                                             placeholder="Notas adicionales..."
+                                            className="bg-background border-border text-foreground resize-none"
                                         />
                                     </div>
                                 </div>
-                            
+                            </form>
                         </div>
 
-                        <div className="px-6 py-3 bg-[rgb(var(--bg-secondary))] sm:px-6 sm:flex sm:flex-row-reverse gap-3">
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || !isFormValid}
-                                style={{
-                                    background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
-                                }}
-                                className="w-full inline-flex justify-center items-center gap-2 rounded-lg shadow-sm px-4 py-2 text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm font-medium transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting && (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                )}
-                                {appointment ? 'Actualizar' : 'Crear'} Cita
-                            </button>
-                            <button
+                        {/* Footer with Sidebar Gradient */}
+                        <div className="p-4 border-t border-white/10 gradient-primary flex justify-end gap-3 rounded-b-lg">
+                            <Button
                                 type="button"
-                                onClick={handleClose}
-                                disabled={isSubmitting}
-                                className="mt-3 w-full inline-flex justify-center rounded-lg border border-[rgb(var(--border-primary))] shadow-sm px-4 py-2 bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--bg-secondary))] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:w-auto sm:text-sm font-medium transition-colors duration-200"
+                                variant="ghost"
+                                onClick={onClose}
+                                className="text-white hover:bg-white/10 transition-colors"
                             >
                                 Cancelar
-                            </button>
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="appointment-form"
+                                disabled={isCreating || isUpdating || !isFormValid}
+                                className={cn(
+                                    "transition-all duration-300 shadow-lg px-8 font-bold",
+                                    isFormValid 
+                                        ? "bg-white text-primary hover:bg-white/90" 
+                                        : "bg-white/20 text-white/50 cursor-not-allowed"
+                                )}
+                            >
+                                {isCreating || isUpdating ? (
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 animate-spin" />
+                                        <span>Guardando...</span>
+                                    </div>
+                                ) : (
+                                    appointment ? 'Actualizar cita' : 'Crear cita'
+                                )}
+                            </Button>
                         </div>
-                    </form>
-                </div>
-            </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-            {/* Quick Patient Create Modal */}
             <QuickPatientModal
                 isOpen={showQuickPatientCreate}
                 onClose={() => setShowQuickPatientCreate(false)}
                 onSuccess={handlePatientCreated}
             />
-        </div>
+        </>
     );
 };
 

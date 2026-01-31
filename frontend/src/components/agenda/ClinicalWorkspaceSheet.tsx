@@ -9,21 +9,20 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase/client';
 
-import PaymentModal from './PaymentModal';
 import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
 
 interface ClinicalWorkspaceSheetProps {
   appointment: Appointment | null;
   isOpen: boolean;
   onClose: () => void;
+  onShowPayment?: (appointment: Appointment) => void;
 }
 
-const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorkspaceSheetProps) => { /* Refactored ClinicalWorkspaceSheet */
+const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }: ClinicalWorkspaceSheetProps) => { /* Refactored ClinicalWorkspaceSheet */
   const { updateAppointment, fetchAppointmentById, isUpdating, appointments } = useAppointmentsStore();
   const [currentImages, setCurrentImages] = useState<string[]>([]);
   const [clinicalNotes, setClinicalNotes] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [activeTab, setActiveTab] = useState('attention');
   
   // Fetch full appointment details on mount/open to get medicalHistory
@@ -104,8 +103,10 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
              const isPaid = currentAppointmentRaw.payment?.status === PAYMENT_STATUS.COMPLETED;
              if (isPaid) {
                 onClose();
+             } else if (onShowPayment) {
+                onShowPayment(currentAppointmentRaw);
              } else {
-                setShowPaymentModal(true);
+                onClose();
              }
           } else {
              onClose();
@@ -312,23 +313,6 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
 
         </Dialog.Content>
       </Dialog.Portal>
-      
-      {/* Integrated Payment Modal */}
-      {appointment && (
-        <PaymentModal 
-            appointment={currentAppointmentRaw}
-            isOpen={showPaymentModal}
-            onClose={() => {
-                setShowPaymentModal(false);
-                onClose(); // Close sheet after payment interaction finishes/closes
-            }}
-            onPaymentRegistered={() => {
-                 fetchAppointmentById(appointment.id);
-                 setShowPaymentModal(false);
-                 onClose();
-            }}
-        />
-      )}
     </Dialog.Root>
   );
 };
