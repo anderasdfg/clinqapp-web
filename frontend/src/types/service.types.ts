@@ -2,6 +2,14 @@
 
 export type ServiceCategory = "DIAGNOSTIC" | "TREATMENT" | "FOLLOWUP" | "OTHER";
 
+// Constant values to avoid magic strings
+export const SERVICE_CATEGORY = {
+  DIAGNOSTIC: "DIAGNOSTIC",
+  TREATMENT: "TREATMENT",
+  FOLLOWUP: "FOLLOWUP",
+  OTHER: "OTHER",
+} as const satisfies Record<ServiceCategory, ServiceCategory>;
+
 export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   DIAGNOSTIC: "Diagnóstico",
   TREATMENT: "Tratamiento",

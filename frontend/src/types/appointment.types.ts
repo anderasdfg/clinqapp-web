@@ -21,6 +21,32 @@ export type PaymentMethod =
 // Payment Status Type
 export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 
+// Constant values to avoid magic strings
+export const APPOINTMENT_STATUS = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  NO_SHOW: "NO_SHOW",
+  RESCHEDULED: "RESCHEDULED",
+} as const satisfies Record<AppointmentStatus, AppointmentStatus>;
+
+export const PAYMENT_METHOD = {
+  CASH: "CASH",
+  CARD: "CARD",
+  BANK_TRANSFER: "BANK_TRANSFER",
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  OTHER: "OTHER",
+} as const satisfies Record<PaymentMethod, PaymentMethod>;
+
+export const PAYMENT_STATUS = {
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+  REFUNDED: "REFUNDED",
+} as const satisfies Record<PaymentStatus, PaymentStatus>;
+
 // Status labels in Spanish
 export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   PENDING: "Pendiente",

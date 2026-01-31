@@ -5,6 +5,13 @@
 
 export type StaffRole = "PROFESSIONAL" | "OWNER" | "RECEPTIONIST";
 
+// Constant values to avoid magic strings
+export const STAFF_ROLE = {
+  PROFESSIONAL: "PROFESSIONAL",
+  OWNER: "OWNER",
+  RECEPTIONIST: "RECEPTIONIST",
+} as const satisfies Record<StaffRole, StaffRole>;
+
 /**
  * DTO for creating a new staff member
  * Matches backend createStaffSchema

@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { X, Phone, Trash2, Camera, AlertTriangle } from 'lucide-react';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
-import { Appointment, AppointmentStatus, APPOINTMENT_STATUS_LABELS, PaymentStatus } from '@/types/appointment.types';
+import { Appointment, AppointmentStatus, APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS, PAYMENT_STATUS } from '@/types/appointment.types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/textarea';
@@ -100,8 +100,8 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
               ...(status && { status })
           });
           
-          if (status === AppointmentStatus.COMPLETED) {
-             const isPaid = currentAppointmentRaw.payment?.status === PaymentStatus.COMPLETED;
+          if (status === APPOINTMENT_STATUS.COMPLETED) {
+             const isPaid = currentAppointmentRaw.payment?.status === PAYMENT_STATUS.COMPLETED;
              if (isPaid) {
                 onClose();
              } else {
@@ -302,9 +302,9 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose }: ClinicalWorksp
              <Button 
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 disabled={isUpdating}
-                onClick={() => handleSave(AppointmentStatus.COMPLETED)}
+                onClick={() => handleSave(APPOINTMENT_STATUS.COMPLETED)}
              >
-                 {currentAppointmentRaw.payment?.status === PaymentStatus.COMPLETED 
+                 {currentAppointmentRaw.payment?.status === PAYMENT_STATUS.COMPLETED 
                     ? 'Finalizar Atención' 
                     : 'Finalizar y Cobrar'}
              </Button>

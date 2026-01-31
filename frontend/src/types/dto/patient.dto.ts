@@ -14,6 +14,13 @@ export type ReferralSource =
 
 export type Gender = "MALE" | "FEMALE" | "OTHER";
 
+// Constant values to avoid magic strings
+export const GENDER = {
+  MALE: "MALE",
+  FEMALE: "FEMALE",
+  OTHER: "OTHER",
+} as const satisfies Record<Gender, Gender>;
+
 /**
  * DTO for creating a new patient
  * Matches backend createPatientSchema

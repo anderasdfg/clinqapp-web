@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useStaffStore } from '@/stores/useStaffStore';
-import { UserRole, USER_ROLE_LABELS } from '@/types/staff.types';
+import { USER_ROLE_LABELS } from '@/types/staff.types';
+import { STAFF_ROLE } from '@/types/dto/staff.dto';
 
 const staffSchema = z.object({
     firstName: z.string().min(1, 'Nombre es requerido'),
@@ -13,7 +14,7 @@ const staffSchema = z.object({
     phone: z.string().optional(),
     specialty: z.string().optional(),
     licenseNumber: z.string().optional(),
-    role: z.nativeEnum(UserRole),
+    role: z.enum([STAFF_ROLE.PROFESSIONAL, STAFF_ROLE.OWNER, STAFF_ROLE.RECEPTIONIST]),
 });
 
 type StaffFormData = z.infer<typeof staffSchema>;
@@ -47,7 +48,7 @@ const EditStaffPage = () => {
                 phone: selectedStaff.phone || '',
                 specialty: selectedStaff.specialty || '',
                 licenseNumber: selectedStaff.licenseNumber || '',
-                role: selectedStaff.role,
+                role: selectedStaff.role as "PROFESSIONAL" | "OWNER" | "RECEPTIONIST",
             });
         }
     }, [selectedStaff, reset]);

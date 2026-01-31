@@ -52,9 +52,42 @@ export interface Patient {
   assignedProfessional?: User;
   assignedProfessionalId?: string;
   appointments?: Appointment[];
-  medicalHistory?: Record<string, unknown>; // Structured podiatry JSON
+  medicalHistory?: MedicalHistory; // Structured podiatry JSON
   createdAt: string;
   updatedAt: string;
+}
+
+// Medical History structure for podiatry
+export interface MedicalHistory {
+  systemic?: {
+    diabetes?: {
+      has: boolean;
+      type?: string;
+      controlled?: boolean;
+    };
+    hypertension?: {
+      has: boolean;
+      controlled?: boolean;
+    };
+    [key: string]: unknown;
+  };
+  allergies?: {
+    medication?: string;
+    latex?: boolean;
+    [key: string]: unknown;
+  };
+  podiatricExam?: {
+    biomechanical?: {
+      footType?: string;
+      [key: string]: unknown;
+    };
+    nails?: {
+      onychopathy?: unknown[];
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
 }
 
 // Re-export DTOs from dto folder for convenience

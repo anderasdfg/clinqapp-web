@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GENDER } from "@/types/dto/patient.dto";
 
 // Regex for names: only letters (including ñ, Ñ), spaces, and accented characters
 const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
@@ -14,7 +15,7 @@ export const patientSchema = z.object({
     .max(50, "El nombre no puede exceder 50 caracteres")
     .regex(
       nameRegex,
-      "El nombre solo puede contener letras, espacios y tildes"
+      "El nombre solo puede contener letras, espacios y tildes",
     ),
 
   lastName: z
@@ -24,7 +25,7 @@ export const patientSchema = z.object({
     .max(50, "El apellido no puede exceder 50 caracteres")
     .regex(
       nameRegex,
-      "El apellido solo puede contener letras, espacios y tildes"
+      "El apellido solo puede contener letras, espacios y tildes",
     ),
 
   dni: z
@@ -38,7 +39,7 @@ export const patientSchema = z.object({
       },
       {
         message: "Ingrese un DNI válido (8 dígitos) o CE válido (10 dígitos)",
-      }
+      },
     ),
 
   phone: z
@@ -46,7 +47,7 @@ export const patientSchema = z.object({
     .min(1, "El teléfono es requerido")
     .regex(
       phoneRegex,
-      "Ingrese un número de celular peruano válido (9 dígitos, comenzando con 9)"
+      "Ingrese un número de celular peruano válido (9 dígitos, comenzando con 9)",
     ),
 
   email: z
@@ -55,7 +56,7 @@ export const patientSchema = z.object({
 
   dateOfBirth: z.string().optional(),
 
-  gender: z.string().optional(),
+  gender: z.enum([GENDER.MALE, GENDER.FEMALE, GENDER.OTHER]).optional(),
 
   address: z
     .string()
@@ -67,7 +68,7 @@ export const patientSchema = z.object({
       },
       {
         message: "La dirección debe tener al menos 5 caracteres",
-      }
+      },
     ),
 
   occupation: z
@@ -80,7 +81,7 @@ export const patientSchema = z.object({
       },
       {
         message: "La ocupación solo puede contener letras, espacios y tildes",
-      }
+      },
     ),
 
   emergencyContact: z
@@ -94,7 +95,7 @@ export const patientSchema = z.object({
       {
         message:
           "El nombre del contacto solo puede contener letras, espacios y tildes",
-      }
+      },
     ),
 
   emergencyPhone: z
@@ -108,7 +109,7 @@ export const patientSchema = z.object({
       {
         message:
           "Ingrese un número de celular peruano válido (9 dígitos, comenzando con 9)",
-      }
+      },
     ),
 
   referralSource: z

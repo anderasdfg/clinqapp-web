@@ -5,7 +5,6 @@ import { appointmentSchema, type AppointmentFormData } from '@/lib/validations/a
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
-import type { StaffMember } from '@/types/staff.types';
 import type { Service } from '@/types/service.types';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';

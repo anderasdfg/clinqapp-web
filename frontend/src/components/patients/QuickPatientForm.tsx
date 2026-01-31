@@ -42,7 +42,6 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
                 // Optional fields - send empty strings for backend
                 dni: '',
                 dateOfBirth: '',
-                gender: '',
                 address: '',
                 occupation: '',
                 emergencyContact: '',

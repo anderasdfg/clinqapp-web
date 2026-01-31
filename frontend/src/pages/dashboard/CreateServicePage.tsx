@@ -3,12 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useServicesStore } from '@/stores/useServicesStore';
-import { ServiceCategory, SERVICE_CATEGORY_LABELS } from '@/types/service.types';
+import { SERVICE_CATEGORY_LABELS, SERVICE_CATEGORY } from '@/types/service.types';
 
 const serviceSchema = z.object({
     name: z.string().min(1, 'Nombre es requerido'),
     description: z.string().optional(),
-    category: z.nativeEnum(ServiceCategory),
+    category: z.enum([SERVICE_CATEGORY.DIAGNOSTIC, SERVICE_CATEGORY.TREATMENT, SERVICE_CATEGORY.FOLLOWUP, SERVICE_CATEGORY.OTHER]),
     basePrice: z.number().positive('Precio debe ser mayor a 0'),
     duration: z.number().int().positive('Duración debe ser mayor a 0'),
     isActive: z.boolean(),
@@ -27,7 +27,7 @@ const CreateServicePage = () => {
     } = useForm<ServiceFormData>({
         resolver: zodResolver(serviceSchema),
         defaultValues: {
-            category: ServiceCategory.OTHER,
+            category: SERVICE_CATEGORY.OTHER,
             isActive: true,
             duration: 30,
         },

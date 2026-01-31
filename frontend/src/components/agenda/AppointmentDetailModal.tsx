@@ -1,5 +1,5 @@
 import type { Appointment, AppointmentStatus } from '@/types/appointment.types';
-import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS, AppointmentStatus as Status, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types/appointment.types';
+import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS, APPOINTMENT_STATUS, PAYMENT_STATUS } from '@/types/appointment.types';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { formatAppointmentDate, formatTimeRange } from '@/lib/utils/calendar.utils';
 import { useState } from 'react';
@@ -31,7 +31,7 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
     const handleCancel = async () => {
         try {
             await updateAppointmentStatus(appointment!.id, {
-                status: Status.CANCELLED,
+                status: APPOINTMENT_STATUS.CANCELLED,
                 cancellationReason,
             });
             setShowCancelConfirm(false);
@@ -152,14 +152,14 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                                 <span className="text-[rgb(var(--text-primary))] font-medium">
                                                     {PAYMENT_STATUS_LABELS[currentAppointment.payment.status]}
                                                 </span>
-                                                <span className={`px-2 py-1 rounded text-xs font-medium ${currentAppointment.payment.status === 'COMPLETED'
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${currentAppointment.payment.status === PAYMENT_STATUS.COMPLETED
                                                     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                                                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
                                                     }`}>
-                                                    {currentAppointment.payment.status === 'COMPLETED' ? 'Pagado' : 'Pendiente'}
+                                                    {currentAppointment.payment.status === PAYMENT_STATUS.COMPLETED ? 'Pagado' : 'Pendiente'}
                                                 </span>
                                             </div>
-                                            {currentAppointment.payment.status === 'COMPLETED' && (
+                                            {currentAppointment.payment.status === PAYMENT_STATUS.COMPLETED && (
                                                 <>
                                                     <div className="flex items-center justify-between text-sm">
                                                         <span className="text-[rgb(var(--text-secondary))]">Método:</span>
@@ -189,7 +189,7 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                             <p className="text-[rgb(var(--text-secondary))] mt-1 mb-3">
                                                 Sin pago registrado
                                             </p>
-                                            {currentAppointment.status !== 'CANCELLED' && (
+                                            {currentAppointment.status !== APPOINTMENT_STATUS.CANCELLED && (
                                                 <button
                                                     onClick={() => setShowPaymentModal(true)}
                                                     className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
@@ -222,22 +222,22 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                 )}
 
                                 {/* Action Buttons - Simplified based on status */}
-                                {currentAppointment.status !== 'CANCELLED' && currentAppointment.status !== 'COMPLETED' && (
+                                {currentAppointment.status !== APPOINTMENT_STATUS.CANCELLED && currentAppointment.status !== APPOINTMENT_STATUS.COMPLETED && (
                                     <div className="flex flex-col gap-3 pt-4 border-t border-[rgb(var(--border-primary))]">
                                         {/* Primary Actions */}
                                         <div className="flex gap-2">
-                                            {currentAppointment.status === 'PENDING' && (
+                                            {currentAppointment.status === APPOINTMENT_STATUS.PENDING && (
                                                 <button
-                                                    onClick={() => handleStatusUpdate(Status.CONFIRMED)}
+                                                    onClick={() => handleStatusUpdate(APPOINTMENT_STATUS.CONFIRMED)}
                                                     disabled={isUpdating}
                                                     className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50"
                                                 >
                                                     Confirmar Cita
                                                 </button>
                                             )}
-                                            {currentAppointment.status === 'CONFIRMED' && (
+                                            {currentAppointment.status === APPOINTMENT_STATUS.CONFIRMED && (
                                                 <button
-                                                    onClick={() => handleStatusUpdate(Status.COMPLETED)}
+                                                    onClick={() => handleStatusUpdate(APPOINTMENT_STATUS.COMPLETED)}
                                                     disabled={isUpdating}
                                                     className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium disabled:opacity-50"
                                                 >
@@ -292,7 +292,7 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                     <div className="px-6 py-3 bg-[rgb(var(--bg-secondary))] sm:px-6 sm:flex sm:flex-row-reverse gap-3">
                         {!showCancelConfirm ? (
                             <>
-                                {onEdit && currentAppointment.status !== 'COMPLETED' && currentAppointment.status !== 'CANCELLED' && (
+                                {onEdit && currentAppointment.status !== APPOINTMENT_STATUS.COMPLETED && currentAppointment.status !== APPOINTMENT_STATUS.CANCELLED && (
                                     <button
                                         onClick={onEdit}
                                         style={{

@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
-import { UserRole, USER_ROLE_LABELS } from '@/types/staff.types';
+import { USER_ROLE_LABELS } from '@/types/staff.types';
+import { STAFF_ROLE } from '@/types/dto/staff.dto';
 import { supabase } from '@/lib/supabase/client';
 
 const staffSchema = z.object({
@@ -13,7 +14,7 @@ const staffSchema = z.object({
     phone: z.string().optional(),
     specialty: z.string().optional(),
     licenseNumber: z.string().optional(),
-    role: z.nativeEnum(UserRole),
+    role: z.enum([STAFF_ROLE.PROFESSIONAL, STAFF_ROLE.OWNER, STAFF_ROLE.RECEPTIONIST]),
     password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
 });
 
@@ -31,7 +32,7 @@ const CreateStaffPage = () => {
     } = useForm<StaffFormData>({
         resolver: zodResolver(staffSchema),
         defaultValues: {
-            role: UserRole.PROFESSIONAL,
+            role: STAFF_ROLE.PROFESSIONAL,
         },
     });
 

@@ -6,6 +6,7 @@ import { patientSchema, type PatientFormData } from '@/lib/validations/patient.v
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import { staffService } from '@/services/staff.service';
 import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
+import { GENDER } from '@/types/dto/patient.dto';
 import type { Patient } from '@/types/patient.types';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Input } from '@/components/ui/Input';
@@ -52,7 +53,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                 phone: patient.phone,
                 email: patient.email || '',
                 dateOfBirth: patient.dateOfBirth ? patient.dateOfBirth.split('T')[0] : '',
-                gender: patient.gender || '',
+                gender: (patient.gender as "MALE" | "FEMALE" | "OTHER") || undefined,
                 address: patient.address || '',
                 occupation: patient.occupation || '',
                 emergencyContact: patient.emergencyContact || '',
@@ -206,9 +207,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                             <SelectValue placeholder="Seleccionar..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Masculino">Masculino</SelectItem>
-                                            <SelectItem value="Femenino">Femenino</SelectItem>
-                                            <SelectItem value="Otro">Otro</SelectItem>
+                                            <SelectItem value={GENDER.MALE}>Masculino</SelectItem>
+                                            <SelectItem value={GENDER.FEMALE}>Femenino</SelectItem>
+                                            <SelectItem value={GENDER.OTHER}>Otro</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 )}

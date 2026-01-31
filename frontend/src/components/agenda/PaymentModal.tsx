@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '@/lib/supabase/client';
-import { PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types/appointment.types';
+import { PaymentMethod, PAYMENT_METHOD_LABELS, PAYMENT_METHOD, APPOINTMENT_STATUS } from '@/types/appointment.types';
 import type { Appointment } from '@/types/appointment.types';
 
 interface PaymentModalProps {
@@ -29,7 +29,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
     } = useForm<PaymentFormData>({
         defaultValues: {
             amount: appointment.service?.basePrice ? Number(appointment.service.basePrice) : 0,
-            method: PaymentMethod.CASH,
+            method: PAYMENT_METHOD.CASH,
         },
     });
 
@@ -63,7 +63,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
             }
 
             // Auto-confirm appointment if it's in PENDING status
-            if (appointment.status === 'PENDING') {
+            if (appointment.status === APPOINTMENT_STATUS.PENDING) {
                 const confirmResponse = await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment.id}/status`, {
                     method: 'PATCH',
                     headers: {
@@ -71,7 +71,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                         'Authorization': `Bearer ${session.access_token}`,
                     },
                     body: JSON.stringify({
-                        status: 'CONFIRMED',
+                        status: APPOINTMENT_STATUS.CONFIRMED,
                     }),
                 });
 
