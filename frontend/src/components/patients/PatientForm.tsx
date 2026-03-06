@@ -148,7 +148,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="dni">
-                                DNI <span className="text-error">*</span>
+                                DNI
                             </Label>
                             <Input
                                 id="dni"
@@ -429,7 +429,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/dashboard/patients')}
+                    onClick={() => navigate('/app/dashboard/patients')}
                     disabled={isSubmitting}
                 >
                     Cancelar

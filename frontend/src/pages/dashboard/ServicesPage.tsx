@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useServicesStore } from '@/stores/useServicesStore';
 import { SERVICE_CATEGORY_LABELS } from '@/types/service.types';
+import ServiceFormDrawer from '@/components/services/ServiceFormDrawer';
 
 const ServicesPage = () => {
     const {
@@ -13,6 +14,7 @@ const ServicesPage = () => {
     } = useServicesStore();
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchServices({ page: 1, limit: 50 });
@@ -192,7 +194,10 @@ const ServicesPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-[rgb(var(--text-primary))]">
-                                                {formatPrice(service.basePrice, service.currency)}
+                                                {service.basePrice 
+                                                    ? formatPrice(service.basePrice, service.currency)
+                                                    : <span className="text-[rgb(var(--text-tertiary))] italic">Sin precio definido</span>
+                                                }
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -208,15 +213,15 @@ const ServicesPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    to={`/app/dashboard/services/${service.id}/edit`}
+                                                <button
+                                                    onClick={() => setEditingServiceId(service.id)}
                                                     className="text-primary hover:text-primary-hover"
                                                     title="Editar"
                                                 >
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                     </svg>
-                                                </Link>
+                                                </button>
                                                 <button
                                                     onClick={() => handleDelete(service.id, service.name)}
                                                     className="text-error hover:text-red-700"
@@ -260,6 +265,14 @@ const ServicesPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Edit Drawer */}
+            <ServiceFormDrawer
+                isOpen={editingServiceId !== null}
+                onClose={() => setEditingServiceId(null)}
+                serviceId={editingServiceId || undefined}
+                onSuccess={() => fetchServices({ page: pagination.page, limit: pagination.limit }, true)}
+            />
         </div>
     );
 };

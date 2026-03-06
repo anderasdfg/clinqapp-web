@@ -2,12 +2,16 @@ import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { z } from "zod";
+import { generateTemporaryDni } from "../utils/dni";
 
 // Validation schemas
 const createPatientSchema = z.object({
   firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   lastName: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
-  dni: z.string().optional(),
+  dni: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : val),
+    z.string().optional()
+  ),
   phone: z.string().min(9, "El teléfono debe tener al menos 9 dígitos"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   dateOfBirth: z.string().optional(),
@@ -267,11 +271,16 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
 
     const data = validation.data;
 
-    // Check if DNI already exists (if provided)
-    if (data.dni) {
+    // Generate temporary DNI if not provided
+    let finalDni = data.dni;
+    if (!finalDni) {
+      finalDni = await generateTemporaryDni();
+      console.log(`📝 Generated temporary DNI: ${finalDni}`);
+    } else {
+      // Check if DNI already exists (if provided)
       const existingPatient = await prisma.patient.findFirst({
         where: {
-          dni: data.dni,
+          dni: finalDni,
           deletedAt: null,
         },
       });
@@ -287,6 +296,7 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
     const patient = await prisma.patient.create({
       data: {
         ...data,
+        dni: finalDni,
         organizationId: dbUser.organizationId,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         email: data.email || null,

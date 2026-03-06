@@ -30,9 +30,10 @@ export const patientSchema = z.object({
 
   dni: z
     .string()
-    .min(1, "El DNI o CE es requerido")
+    .optional()
     .refine(
       (val) => {
+        if (!val || val === "") return true;
         return /^\d{8}$/.test(val) || /^\d{10}$/.test(val);
       },
       {
@@ -46,6 +47,31 @@ export const patientSchema = z.object({
     .regex(
       phoneRegex,
       "Ingrese un número de celular peruano válido (9 dígitos, comenzando con 9)",
+    )
+    .refine(
+      (val) => {
+        // Rechazar números con todos los dígitos iguales (ej: 999999999)
+        if (/^(\d)\1{8}$/.test(val)) return false;
+        
+        // Rechazar secuencias ascendentes (ej: 987654321)
+        const isDescending = val.split('').every((digit, i) => {
+          if (i === 0) return true;
+          return parseInt(digit) === parseInt(val[i - 1]) - 1;
+        });
+        if (isDescending) return false;
+        
+        // Rechazar secuencias ascendentes (ej: 912345678)
+        const isAscending = val.split('').every((digit, i) => {
+          if (i === 0) return true;
+          return parseInt(digit) === parseInt(val[i - 1]) + 1;
+        });
+        if (isAscending) return false;
+        
+        return true;
+      },
+      {
+        message: "Debe ser un número de teléfono válido",
+      },
     ),
 
   email: z
@@ -107,6 +133,33 @@ export const patientSchema = z.object({
       {
         message:
           "Ingrese un número de celular peruano válido (9 dígitos, comenzando con 9)",
+      },
+    )
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        
+        // Rechazar números con todos los dígitos iguales
+        if (/^(\d)\1{8}$/.test(val)) return false;
+        
+        // Rechazar secuencias descendentes
+        const isDescending = val.split('').every((digit, i) => {
+          if (i === 0) return true;
+          return parseInt(digit) === parseInt(val[i - 1]) - 1;
+        });
+        if (isDescending) return false;
+        
+        // Rechazar secuencias ascendentes
+        const isAscending = val.split('').every((digit, i) => {
+          if (i === 0) return true;
+          return parseInt(digit) === parseInt(val[i - 1]) + 1;
+        });
+        if (isAscending) return false;
+        
+        return true;
+      },
+      {
+        message: "Debe ser un número de teléfono válido",
       },
     ),
 

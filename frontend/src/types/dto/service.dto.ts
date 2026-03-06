@@ -13,7 +13,7 @@ export interface CreateServiceDTO {
   name: string;
   description?: string;
   duration: number; // Duration in minutes, must be positive integer
-  basePrice: number; // Must be positive
+  basePrice?: number; // Optional, must be positive if provided
   category?: ServiceCategory;
   isActive?: boolean; // Defaults to true
 }

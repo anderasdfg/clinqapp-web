@@ -109,12 +109,15 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     try {
       await servicesService.createService(data);
       set({ isCreating: false });
-      // Refresh services list
+      // Refresh services list with force refresh
       const state = useServicesStore.getState();
-      await state.fetchServices({
-        page: state.pagination.page,
-        limit: state.pagination.limit,
-      });
+      await state.fetchServices(
+        {
+          page: state.pagination.page,
+          limit: state.pagination.limit,
+        },
+        true, // Force refresh
+      );
     } catch (error) {
       set({
         error:
@@ -130,12 +133,15 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     try {
       await servicesService.updateService(id, data);
       set({ isUpdating: false });
-      // Refresh services list
+      // Refresh services list with force refresh
       const state = useServicesStore.getState();
-      await state.fetchServices({
-        page: state.pagination.page,
-        limit: state.pagination.limit,
-      });
+      await state.fetchServices(
+        {
+          page: state.pagination.page,
+          limit: state.pagination.limit,
+        },
+        true, // Force refresh
+      );
     } catch (error) {
       set({
         error:
@@ -153,12 +159,15 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     try {
       await servicesService.deleteService(id);
       set({ isDeleting: false });
-      // Refresh services list
+      // Refresh services list with force refresh
       const state = useServicesStore.getState();
-      await state.fetchServices({
-        page: state.pagination.page,
-        limit: state.pagination.limit,
-      });
+      await state.fetchServices(
+        {
+          page: state.pagination.page,
+          limit: state.pagination.limit,
+        },
+        true, // Force refresh
+      );
     } catch (error) {
       set({
         error:

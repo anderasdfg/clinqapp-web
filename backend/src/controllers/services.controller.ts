@@ -8,7 +8,7 @@ const createServiceSchema = z.object({
   name: z.string().min(1, "Nombre es requerido"),
   description: z.string().optional(),
   duration: z.number().int().positive("Duración debe ser mayor a 0"),
-  basePrice: z.number().positive("Precio debe ser mayor a 0"),
+  basePrice: z.number().positive("Precio debe ser mayor a 0").optional(),
   category: z.enum(["DIAGNOSTIC", "TREATMENT", "FOLLOWUP", "OTHER"]).optional(),
   isActive: z.boolean().default(true),
 });
@@ -162,16 +162,23 @@ export const createService = async (req: AuthRequest, res: Response) => {
     const data = validation.data;
 
     // Create service
-    const service = await prisma.service.create({
-      data: {
-        organizationId: dbUser.organizationId,
-        name: data.name,
-        description: data.description,
-        duration: data.duration,
-        basePrice: data.basePrice,
-        category: data.category,
-        isActive: data.isActive,
+    const serviceData: any = {
+      organization: {
+        connect: { id: dbUser.organizationId },
       },
+      name: data.name,
+      description: data.description,
+      duration: data.duration,
+      category: data.category,
+      isActive: data.isActive,
+    };
+
+    if (data.basePrice !== undefined) {
+      serviceData.basePrice = data.basePrice;
+    }
+
+    const service = await prisma.service.create({
+      data: serviceData,
     });
 
     // Invalidate cache
@@ -230,7 +237,7 @@ export const updateService = async (req: AuthRequest, res: Response) => {
         name: data.name,
         description: data.description,
         duration: data.duration,
-        basePrice: data.basePrice,
+        ...(data.basePrice !== undefined && { basePrice: data.basePrice }),
         category: data.category,
         isActive: data.isActive,
       },

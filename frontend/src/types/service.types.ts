@@ -22,7 +22,7 @@ export interface Service {
   name: string;
   description?: string | null;
   category: ServiceCategory;
-  basePrice: number;
+  basePrice?: number | null;
   currency: string;
   duration: number; // in minutes
   requiresSessions: boolean;
