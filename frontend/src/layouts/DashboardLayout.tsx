@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
+import DashboardFooter from '@/components/dashboard/DashboardFooter';
 import { cn } from '@/lib/utils/cn';
 
 const DashboardLayout = () => {
@@ -41,7 +42,7 @@ const DashboardLayout = () => {
             {/* Main Content Area */}
             <div
                 className={cn(
-                    'transition-all duration-300 ease-in-out',
+                    'transition-all duration-300 ease-in-out min-h-screen flex flex-col',
                     'lg:ml-64',
                     isSidebarCollapsed && 'lg:ml-20'
                 )}
@@ -50,9 +51,12 @@ const DashboardLayout = () => {
                 <Navbar onToggleSidebar={handleToggleSidebar} />
 
                 {/* Page Content */}
-                <main className="p-4 sm:p-6 lg:p-8">
+                <main className="flex-1 p-4 sm:p-6 lg:p-8">
                     <Outlet />
                 </main>
+
+                {/* Footer */}
+                <DashboardFooter />
             </div>
         </div>
     );

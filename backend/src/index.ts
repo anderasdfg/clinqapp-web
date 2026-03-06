@@ -76,6 +76,17 @@ app.use(
 
 app.use(express.json());
 
+// Cache control middleware - prevent caching of API responses
+app.use((req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  next();
+});
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
