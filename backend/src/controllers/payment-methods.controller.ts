@@ -141,7 +141,7 @@ export const updatePaymentMethod = async (req: AuthRequest, res: Response) => {
     // Verify payment method exists and belongs to organization
     const existing = await prisma.paymentMethodConfig.findFirst({
       where: {
-        id,
+        id: id as string,
         organizationId,
       },
     });
@@ -151,7 +151,7 @@ export const updatePaymentMethod = async (req: AuthRequest, res: Response) => {
     }
 
     const paymentMethod = await prisma.paymentMethodConfig.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         ...(validatedData.type !== undefined && { type: validatedData.type }),
         ...(validatedData.isActive !== undefined && {
@@ -188,7 +188,7 @@ export const deletePaymentMethod = async (req: AuthRequest, res: Response) => {
     // Verify payment method exists and belongs to organization
     const existing = await prisma.paymentMethodConfig.findFirst({
       where: {
-        id,
+        id: id as string,
         organizationId,
       },
     });
@@ -198,7 +198,7 @@ export const deletePaymentMethod = async (req: AuthRequest, res: Response) => {
     }
 
     await prisma.paymentMethodConfig.delete({
-      where: { id },
+      where: { id: id as string },
     });
 
     res.json({ message: "Método de pago eliminado correctamente" });
