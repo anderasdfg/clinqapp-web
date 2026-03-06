@@ -30,11 +30,9 @@ export const patientSchema = z.object({
 
   dni: z
     .string()
-    .optional()
+    .min(1, "El DNI o CE es requerido")
     .refine(
       (val) => {
-        if (!val || val === "") return true; // Optional field
-        // Must be either DNI (8 digits) or CE (10 digits)
         return /^\d{8}$/.test(val) || /^\d{10}$/.test(val);
       },
       {

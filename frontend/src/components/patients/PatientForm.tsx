@@ -41,10 +41,10 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
         register,
         handleSubmit,
         control,
-        formState: { errors },
+        formState: { errors, isValid, isDirty },
     } = useForm<PatientFormData>({
         resolver: zodResolver(patientSchema),
-        mode: 'onBlur',
+        mode: 'onChange',
         defaultValues: patient
             ? {
                 firstName: patient.firstName,
@@ -147,7 +147,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="dni">DNI</Label>
+                            <Label htmlFor="dni">
+                                DNI <span className="text-error">*</span>
+                            </Label>
                             <Input
                                 id="dni"
                                 type="text"
@@ -191,6 +193,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                     );
                                 }}
                             />
+                            {errors.dateOfBirth && (
+                                <p className="text-sm text-error">{errors.dateOfBirth.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -214,6 +219,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                     </Select>
                                 )}
                             />
+                            {errors.gender && (
+                                <p className="text-sm text-error">{errors.gender.message}</p>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -273,6 +281,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 {...register('address')}
                                 className="h-9"
                             />
+                            {errors.address && (
+                                <p className="text-sm text-error">{errors.address.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -287,6 +298,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 }}
                                 className="h-9"
                             />
+                            {errors.occupation && (
+                                <p className="text-sm text-error">{errors.occupation.message}</p>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -311,6 +325,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 }}
                                 className="h-9"
                             />
+                            {errors.emergencyContact && (
+                                <p className="text-sm text-error">{errors.emergencyContact.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -332,6 +349,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 }}
                                 className="h-9"
                             />
+                            {errors.emergencyPhone && (
+                                <p className="text-sm text-error">{errors.emergencyPhone.message}</p>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -367,6 +387,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                     </Select>
                                 )}
                             />
+                            {errors.referralSource && (
+                                <p className="text-sm text-error">{errors.referralSource.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -393,6 +416,9 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                     </Select>
                                 )}
                             />
+                            {errors.assignedProfessionalId && (
+                                <p className="text-sm text-error">{errors.assignedProfessionalId.message}</p>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -410,7 +436,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                 </Button>
                 <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isValid || (patient && !isDirty)}
                     style={{
                         background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                     }}
