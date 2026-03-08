@@ -32,6 +32,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://clinqapp-web.vercel.app",
+  "https://clinqapp.net",
 ].filter(Boolean); // Remove undefined values
 
 console.log("🔒 CORS allowed origins:", allowedOrigins);
