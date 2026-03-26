@@ -122,9 +122,12 @@ model User {
   email     String  @unique
   firstName String  @map("first_name")
   lastName  String  @map("last_name")
-  dni       String? @unique // CAMBIADO: ahora es único
   phone     String?
   avatarUrl String? @map("avatar_url")
+  
+  // Document identification
+  documentType   String? @map("document_type")    // DNI, CE, RUC
+  documentNumber String? @map("document_number")   // El número del documento
   
   // Organization membership
   organizationId String       @map("organization_id") @db.Uuid
@@ -148,7 +151,7 @@ model User {
   @@index([organizationId])
   @@index([authId])
   @@index([email])
-  @@index([dni])
+  @@index([documentNumber])
   @@index([organizationId, role, deletedAt])
 }
 

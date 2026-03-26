@@ -1,4 +1,4 @@
--- Create the migration file to fix the missing trigger
+-- Update: handle_new_user trigger now populates document_type and document_number
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create or replace the function to handle new user signup
@@ -6,18 +6,24 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   org_id UUID;
-  new_org_uuid UUID; -- Explicit variable for ID
+  new_org_uuid UUID;
   user_full_name TEXT;
   user_first_name TEXT;
   user_last_name TEXT;
   org_name TEXT;
   org_slug TEXT;
+  user_document_type TEXT;
+  user_document_number TEXT;
 BEGIN
   -- Extract name from metadata or default to email parts
   user_full_name := new.raw_user_meta_data->>'full_name';
   IF user_full_name IS NULL OR user_full_name = '' THEN
     user_full_name := split_part(new.email, '@', 1);
   END IF;
+
+  -- Extract document fields from metadata (sent during registration)
+  user_document_type   := new.raw_user_meta_data->>'document_type';
+  user_document_number := new.raw_user_meta_data->>'document_number';
 
   -- Split name for first/last (simple approximation)
   user_first_name := split_part(user_full_name, ' ', 1);
@@ -52,14 +58,14 @@ BEGIN
     specialty,
     subscription_plan,
     subscription_status,
-    updated_at -- Explicitly added
+    updated_at
   ) VALUES (
-    new_org_uuid, -- USE THE GENERATED UUID
+    new_org_uuid,
     org_name,
     org_slug,
     new.email,
-    true, -- is_temporary
-    false, -- onboarding_completed
+    true,
+    false,
     true,
     false,
     true,
@@ -67,33 +73,37 @@ BEGIN
     30,
     0,
     false,
-    'PODIATRY', -- Default, can be changed in onboarding
+    'PODIATRY',
     'FREE_TRIAL',
     'TRIALING',
-    NOW() -- Explicitly set updated_at
+    NOW()
   ) RETURNING id INTO org_id;
 
-  -- 2. Create User linked to Organization
+  -- 2. Create User linked to Organization (with document_type and document_number)
   INSERT INTO public.users (
     id,
     auth_id,
     email,
     first_name,
     last_name,
+    document_type,
+    document_number,
     organization_id,
     role,
     email_verified,
-    updated_at -- Explicitly added
+    updated_at
   ) VALUES (
     gen_random_uuid(),
     new.id,
     new.email,
     user_first_name,
     user_last_name,
+    user_document_type,
+    user_document_number,
     org_id,
     'OWNER',
     false,
-    NOW() -- Explicitly set updated_at
+    NOW()
   );
 
   RETURN new;
