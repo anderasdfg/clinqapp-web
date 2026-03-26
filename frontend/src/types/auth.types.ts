@@ -2,17 +2,26 @@
 // We will need to create validations/auth first, or define them here temporarily
 // For now defining interfaces directly to avoid circular dependency if validation not ready
 
+export const DocumentTypes = {
+  DNI: "DNI",
+  CE: "CE",
+  RUC: "RUC",
+} as const;
+
+export type DocumentType = keyof typeof DocumentTypes;
+
 export interface LoginFormData {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 }
 
 export interface RegisterFormData {
-    email: string;
-    password: string;
-    confirmPassword: string;
-    fullName: string;
-    dni: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+  documentType: DocumentType;
+  documentNumber: string;
 }
 
 /**
@@ -20,8 +29,8 @@ export interface RegisterFormData {
  * Maps field names to error messages
  */
 export interface LoginFormErrors {
-    email?: string;
-    password?: string;
+  email?: string;
+  password?: string;
 }
 
 /**
@@ -29,8 +38,8 @@ export interface LoginFormErrors {
  * Tracks the current state of the login process
  */
 export interface LoginFormState {
-    isLoading: boolean;
-    errors: LoginFormErrors;
+  isLoading: boolean;
+  errors: LoginFormErrors;
 }
 
 /**
@@ -38,9 +47,9 @@ export interface LoginFormState {
  * Generic type to allow for future extensions (API responses, etc.)
  */
 export interface LoginResult {
-    success: boolean;
-    message?: string;
-    error?: string;
+  success: boolean;
+  message?: string;
+  error?: string;
 }
 
 /**
@@ -48,11 +57,12 @@ export interface LoginResult {
  * Maps field names to error messages
  */
 export interface RegisterFormErrors {
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-    fullName?: string;
-    dni?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  fullName?: string;
+  documentType?: string;
+  documentNumber?: string;
 }
 
 /**
@@ -60,18 +70,18 @@ export interface RegisterFormErrors {
  * Tracks the current state of the registration process
  */
 export interface RegisterFormState {
-    isLoading: boolean;
-    errors: RegisterFormErrors;
+  isLoading: boolean;
+  errors: RegisterFormErrors;
 }
 
 /**
  * Result of a registration attempt
  */
 export interface RegisterResult {
-    success: boolean;
-    message?: string;
-    error?: string;
-    requiresEmailVerification?: boolean;
+  success: boolean;
+  message?: string;
+  error?: string;
+  requiresEmailVerification?: boolean;
 }
 
 /**
@@ -79,10 +89,11 @@ export interface RegisterResult {
  * Represents authenticated user information
  */
 export interface UserSession {
-    id: string;
-    email: string;
-    emailVerified: boolean;
-    fullName?: string;
-    dni?: string;
-    avatarUrl?: string;
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  fullName?: string;
+  documentType?: DocumentType;
+  documentNumber?: string;
+  avatarUrl?: string;
 }

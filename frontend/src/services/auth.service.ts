@@ -40,7 +40,8 @@ export class AuthService {
           emailRedirectTo: `${AppConfig.baseUrl}${AppConfig.routes.authCallback}`,
           data: {
             full_name: data.fullName,
-            dni: data.dni,
+            document_type: data.documentType,
+            document_number: data.documentNumber,
           },
         },
       });
@@ -406,6 +407,25 @@ export class AuthService {
     } catch (error) {
       logger.error("Unexpected error fetching organization", { error });
       return null;
+    }
+  }
+  /**
+   * Sign in with Google OAuth
+   * Redirects to Google sign-in page
+   *
+   * @returns Promise<void>
+   */
+  static async signInWithGoogle(): Promise<void> {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${AppConfig.baseUrl}${AppConfig.routes.authCallback}`,
+      },
+    });
+
+    if (error) {
+      logger.error("Google sign-in error", { error: error.message });
+      throw new Error(error.message);
     }
   }
 }

@@ -223,14 +223,14 @@ export const landingContent = {
         {
           icon: Mail,
           label: "Soporte Técnico",
-          value: "soporte@clinqapp.com",
-          href: "mailto:soporte@clinqapp.com",
+          value: "clinqapp.team@gmail.com",
+          href: "mailto:clinqapp.team@gmail.com",
         },
         {
           icon: Phone,
           label: "Ventas y Consultas",
-          value: "+51 900 000 000",
-          href: "tel:+51900000000",
+          value: "+51 991 396 963",
+          href: "wa.me/51991396963",
         },
         {
           icon: MapPin,
@@ -300,10 +300,10 @@ export const landingContent = {
       items: [
         {
           icon: Mail,
-          label: "hola@clinqapp.com",
-          href: "mailto:hola@clinqapp.com",
+          label: "clinqapp.team@gmail.com",
+          href: "mailto:clinqapp.team@gmail.com",
         },
-        { icon: Phone, label: "+51 900 000 000", href: "tel:+51900000000" },
+        { icon: Phone, label: "+51 991 396 963", href: "wa.me/51991396963" },
         { icon: MapPin, label: "Lima, Perú" },
       ],
     },
