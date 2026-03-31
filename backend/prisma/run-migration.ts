@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 const MIGRATION_FILE = path.join(
   __dirname,
   "migrations",
-  "20260325_enable_rls",
+  "20260325_rls_policies",
   "migration.sql",
 );
 

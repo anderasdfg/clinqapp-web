@@ -65,7 +65,23 @@ export const CRUD_NAVIGATION: NavigationItem[] = [
   },
 ];
 
-// Settings navigation
+// CRUD navigation items
+export const CRUD_SALES: NavigationItem[] = [
+  {
+    id: "inventory",
+    label: "Inventario",
+    icon: "box",
+    path: "/app/dashboard/inventory",
+  },
+  {
+    id: "product_sales",
+    label: "Venta de productos",
+    icon: "clipboard-list",
+    path: "/app/dashboard/product_sales",
+  },
+];
+
+/* // Settings navigation
 export const SETTINGS_NAVIGATION: NavigationItem[] = [
   {
     id: "settings",
@@ -73,7 +89,7 @@ export const SETTINGS_NAVIGATION: NavigationItem[] = [
     icon: "cog",
     path: "/app/dashboard/settings",
   },
-];
+]; */
 
 // Grouped navigation for sidebar
 export const NAVIGATION_GROUPS: NavigationGroup[] = [
@@ -87,11 +103,16 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     label: "Gestión",
     items: CRUD_NAVIGATION,
   },
-  {
+  /* {
+    id: "sales",
+    label: "Ventas",
+    items: CRUD_SALES,
+  }, */
+  /*   {
     id: "system",
     label: "Sistema",
     items: SETTINGS_NAVIGATION,
-  },
+  }, */
 ];
 
 // Icon SVG paths (Heroicons outline style)

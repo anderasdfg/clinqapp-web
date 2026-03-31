@@ -301,6 +301,7 @@ export const createPatient = async (req: AuthRequest, res: Response) => {
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         email: data.email || null,
         referralSource: data.referralSource || undefined,
+        deletedAt: null,
       },
       include: {
         assignedProfessional: {

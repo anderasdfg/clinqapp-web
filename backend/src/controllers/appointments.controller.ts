@@ -372,6 +372,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     });
 
     if (!patient) {
+      console.error(`❌ Patient not found: ${data.patientId} for org: ${dbUser.organizationId}`);
       return res.status(404).json({ error: "Paciente no encontrado" });
     }
 

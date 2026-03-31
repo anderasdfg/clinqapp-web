@@ -154,8 +154,8 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 id="dni"
                                 type="text"
                                 inputMode="numeric"
-                                maxLength={10}
-                                placeholder="DNI (8 dígitos) o CE (10 dígitos)"
+                                maxLength={9}
+                                placeholder="DNI (8 dígitos) o CE (9 dígitos)"
                                 {...register('dni')}
                                 onInput={(e) => {
                                     const target = e.target as HTMLInputElement;
