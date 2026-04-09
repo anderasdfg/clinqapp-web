@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import { REFERRAL_SOURCE_LABELS, ReferralSource } from '@/types/patient.types';
@@ -45,9 +45,7 @@ import {
     Eye, 
     Pencil, 
     Trash2, 
-    MoreVertical, 
-    ChevronLeft, 
-    ChevronRight,
+    MoreVertical,
     Users,
     AlertTriangle,
     X,
@@ -66,17 +64,16 @@ const PatientsPage = () => {
     const {
         patients,
         isLoading,
-        currentPage,
-        totalPages,
         totalPatients,
+        hasMore,
         searchQuery,
         assignedProfessionalFilter,
         referralSourceFilter,
         setSearchQuery,
         setAssignedProfessionalFilter,
         setReferralSourceFilter,
-        setCurrentPage,
         fetchPatients,
+        loadMorePatients,
         deletePatient,
     } = usePatientsStore();
 
@@ -95,6 +92,7 @@ const PatientsPage = () => {
     
     const [openFilterPopover, setOpenFilterPopover] = useState<string | null>(null);
     const isFirstRender = useState(true);
+    const observerTarget = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchPatients();
@@ -111,7 +109,7 @@ const PatientsPage = () => {
         }
 
         const debounceTimer = setTimeout(() => {
-            fetchPatients();
+            fetchPatients({ page: 1 }, true);
         }, 500); // Wait 500ms after user stops typing
 
         return () => clearTimeout(debounceTimer);
@@ -125,11 +123,6 @@ const PatientsPage = () => {
         } catch (error) {
             console.error('Error loading professionals:', error);
         }
-    };
-
-    const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        fetchPatients();
     };
 
     const handleDeleteClick = (id: string) => {
@@ -151,20 +144,43 @@ const PatientsPage = () => {
 
     const handleProfessionalFilterChange = (value: string) => {
         setAssignedProfessionalFilter(value === 'all' ? null : value);
-        fetchPatients();
+        fetchPatients({}, true);
     };
 
     const handleReferralSourceFilterChange = (value: string) => {
         setReferralSourceFilter(value === 'all' ? null : value as ReferralSource);
-        fetchPatients();
+        fetchPatients({}, true);
     };
 
     const clearFilters = () => {
         setSearchQuery('');
         setAssignedProfessionalFilter(null);
         setReferralSourceFilter(null);
-        fetchPatients();
+        fetchPatients({}, true);
     };
+
+    // Intersection Observer for infinite scroll
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoading) {
+                    loadMorePatients();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, isLoading, loadMorePatients]);
 
     const hasActiveFilters = searchQuery || assignedProfessionalFilter || referralSourceFilter;
 
@@ -218,8 +234,7 @@ const PatientsPage = () => {
 
             {/* Search and Filters - Single Line */}
             <Card className="p-4">
-                <form onSubmit={handleSearch}>
-                    <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                         {/* Search Input */}
                         <div className="flex-1 min-w-[100px] relative">
                             <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgb(var(--text-tertiary))] z-10 pointer-events-none" />
@@ -261,12 +276,6 @@ const PatientsPage = () => {
                             </SelectContent>
                         </Select>
 
-                        {/* Search Button */}
-                        <Button type="submit" className="gap-2 h-9 hover:opacity-90 transition-opacity">
-                            <Search className="w-4 h-4" />
-                            Buscar
-                        </Button>
-
                         {/* Clear Filters Button */}
                         {hasActiveFilters && (
                             <Button
@@ -280,13 +289,12 @@ const PatientsPage = () => {
                                 Limpiar filtros
                             </Button>
                         )}
-                    </div>
-                </form>
+                </div>
             </Card>
 
             {/* Table */}
             <Card>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -500,7 +508,7 @@ const PatientsPage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
+                            {isLoading && patients.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-32 text-center">
                                         <div className="flex justify-center items-center">
@@ -622,45 +630,27 @@ const PatientsPage = () => {
                             )}
                         </TableBody>
                     </Table>
+                    
+                    {/* Infinite scroll trigger */}
+                    <div ref={observerTarget} className="h-10 flex items-center justify-center">
+                        {isLoading && hasMore && (
+                            <div className="flex items-center gap-2 text-sm text-[rgb(var(--text-secondary))]">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                Cargando más pacientes...
+                            </div>
+                        )}
+                        {!hasMore && patients.length > 0 && (
+                            <div className="text-sm text-[rgb(var(--text-secondary))]">
+                                No hay más pacientes para mostrar
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-[rgb(var(--border-primary))] flex items-center justify-between">
-                        <div className="text-sm text-[rgb(var(--text-secondary))]">
-                            Mostrando {patients.length} de {totalPatients} pacientes
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setCurrentPage(currentPage - 1);
-                                    fetchPatients({ page: currentPage - 1 });
-                                }}
-                                disabled={currentPage === 1}
-                                className="gap-2 hover:bg-[rgb(var(--bg-secondary))] transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                                Anterior
-                            </Button>
-                            <span className="px-4 py-2 text-sm text-[rgb(var(--text-primary))] flex items-center">
-                                Página {currentPage} de {totalPages}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setCurrentPage(currentPage + 1);
-                                    fetchPatients({ page: currentPage + 1 });
-                                }}
-                                disabled={currentPage === totalPages}
-                                className="gap-2 hover:bg-[rgb(var(--bg-secondary))] transition-colors"
-                            >
-                                Siguiente
-                                <ChevronRight className="w-4 h-4" />
-                            </Button>
-                        </div>
+                {/* Footer with total count */}
+                {patients.length > 0 && (
+                    <div className="px-6 py-3 border-t border-[rgb(var(--border-primary))] text-sm text-[rgb(var(--text-secondary))]">
+                        Mostrando {patients.length} de {totalPatients} pacientes
                     </div>
                 )}
             </Card>

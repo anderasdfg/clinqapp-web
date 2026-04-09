@@ -23,6 +23,7 @@ interface PatientsState {
   totalPages: number;
   totalPatients: number;
   limit: number;
+  hasMore: boolean;
 
   // Filters
   searchQuery: string;
@@ -44,6 +45,7 @@ interface PatientsState {
     params?: PatientsQueryParams,
     forceRefresh?: boolean,
   ) => Promise<void>;
+  loadMorePatients: () => Promise<void>;
   fetchPatientById: (id: string) => Promise<void>;
   createPatient: (data: CreatePatientDTO) => Promise<Patient>;
   updatePatient: (id: string, data: UpdatePatientDTO) => Promise<Patient>;
@@ -65,7 +67,8 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
   currentPage: 1,
   totalPages: 1,
   totalPatients: 0,
-  limit: 10,
+  limit: 20,
+  hasMore: true,
   searchQuery: "",
   assignedProfessionalFilter: null,
   referralSourceFilter: null,
@@ -112,6 +115,7 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
         currentPage: response.pagination.page,
         totalPages: response.pagination.totalPages,
         totalPatients: response.pagination.total,
+        hasMore: response.pagination.page < response.pagination.totalPages,
         lastFetchedAt: Date.now(),
         isLoading: false,
       });
@@ -205,9 +209,46 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
     }
   },
 
+  // Load more patients (infinite scroll)
+  loadMorePatients: async () => {
+    const state = get();
+    
+    // Don't load if already loading or no more data
+    if (state.isLoading || !state.hasMore) return;
+    
+    const nextPage = state.currentPage + 1;
+    
+    set({ isLoading: true, error: null });
+    try {
+      const queryParams: PatientsQueryParams = {
+        page: nextPage,
+        limit: state.limit,
+        search: state.searchQuery || undefined,
+        assignedProfessionalId: state.assignedProfessionalFilter || undefined,
+        referralSource: (state.referralSourceFilter || undefined) as any,
+      };
+
+      const response = await patientsService.getPatients(queryParams);
+
+      set((state) => ({
+        patients: [...state.patients, ...response.data],
+        currentPage: response.pagination.page,
+        totalPages: response.pagination.totalPages,
+        totalPatients: response.pagination.total,
+        hasMore: response.pagination.page < response.pagination.totalPages,
+        isLoading: false,
+      }));
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.error || "Error al cargar más pacientes",
+        isLoading: false,
+      });
+    }
+  },
+
   // Filter actions
   setSearchQuery: (query: string) => {
-    set({ searchQuery: query, currentPage: 1 });
+    set({ searchQuery: query, currentPage: 1, lastFetchedAt: null });
   },
 
   setAssignedProfessionalFilter: (professionalId: string | null) => {
@@ -238,7 +279,8 @@ export const usePatientsStore = create<PatientsState>((set, get) => ({
       currentPage: 1,
       totalPages: 1,
       totalPatients: 0,
-      limit: 10,
+      limit: 20,
+      hasMore: true,
       searchQuery: "",
       assignedProfessionalFilter: null,
       referralSourceFilter: null,

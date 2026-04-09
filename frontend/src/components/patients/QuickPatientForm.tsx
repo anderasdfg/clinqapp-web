@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePatientsStore } from '@/stores/usePatientsStore';
+import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +26,7 @@ interface QuickPatientFormProps {
 
 const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
     const { createPatient, isCreating } = usePatientsStore();
+    const { toast } = useToast();
 
     const {
         register,
@@ -46,8 +48,14 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
             });
 
             onSuccess(patient.id);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating patient:', error);
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error al crear el paciente';
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: errorMessage,
+            });
         }
     };
 

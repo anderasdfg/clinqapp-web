@@ -34,10 +34,10 @@ export const patientSchema = z.object({
     .refine(
       (val) => {
         if (!val || val === "") return true;
-        return /^\d{8}$/.test(val) || /^\d{10}$/.test(val);
+        return /^\d{8}$/.test(val) || /^\d{9}$/.test(val);
       },
       {
-        message: "Ingrese un DNI válido (8 dígitos) o CE válido (10 dígitos)",
+        message: "Ingrese un DNI válido (8 dígitos) o CE válido (9 dígitos)",
       },
     ),
 

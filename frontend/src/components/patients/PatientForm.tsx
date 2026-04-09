@@ -25,7 +25,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PatientFormProps {
     patient?: Patient;
@@ -36,6 +37,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
     const navigate = useNavigate();
     const { createPatient, updatePatient, isCreating, isUpdating } = usePatientsStore();
     const [professionals, setProfessionals] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
+    const { toast } = useToast();
 
     const {
         register,
@@ -90,8 +92,14 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
             } else {
                 navigate('/app/dashboard/patients');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving patient:', error);
+            const errorMessage = error?.response?.data?.error || error?.message || 'Error al guardar el paciente';
+            toast({
+                variant: "destructive",
+                title: "Error al guardar",
+                description: errorMessage,
+            });
         }
     };
 
