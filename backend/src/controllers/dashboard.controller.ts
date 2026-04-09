@@ -2,6 +2,7 @@ import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 // Simple in-memory cache for dashboard stats
 const dashboardCache = new Map<string, { data: any; timestamp: number }>();
@@ -28,11 +29,17 @@ export const getStats = async (req: AuthRequest, res: Response) => {
 
     console.log(`🔍 Dashboard: Cache MISS for org ${organizationId}`);
 
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
+    // Use Peru timezone (America/Lima) for date calculations
+    const TIMEZONE = "America/Lima";
+    const nowUTC = new Date();
+    const nowPeru = toZonedTime(nowUTC, TIMEZONE);
+    
+    const monthStart = startOfMonth(nowPeru);
+    const monthEnd = endOfMonth(nowPeru);
+    const todayStart = startOfDay(nowPeru);
+    const todayEnd = endOfDay(nowPeru);
+
+    console.log(`📅 Dashboard: Peru time: ${nowPeru.toISOString()}, Today range: ${todayStart.toISOString()} - ${todayEnd.toISOString()}`);
 
     const [ingresosMesData, citasHoy, pacientesNuevosMes, proximasCitas] =
       await Promise.all([
@@ -85,7 +92,7 @@ export const getStats = async (req: AuthRequest, res: Response) => {
               notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"],
             },
             startTime: {
-              gte: now,
+              gte: nowPeru,
               lte: todayEnd,
             },
           },
