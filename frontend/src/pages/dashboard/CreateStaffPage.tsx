@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { USER_ROLE_LABELS } from '@/types/staff.types';
 import { STAFF_ROLE } from '@/types/dto/staff.dto';
 import { supabase } from '@/lib/supabase/client';
+import { useStaffStore } from '@/stores/useStaffStore';
 
 const staffSchema = z.object({
     firstName: z.string().min(1, 'Nombre es requerido'),
@@ -22,6 +23,7 @@ type StaffFormData = z.infer<typeof staffSchema>;
 
 const CreateStaffPage = () => {
     const navigate = useNavigate();
+    const { fetchStaff } = useStaffStore();
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +94,7 @@ const CreateStaffPage = () => {
                 throw new Error(errorData.error || 'Error al crear personal');
             }
 
+            await fetchStaff({ page: 1, limit: 50 }, true);
             navigate('/app/dashboard/staff');
         } catch (err) {
             console.error('Error creating staff:', err);

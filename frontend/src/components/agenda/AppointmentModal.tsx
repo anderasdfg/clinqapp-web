@@ -7,10 +7,7 @@ import { usePatientsStore } from '@/stores/usePatientsStore';
 import type { Appointment } from '@/types/appointment.types';
 import type { Service } from '@/types/service.types';
 import { format, isValid as isValidDate } from 'date-fns';
-import {
-    Dialog,
-    DialogContent,
-} from '@/components/ui/dialog';
+import * as Dialog from '@radix-ui/react-dialog';
 import {
     Select,
     SelectContent,
@@ -294,9 +291,34 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-border shadow-2xl">
-                    <div className="flex flex-col h-full max-h-[90vh]">
+            <Dialog.Root 
+                open={isOpen}
+                modal={!showQuickPatientCreate}
+                onOpenChange={(open) => {
+                    // Only close if QuickPatientModal is not open
+                    if (!open && !showQuickPatientCreate) {
+                        onClose();
+                    }
+                }}
+            >
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/80 z-50 transition-opacity duration-300 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
+                    <Dialog.Content 
+                        className="fixed inset-x-0 bottom-0 z-50 flex h-auto flex-col rounded-t-[20px] border bg-background shadow-2xl md:inset-y-0 md:right-0 md:left-auto md:w-full md:max-w-2xl md:rounded-none md:rounded-l-[20px] max-h-[90vh] md:max-h-screen overflow-hidden transition-transform duration-300 ease-out data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom md:data-[state=open]:animate-slide-in-from-right md:data-[state=closed]:animate-slide-out-to-right"
+                        onPointerDownOutside={(e) => {
+                            // Prevent closing when clicking on QuickPatientModal
+                            if (showQuickPatientCreate) {
+                                e.preventDefault();
+                            }
+                        }}
+                        onInteractOutside={(e) => {
+                            // Prevent closing when interacting with QuickPatientModal
+                            if (showQuickPatientCreate) {
+                                e.preventDefault();
+                            }
+                        }}
+                    >
+                        <div className="flex flex-col h-full">
                         {/* Header with Sidebar Gradient */}
                         <div className="flex items-center justify-between p-4 border-b border-white/10 gradient-primary text-white">
                             <h2 className="text-xl font-bold tracking-tight">
@@ -532,8 +554,8 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                 className={cn(
                                     "transition-all duration-300 shadow-lg px-8 font-bold",
                                     isFormValid 
-                                        ? "bg-white text-primary hover:bg-white/90" 
-                                        : "bg-white/20 text-white/50 cursor-not-allowed"
+                                        ? "bg-white dark:bg-background text-primary dark:text-foreground hover:bg-white/90 dark:hover:bg-background/90 border-2 border-white dark:border-foreground/20" 
+                                        : "bg-white/20 text-white/50 cursor-not-allowed dark:bg-background/20 dark:text-foreground/50"
                                 )}
                             >
                                 {isCreating || isUpdating ? (
@@ -546,9 +568,10 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                 )}
                             </Button>
                         </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
 
             <QuickPatientModal
                 isOpen={showQuickPatientCreate}

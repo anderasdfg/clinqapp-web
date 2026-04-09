@@ -62,6 +62,48 @@ export default {
                     '0%, 100%': { opacity: '0' },
                     '50%': { opacity: '1' },
                 },
+                'slide-in-from-right': {
+                    '0%': { transform: 'translateX(100%)' },
+                    '100%': { transform: 'translateX(0)' },
+                },
+                'slide-out-to-right': {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(100%)' },
+                },
+                'slide-in-from-bottom': {
+                    '0%': { transform: 'translateY(100%)' },
+                    '100%': { transform: 'translateY(0)' },
+                },
+                'slide-out-to-bottom': {
+                    '0%': { transform: 'translateY(0)' },
+                    '100%': { transform: 'translateY(100%)' },
+                },
+                'fade-in': {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                },
+                'fade-out': {
+                    '0%': { opacity: '1' },
+                    '100%': { opacity: '0' },
+                },
+                'scale-in': {
+                    '0%': { opacity: '0', transform: 'scale(0.95)' },
+                    '100%': { opacity: '1', transform: 'scale(1)' },
+                },
+                'scale-out': {
+                    '0%': { opacity: '1', transform: 'scale(1)' },
+                    '100%': { opacity: '0', transform: 'scale(0.95)' },
+                },
+            },
+            animation: {
+                'slide-in-from-right': 'slide-in-from-right 0.3s ease-out',
+                'slide-out-to-right': 'slide-out-to-right 0.3s ease-in',
+                'slide-in-from-bottom': 'slide-in-from-bottom 0.3s ease-out',
+                'slide-out-to-bottom': 'slide-out-to-bottom 0.3s ease-in',
+                'fade-in': 'fade-in 0.2s ease-out',
+                'fade-out': 'fade-out 0.2s ease-in',
+                'scale-in': 'scale-in 0.2s ease-out',
+                'scale-out': 'scale-out 0.2s ease-in',
             },
             boxShadow: {
                 'glow': '0 0 20px rgba(3, 211, 238, 0.3)',
