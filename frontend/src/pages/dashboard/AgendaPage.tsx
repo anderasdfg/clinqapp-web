@@ -38,7 +38,7 @@ const AgendaPage = () => {
             endDate: end.toISOString(),
         });
 
-        fetchAppointments();
+        fetchAppointments({}, true); // Force refresh when changing weeks
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentDate]); // Only depend on currentDate
 

@@ -173,7 +173,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
 
     // Load available slots
     useEffect(() => {
-        if (selectedProfessionalId && selectedDate) {
+        if (selectedProfessionalId && selectedDate && duration > 0) {
             const fetchSlots = async () => {
                 setLoadingSlots(true);
                 try {
@@ -199,9 +199,11 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
     useEffect(() => {
         if (selectedServiceId) {
             const service = services.find(s => s.id === selectedServiceId);
-            if (service) {
+            if (service && service.duration && service.duration > 0) {
                 setDuration(service.duration);
             }
+        } else {
+            setDuration(60);
         }
     }, [selectedServiceId, services]);
 
@@ -223,7 +225,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                 const start = new Date(appointment.startTime);
                 const end = new Date(appointment.endTime);
                 const diffMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
-                setDuration(diffMinutes);
+                setDuration(diffMinutes > 0 ? diffMinutes : 60);
                 setSelectedDate(start);
                 setIsTimeSelected(true);
                 reset({
@@ -238,6 +240,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                 const initialDate = defaultDate || new Date();
                 setSelectedDate(initialDate);
                 setIsTimeSelected(false);
+                setDuration(60);
                 reset({
                     patientId: '',
                     professionalId: '',
@@ -274,7 +277,7 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
             } else {
                 await createAppointment(payload as any);
             }
-            await fetchAppointments(); // Refresh agenda
+            await fetchAppointments({}, true); // Force refresh agenda
             onClose();
         } catch (error) {
             console.error('Error saving appointment:', error);
@@ -463,14 +466,25 @@ const AppointmentModal = ({ appointment, isOpen, onClose, defaultDate }: Appoint
                                                 </label>
                                                 <Select
                                                     value={duration.toString()}
-                                                    onValueChange={(value) => setDuration(parseInt(value))}
+                                                    onValueChange={(value) => {
+                                                        const parsed = parseInt(value);
+                                                        if (!isNaN(parsed) && parsed > 0) {
+                                                            setDuration(parsed);
+                                                        }
+                                                    }}
                                                 >
                                                     <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Seleccionar duración" />
+                                                        <SelectValue>
+                                                            {duration >= 60 
+                                                                ? `${Math.floor(duration / 60)} hora${duration >= 120 ? 's' : ''}${duration % 60 > 0 ? ` ${duration % 60} min` : ''}`
+                                                                : `${duration} minutos`
+                                                            }
+                                                        </SelectValue>
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="15">15 minutos</SelectItem>
                                                         <SelectItem value="30">30 minutos</SelectItem>
+                                                        <SelectItem value="40">40 minutos</SelectItem>
                                                         <SelectItem value="45">45 minutos</SelectItem>
                                                         <SelectItem value="60">1 hora</SelectItem>
                                                         <SelectItem value="90">1 hora 30 min</SelectItem>

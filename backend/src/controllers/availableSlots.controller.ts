@@ -60,6 +60,7 @@ export const getAvailableSlots = async (
     if (isNaN(appointmentDuration) || appointmentDuration <= 0) {
       return res.status(400).json({
         error: "duration debe ser un número positivo",
+        details: `Valor recibido: ${duration}, parseado como: ${appointmentDuration}`,
       });
     }
 
