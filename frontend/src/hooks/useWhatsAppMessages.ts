@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { SendMessageRequest, SendMessageResponse } from '../types/whatsapp';
+import { AppConfig } from '../lib/config/app.config';
 
 export const useWhatsAppMessages = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -12,7 +13,7 @@ export const useWhatsAppMessages = () => {
       setError('');
       setSuccess('');
 
-      const response = await fetch('/api/webhooks/whatsapp/send', {
+      const response = await fetch(`${AppConfig.apiUrl}/webhooks/whatsapp/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Conversation, Message } from '../types/whatsapp';
+import { AppConfig } from '../lib/config/app.config';
 
 export const useWhatsAppConversations = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -11,7 +12,7 @@ export const useWhatsAppConversations = () => {
       setLoading(true);
       setError('');
       
-      const response = await fetch('/api/webhooks/whatsapp/conversations');
+      const response = await fetch(`${AppConfig.apiUrl}/webhooks/whatsapp/conversations`);
       
       if (!response.ok) {
         throw new Error('Error cargando conversaciones');
@@ -51,7 +52,7 @@ export const useConversationMessages = (phoneNumber: string | null) => {
       setError('');
       
       const encodedPhone = encodeURIComponent(phone);
-      const response = await fetch(`/api/webhooks/whatsapp/conversations/${encodedPhone}/messages`);
+      const response = await fetch(`${AppConfig.apiUrl}/webhooks/whatsapp/conversations/${encodedPhone}/messages`);
       
       if (!response.ok) {
         throw new Error('Error cargando mensajes');

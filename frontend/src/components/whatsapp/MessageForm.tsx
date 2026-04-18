@@ -58,7 +58,7 @@ export const MessageForm: React.FC<MessageFormProps> = ({ onSuccess, organizatio
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Ej: +51987654321 o 987654321"
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
                 disabled={sendingMessage}
               />
             </div>

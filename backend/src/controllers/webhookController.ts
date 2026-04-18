@@ -204,75 +204,73 @@ export class WebhookController {
     try {
       const { organizationId, limit = 50, offset = 0 } = req.query;
 
-      // Obtener conversaciones agrupadas por número de teléfono
-      const conversations = await prisma.$queryRaw`
-        SELECT 
-          phone_number,
-          profile_name,
-          patient_id,
-          organization_id,
-          COUNT(*) as message_count,
-          MAX(created_at) as last_message_at,
-          (
-            SELECT content 
-            FROM whatsapp_messages wm2 
-            WHERE wm2.phone_number = wm.phone_number 
-            ORDER BY created_at DESC 
-            LIMIT 1
-          ) as last_message,
-          (
-            SELECT direction 
-            FROM whatsapp_messages wm2 
-            WHERE wm2.phone_number = wm.phone_number 
-            ORDER BY created_at DESC 
-            LIMIT 1
-          ) as last_message_direction
-        FROM whatsapp_messages wm
-        ${organizationId ? `WHERE organization_id = ${organizationId}` : ''}
-        GROUP BY phone_number, profile_name, patient_id, organization_id
-        ORDER BY MAX(created_at) DESC
-        LIMIT ${limit}
-        OFFSET ${offset}
-      `;
+      // Obtener todos los números únicos de teléfono
+      const whereClause = organizationId ? { organizationId: organizationId as string } : {};
+      
+      const uniquePhones = await prisma.whatsAppMessage.groupBy({
+        by: ['phoneNumber'],
+        where: whereClause,
+        _count: {
+          id: true
+        },
+        _max: {
+          createdAt: true
+        },
+        orderBy: {
+          _max: {
+            createdAt: 'desc'
+          }
+        },
+        take: parseInt(limit as string),
+        skip: parseInt(offset as string)
+      });
 
-      // Obtener información de pacientes para las conversaciones
-      const conversationsWithPatients = await Promise.all(
-        (conversations as any[]).map(async (conv) => {
-          let patient = null;
-          if (conv.patient_id) {
-            patient = await prisma.patient.findUnique({
-              where: { id: conv.patient_id },
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                phone: true,
-                organization: {
-                  select: {
-                    id: true,
-                    name: true
+      // Para cada número, obtener la información completa
+      const conversations = await Promise.all(
+        uniquePhones.map(async (phone: any) => {
+          // Obtener el último mensaje
+          const lastMessage = await prisma.whatsAppMessage.findFirst({
+            where: {
+              phoneNumber: phone.phoneNumber,
+              ...whereClause
+            },
+            orderBy: {
+              createdAt: 'desc'
+            },
+            include: {
+              patient: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                  organization: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
                   }
                 }
               }
-            });
-          }
+            }
+          });
 
           return {
-            phoneNumber: conv.phone_number,
-            profileName: conv.profile_name,
-            messageCount: parseInt(conv.message_count),
-            lastMessageAt: conv.last_message_at,
-            lastMessage: conv.last_message,
-            lastMessageDirection: conv.last_message_direction,
-            patient: patient,
-            organizationId: conv.organization_id
+            phoneNumber: phone.phoneNumber,
+            profileName: lastMessage?.profileName || null,
+            messageCount: phone._count.id,
+            lastMessageAt: phone._max.createdAt,
+            lastMessage: lastMessage?.content || null,
+            lastMessageDirection: lastMessage?.direction || null,
+            patient: lastMessage?.patient || null,
+            organizationId: lastMessage?.organizationId || null
           };
         })
       );
 
       res.json({
-        conversations: conversationsWithPatients,
-        total: conversationsWithPatients.length
+        conversations: conversations,
+        total: conversations.length
       });
       
     } catch (error) {
