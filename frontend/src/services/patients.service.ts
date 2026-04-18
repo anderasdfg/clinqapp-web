@@ -9,12 +9,12 @@ import type {
   PatientsQueryParams,
 } from "@/types/patient.types";
 import { supabase } from "@/lib/supabase/client";
+import { AppConfig } from "@/lib/config/app.config";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: AppConfig.apiUrl,
 });
 
 // Add auth token to requests

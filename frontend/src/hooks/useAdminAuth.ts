@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
+import { AppConfig } from '../lib/config/app.config';
 
 interface AdminUser {
   username: string;
@@ -51,7 +52,7 @@ const useAdminAuthStandalone = () => {
   const login = async (username: string, password: string) => {
     try {
       
-      const response = await fetch('http://localhost:3001/api/admin/login', {
+      const response = await fetch(`${AppConfig.apiUrl}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ export const adminApi = {
       },
     };
 
-    const response = await fetch(`http://localhost:3001/api/admin${endpoint}`, config);
+    const response = await fetch(`${AppConfig.apiUrl}/admin${endpoint}`, config);
     const data = await response.json();
 
     if (!response.ok) {
