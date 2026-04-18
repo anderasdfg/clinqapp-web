@@ -212,7 +212,7 @@ export class AdminController {
       const { id } = req.params;
 
       const organization = await prisma.organization.findUnique({
-        where: { id },
+        where: { id: id as string },
         include: {
           users: {
             select: {
@@ -267,7 +267,7 @@ export class AdminController {
       const updateData = updateOrganizationSchema.parse(req.body);
 
       const organization = await prisma.organization.update({
-        where: { id },
+        where: { id: id as string },
         data: updateData,
         select: {
           id: true,
@@ -319,7 +319,7 @@ export class AdminController {
       const stats = await prisma.appointment.groupBy({
         by: ['reminderSentAt'],
         where: {
-          organizationId: id,
+          organizationId: id as string,
           startTime: {
             gte: startDate,
             lte: endDate
@@ -330,7 +330,7 @@ export class AdminController {
 
       const totalAppointments = await prisma.appointment.count({
         where: {
-          organizationId: id,
+          organizationId: id as string,
           startTime: {
             gte: startDate,
             lte: endDate
@@ -338,7 +338,7 @@ export class AdminController {
         }
       });
 
-      const remindersSent = stats.filter(s => s.reminderSentAt !== null).reduce((acc, s) => acc + s._count, 0);
+      const remindersSent = stats.filter(s => s.reminderSentAt !== null).reduce((acc, s) => acc + (s._count || 0), 0);
       const remindersNotSent = totalAppointments - remindersSent;
 
       res.status(200).json({

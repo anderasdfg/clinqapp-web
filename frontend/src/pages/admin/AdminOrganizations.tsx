@@ -42,7 +42,7 @@ interface OrganizationsResponse {
 export default function AdminOrganizations() {
   const [data, setData] = useState<OrganizationsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);

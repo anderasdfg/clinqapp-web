@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  BarChart3, 
   TrendingUp, 
   Calendar, 
   MessageSquare, 
   Users, 
   Building2,
   Download,
-  Filter,
   RefreshCw
 } from 'lucide-react';
 import { adminApi } from '../../hooks/useAdminAuth';
@@ -29,9 +27,9 @@ interface TimeframeStats {
 
 export default function AdminStats() {
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [timeframeStats, setTimeframeStats] = useState<TimeframeStats[]>([]);
+  const [timeframeStats] = useState<TimeframeStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [selectedTimeframe, setSelectedTimeframe] = useState('30d');
   const [refreshing, setRefreshing] = useState(false);
 

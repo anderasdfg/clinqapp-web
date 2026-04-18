@@ -298,7 +298,7 @@ export class WebhookController {
 
       const messages = await prisma.whatsAppMessage.findMany({
         where: {
-          phoneNumber: phoneNumber
+          phoneNumber: phoneNumber as string
         },
         include: {
           patient: {
