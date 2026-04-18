@@ -52,44 +52,13 @@ export class WebhookController {
 
       console.log(`💾 Mensaje guardado con ID: ${incomingMessage.id}`);
 
-      let responseMessage: string;
-      let isAutoResponse = true;
-
       if (patient) {
         console.log(`👤 Paciente encontrado: ${patient.firstName} ${patient.lastName}`);
-        
-        // Respuesta automática personalizada
-        responseMessage = `Hola ${patient.firstName}! 👋\n\nGracias por contactarnos. Tu mensaje ha sido recibido en ${patient.organization.name}.\n\nEn breve nos comunicaremos contigo. Si es una emergencia, por favor llama directamente a la clínica.\n\n¡Que tengas un buen día! 😊`;
       } else {
         console.log("❓ Paciente no encontrado en la base de datos");
-        
-        // Respuesta para números no registrados
-        responseMessage = `Hola! 👋\n\nGracias por contactarnos. No encontramos tu número en nuestro sistema.\n\nPor favor, contacta directamente con la clínica para más información.\n\n¡Gracias! 😊`;
       }
 
-      // Enviar respuesta automática
-      const sentMessage = await TwilioService.sendMessage(phoneNumber, responseMessage);
-      
-      if (sentMessage.success) {
-        // Guardar respuesta automática en la base de datos
-        await prisma.whatsAppMessage.create({
-          data: {
-            phoneNumber: phoneNumber,
-            direction: 'OUTGOING',
-            content: responseMessage,
-            messageSid: sentMessage.messageSid,
-            organizationId: patient?.organizationId || null,
-            patientId: patient?.id || null,
-            status: 'SENT',
-            isAutoResponse: true,
-            respondedAt: new Date()
-          }
-        });
-
-        console.log("✅ Respuesta automática enviada y guardada");
-      } else {
-        console.error("❌ Error enviando respuesta automática:", sentMessage.error);
-      }
+      console.log("📝 Mensaje recibido y guardado - Sin respuesta automática");
 
       // Responder a Twilio con TwiML vacío (requerido)
       res.set('Content-Type', 'text/xml');
