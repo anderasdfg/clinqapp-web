@@ -105,7 +105,7 @@ import salesRoutes from "./routes/sales.routes";
 import remindersRoutes from "./routes/reminders";
 import adminRoutes from "./routes/admin";
 import webhooksRoutes from "./routes/webhooks";
-import { ReminderScheduler } from "./lib/scheduler";
+// Scheduler removido - se usa GCP Cloud Scheduler
 
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/organization", organizationRoutes);
@@ -126,18 +126,16 @@ const server = app.listen(port, "0.0.0.0", () => {
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🚀 Ready to accept connections!`);
   
-  // Start the WhatsApp reminder scheduler
-  console.log("🔔 Starting WhatsApp reminder scheduler...");
-  ReminderScheduler.start();
+  // WhatsApp reminders ahora se manejan con GCP Cloud Scheduler
+  console.log("🔔 WhatsApp reminders configurados con GCP Cloud Scheduler");
 });
 
 // Graceful shutdown handling for Railway
 const gracefulShutdown = (signal: string) => {
   console.log(`\n⚠️  Received ${signal}, closing server gracefully...`);
   
-  // Stop the reminder scheduler
-  console.log("🛑 Stopping reminder scheduler...");
-  ReminderScheduler.stop();
+  // Scheduler ya no se usa internamente
+  console.log("🛑 Cerrando servidor...");
   
   server.close(() => {
     console.log("✅ Server closed");

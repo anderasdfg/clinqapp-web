@@ -181,4 +181,44 @@ export class ReminderController {
       });
     }
   }
+
+  /**
+   * Send daily reminders - Endpoint para GCP Cloud Scheduler
+   * POST /api/reminders/send-daily
+   */
+  static async sendDailyReminders(req: Request, res: Response): Promise<void> {
+    try {
+      console.log('🔔 Iniciando envío diario de recordatorios desde GCP Cloud Scheduler');
+      
+      // Verificar que la request viene de GCP (opcional - puedes agregar autenticación)
+      const userAgent = req.headers['user-agent'];
+      console.log(`📡 Request desde: ${userAgent}`);
+      
+      // Ejecutar el proceso de recordatorios diarios
+      const result = await AppointmentReminderService.processReminders();
+      
+      console.log(`✅ Proceso completado: ${result.successful} recordatorios enviados, ${result.failed} fallos`);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Daily reminders processed successfully',
+        data: {
+          processed: result.processed,
+          remindersSent: result.successful,
+          remindersFailed: result.failed,
+          errors: result.errors,
+          processedAt: new Date().toISOString()
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en sendDailyReminders:', error);
+      
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process daily reminders',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 }
