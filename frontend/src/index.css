@@ -5,6 +5,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix text selection visibility in admin inputs */
+input::selection,
+textarea::selection,
+select::selection {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+/* Ensure all inputs have proper text color */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  color: #1f2937 !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  color: #1f2937 !important;
+}
+
 @layer base {
   /* Theme Variables */
   :root {

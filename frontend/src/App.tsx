@@ -25,6 +25,16 @@ import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import { AuthProvider } from './components/auth/AuthProvider';
 
+// Admin imports
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrganizations from './pages/admin/AdminOrganizations';
+import AdminWhatsApp from './pages/admin/AdminWhatsApp';
+import AdminWhatsAppConversations from './pages/admin/AdminWhatsAppConversations';
+import AdminStats from './pages/admin/AdminStats';
+import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
+
 function App() {
     return (
         <ThemeProvider>
@@ -71,6 +81,26 @@ function App() {
                         <Route path="sales" element={<SalesPage />} />
                         <Route path="settings" element={<PatientsPage />} /> {/* Placeholder */}
                     </Route>
+
+                    {/* Admin Routes */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route 
+                        path="/admin" 
+                        element={
+                            <AdminProtectedRoute>
+                                <AdminLayout />
+                            </AdminProtectedRoute>
+                        }
+                    >
+                        <Route index element={<Navigate to="dashboard" replace />} />
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                        <Route path="organizations" element={<AdminOrganizations />} />
+                        <Route path="whatsapp" element={<AdminWhatsApp />} />
+                        <Route path="whatsapp/conversations" element={<AdminWhatsAppConversations />} />
+                        <Route path="stats" element={<AdminStats />} />
+                        <Route path="settings" element={<AdminDashboard />} /> {/* Placeholder */}
+                    </Route>
+
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </Router>

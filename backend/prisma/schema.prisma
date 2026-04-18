@@ -98,6 +98,7 @@ model Organization {
   schedules    Schedule[]
   paymentMethods      PaymentMethodConfig[]
   consultationTypes   ConsultationTypeConfig[]
+  whatsappMessages    WhatsAppMessage[]
 
   @@map("organizations")
 }
@@ -247,6 +248,7 @@ model Patient {
   appointments Appointment[]
   treatments   Treatment[]
   payments     Payment[]
+  whatsappMessages WhatsAppMessage[]
 
   @@map("patients")
   @@index([organizationId])
@@ -599,6 +601,64 @@ model ConsultationTypeConfig {
   @@map("consultation_type_configs")
   @@index([organizationId])
   @@unique([organizationId, type])
+}
+
+// ============================================
+// WHATSAPP MESSAGES
+// ============================================
+
+enum MessageDirection {
+  INCOMING
+  OUTGOING
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model WhatsAppMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Organization
+  organizationId String?       @map("organization_id") @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  
+  // Patient (if identified)
+  patientId String?  @map("patient_id") @db.Uuid
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  
+  // Message details
+  phoneNumber String    @map("phone_number") // E.164 format
+  direction   MessageDirection
+  content     String
+  status      MessageStatus @default(SENT)
+  
+  // Twilio details
+  messageSid  String? @unique @map("message_sid") // Twilio message SID
+  accountSid  String? @map("account_sid")
+  profileName String? @map("profile_name") // WhatsApp profile name
+  
+  // Response tracking
+  isAutoResponse Boolean @default(false) @map("is_auto_response")
+  respondedAt    DateTime? @map("responded_at") @db.Timestamptz
+  
+  // Error handling
+  errorCode    String? @map("error_code")
+  errorMessage String? @map("error_message")
+
+  @@map("whatsapp_messages")
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([phoneNumber])
+  @@index([direction])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@index([patientId, createdAt])
 }
 
 // ============================================

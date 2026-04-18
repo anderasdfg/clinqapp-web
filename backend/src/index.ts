@@ -102,6 +102,10 @@ import dashboardRoutes from "./routes/dashboard.routes";
 import schedulesRoutes from "./routes/schedules.routes";
 import paymentMethodsRoutes from "./routes/payment-methods.routes";
 import salesRoutes from "./routes/sales.routes";
+import remindersRoutes from "./routes/reminders";
+import adminRoutes from "./routes/admin";
+import webhooksRoutes from "./routes/webhooks";
+import { ReminderScheduler } from "./lib/scheduler";
 
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/organization", organizationRoutes);
@@ -113,16 +117,28 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/schedules", schedulesRoutes);
 app.use("/api/payment-methods", paymentMethodsRoutes);
 app.use("/api/sales", salesRoutes);
+app.use("/api/reminders", remindersRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/webhooks", webhooksRoutes);
 
 const server = app.listen(port, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🚀 Ready to accept connections!`);
+  
+  // Start the WhatsApp reminder scheduler
+  console.log("🔔 Starting WhatsApp reminder scheduler...");
+  ReminderScheduler.start();
 });
 
 // Graceful shutdown handling for Railway
 const gracefulShutdown = (signal: string) => {
   console.log(`\n⚠️  Received ${signal}, closing server gracefully...`);
+  
+  // Stop the reminder scheduler
+  console.log("🛑 Stopping reminder scheduler...");
+  ReminderScheduler.stop();
+  
   server.close(() => {
     console.log("✅ Server closed");
     prisma.$disconnect();
