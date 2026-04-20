@@ -11,7 +11,6 @@ const loginSchema = z.object({
 const updateOrganizationSchema = z.object({
   sendReminders: z.boolean().optional(),
   notificationWhatsapp: z.boolean().optional(),
-  reminderHoursBefore: z.number().min(1).max(72).optional(),
   subscriptionPlan: z.enum(['FREE_TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE']).optional(),
   subscriptionStatus: z.enum(['ACTIVE', 'CANCELLED', 'PAST_DUE', 'TRIALING']).optional()
 });
@@ -266,6 +265,15 @@ export class AdminController {
       const { id } = req.params;
       const updateData = updateOrganizationSchema.parse(req.body);
 
+      // Si se activa WhatsApp, también activar sendReminders
+      if (updateData.notificationWhatsapp === true) {
+        updateData.sendReminders = true;
+      }
+      // Si se desactiva WhatsApp, también desactivar sendReminders
+      if (updateData.notificationWhatsapp === false) {
+        updateData.sendReminders = false;
+      }
+
       const organization = await prisma.organization.update({
         where: { id: id as string },
         data: updateData,
@@ -274,7 +282,6 @@ export class AdminController {
           name: true,
           sendReminders: true,
           notificationWhatsapp: true,
-          reminderHoursBefore: true,
           subscriptionPlan: true,
           subscriptionStatus: true
         }

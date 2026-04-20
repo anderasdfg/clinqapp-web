@@ -9,6 +9,7 @@ import {
   Building2,
   TrendingUp
 } from 'lucide-react';
+import * as Switch from '@radix-ui/react-switch';
 import { adminApi } from '../../hooks/useAdminAuth';
 
 interface Organization {
@@ -20,7 +21,6 @@ interface Organization {
   subscriptionStatus: string;
   sendReminders: boolean;
   notificationWhatsapp: boolean;
-  reminderHoursBefore: number;
   createdAt: string;
   _count: {
     users: number;
@@ -162,7 +162,7 @@ export default function AdminOrganizations() {
                   Plan de Suscripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Recordatorios
+                  WhatsApp
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Personal
@@ -198,7 +198,7 @@ export default function AdminOrganizations() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {org.sendReminders && org.notificationWhatsapp ? (
+                      {org.notificationWhatsapp ? (
                         <div className="flex items-center text-green-600">
                           <TrendingUp className="w-4 h-4 mr-1" />
                           <span className="text-sm">Activo</span>
@@ -335,7 +335,6 @@ function EditOrganizationModal({ organization, onClose, onSave }: EditOrganizati
   const [formData, setFormData] = useState({
     sendReminders: organization.sendReminders,
     notificationWhatsapp: organization.notificationWhatsapp,
-    reminderHoursBefore: organization.reminderHoursBefore,
     subscriptionPlan: organization.subscriptionPlan,
     subscriptionStatus: organization.subscriptionStatus
   });
@@ -368,46 +367,30 @@ function EditOrganizationModal({ organization, onClose, onSave }: EditOrganizati
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* WhatsApp Settings */}
             <div className="space-y-3">
-              <h4 className="font-medium text-gray-900">Configuración WhatsApp</h4>
+              <h4 className="font-medium text-gray-900">Configuración recordatorios</h4>
               
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="sendReminders"
-                  checked={formData.sendReminders}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sendReminders: e.target.checked }))}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="sendReminders" className="ml-2 text-sm text-gray-700">
-                  Habilitar recordatorios
+              <div className="flex items-center justify-between">
+                <label htmlFor="whatsappReminders" className="text-sm font-medium text-gray-700">
+                  Habilitar recordatorios por WhatsApp
                 </label>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="notificationWhatsapp"
+                <Switch.Root
+                  id="whatsappReminders"
                   checked={formData.notificationWhatsapp}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notificationWhatsapp: e.target.checked }))}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="notificationWhatsapp" className="ml-2 text-sm text-gray-700">
-                  Habilitar WhatsApp
-                </label>
+                  onCheckedChange={(checked) => setFormData(prev => ({ 
+                    ...prev, 
+                    notificationWhatsapp: checked,
+                    sendReminders: checked // Sincronizar ambos campos
+                  }))}
+                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 data-[state=checked]:bg-indigo-600 data-[state=unchecked]:bg-gray-200"
+                >
+                  <Switch.Thumb className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0" />
+                </Switch.Root>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Horas antes del recordatorio
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="72"
-                  value={formData.reminderHoursBefore}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reminderHoursBefore: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
-                />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-blue-800 text-sm">
+                  <strong>Recordatorios automáticos:</strong> Todos los días a las 8:00 AM se envía el recordatorio de las citas del día siguiente.
+                </p>
               </div>
             </div>
 

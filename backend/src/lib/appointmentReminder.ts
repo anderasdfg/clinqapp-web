@@ -8,7 +8,7 @@ const LIMA_TIMEZONE = 'America/Lima';
 export class AppointmentReminderService {
   /**
    * Process all appointment reminders for the next day
-   * This should be called daily at 9 AM Lima time
+   * This should be called daily at 8 AM Lima time
    */
   static async processReminders(): Promise<{
     processed: number;

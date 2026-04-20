@@ -15,9 +15,7 @@ router.post('/send-daily', ReminderController.sendDailyReminders);
 // Get reminder statistics for an organization
 router.get('/stats', ReminderController.getReminderStats);
 
-// Scheduler management endpoints
+// Scheduler status (solo lectura - GCP Cloud Scheduler)
 router.get('/scheduler/status', ReminderController.getSchedulerStatus);
-router.post('/scheduler/start', ReminderController.startScheduler);
-router.post('/scheduler/stop', ReminderController.stopScheduler);
 
 export default router;

@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { AppointmentReminderService } from '../lib/appointmentReminder';
-import { ReminderScheduler } from '../lib/scheduler';
 import { z } from 'zod';
 
 // Validation schemas
@@ -57,12 +56,12 @@ export class ReminderController {
   }
 
   /**
-   * Force process all pending reminders (for testing/manual execution)
+   * Force process reminders now (same as daily but manual trigger)
    * POST /api/reminders/process-now
    */
   static async processRemindersNow(req: Request, res: Response): Promise<void> {
     try {
-      const results = await ReminderScheduler.forceProcessReminders();
+      const results = await AppointmentReminderService.processReminders();
 
       res.status(200).json({
         success: true,
@@ -117,16 +116,20 @@ export class ReminderController {
   }
 
   /**
-   * Get scheduler status
+   * Get scheduler status (GCP Cloud Scheduler)
    * GET /api/reminders/scheduler/status
    */
   static async getSchedulerStatus(req: Request, res: Response): Promise<void> {
     try {
-      const status = ReminderScheduler.getStatus();
-
+      // Con GCP Cloud Scheduler, el estado se maneja externamente
       res.status(200).json({
         success: true,
-        data: status
+        data: {
+          type: 'GCP Cloud Scheduler',
+          status: 'MANAGED_EXTERNALLY',
+          message: 'Scheduler configurado en Google Cloud Platform',
+          schedule: 'Diario a las 8:00 AM (America/Lima)'
+        }
       });
     } catch (error) {
       console.error('Error in getSchedulerStatus:', error);
@@ -134,50 +137,6 @@ export class ReminderController {
       res.status(500).json({
         success: false,
         error: 'Internal server error'
-      });
-    }
-  }
-
-  /**
-   * Start the reminder scheduler
-   * POST /api/reminders/scheduler/start
-   */
-  static async startScheduler(req: Request, res: Response): Promise<void> {
-    try {
-      ReminderScheduler.start();
-
-      res.status(200).json({
-        success: true,
-        message: 'Reminder scheduler started successfully'
-      });
-    } catch (error) {
-      console.error('Error in startScheduler:', error);
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to start scheduler'
-      });
-    }
-  }
-
-  /**
-   * Stop the reminder scheduler
-   * POST /api/reminders/scheduler/stop
-   */
-  static async stopScheduler(req: Request, res: Response): Promise<void> {
-    try {
-      ReminderScheduler.stop();
-
-      res.status(200).json({
-        success: true,
-        message: 'Reminder scheduler stopped successfully'
-      });
-    } catch (error) {
-      console.error('Error in stopScheduler:', error);
-      
-      res.status(500).json({
-        success: false,
-        error: 'Failed to stop scheduler'
       });
     }
   }
