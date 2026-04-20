@@ -2,10 +2,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Building2, 
-  MessageSquare, 
-  MessageCircle,
   BarChart3, 
-  Settings, 
+  MessageCircle,
   LogOut,
   Shield
 } from 'lucide-react';
@@ -22,19 +20,14 @@ export default function AdminLayout() {
 
   const navigation = [
     {
-      name: 'Dashboard',
+      name: 'Resumen General',
       href: '/admin/dashboard',
       icon: LayoutDashboard,
     },
     {
-      name: 'Organizaciones',
+      name: 'Clientes',
       href: '/admin/organizations',
       icon: Building2,
-    },
-    {
-      name: 'Recordatorios WhatsApp',
-      href: '/admin/whatsapp',
-      icon: MessageSquare,
     },
     {
       name: 'Conversaciones WhatsApp',
@@ -42,14 +35,9 @@ export default function AdminLayout() {
       icon: MessageCircle,
     },
     {
-      name: 'Estadísticas',
+      name: 'Métricas',
       href: '/admin/stats',
       icon: BarChart3,
-    },
-    {
-      name: 'Configuración',
-      href: '/admin/settings',
-      icon: Settings,
     },
   ];
 
@@ -61,7 +49,7 @@ export default function AdminLayout() {
         <div className="flex items-center justify-center h-16 px-4 bg-indigo-600">
           <div className="flex items-center">
             <Shield className="w-8 h-8 text-white mr-2" />
-            <h1 className="text-xl font-bold text-white">Panel ClinqApp</h1>
+            <h1 className="text-xl font-bold text-white">Panel Ejecutivo</h1>
           </div>
         </div>
 

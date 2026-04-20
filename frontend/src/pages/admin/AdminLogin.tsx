@@ -65,7 +65,7 @@ export default function AdminLogin() {
             {/* Username */}
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-3">
-                Usuario Administrador
+                Usuario
               </label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#6366f1] w-5 h-5" />

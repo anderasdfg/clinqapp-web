@@ -111,8 +111,25 @@ export class AppointmentReminderService {
               data: { reminderSentAt: new Date() }
             });
 
+            // Save the reminder message to WhatsApp messages table
+            const formattedPhone = TwilioService.formatPhoneNumber(appointment.patient.phone);
+            const reminderContent = `¡Hola ${reminderData.patientName}! 👋\n\nTe recordamos que tienes una cita mañana ${reminderData.appointmentDate} a las ${reminderData.appointmentTime}\n📍 ${reminderData.clinicName}\n\n¡Te esperamos!`;
+            
+            await prisma.whatsAppMessage.create({
+              data: {
+                phoneNumber: formattedPhone,
+                direction: 'OUTGOING',
+                content: reminderContent,
+                messageSid: result.messageSid,
+                organizationId: appointment.organizationId,
+                patientId: appointment.patientId,
+                status: 'SENT',
+                isAutoResponse: false // Es un recordatorio automático, no una respuesta
+              }
+            });
+
             results.successful++;
-            console.log(`✅ Reminder sent for appointment ${appointment.id} (${reminderData.patientName})`);
+            console.log(`✅ Reminder sent and saved for appointment ${appointment.id} (${reminderData.patientName})`);
           } else {
             results.failed++;
             const errorMsg = `Failed to send reminder for appointment ${appointment.id}: ${result.error}`;

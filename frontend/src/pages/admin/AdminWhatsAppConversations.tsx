@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWhatsAppConversations, useConversationMessages } from '../../hooks/useWhatsAppConversations';
 import { ConversationList } from '../../components/whatsapp/ConversationList';
 import { ChatArea } from '../../components/whatsapp/ChatArea';
 import { Conversation } from '../../types/whatsapp';
+import { RefreshCw } from 'lucide-react';
 
 export default function AdminWhatsAppConversations() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { conversations, loading, error } = useWhatsAppConversations();
+  const { conversations, loading, error, loadConversations } = useWhatsAppConversations();
   const { messages, loading: messagesLoading, loadMessages } = useConversationMessages(selectedConversation?.phoneNumber || null);
+  
+  // Cargar conversaciones solo al montar el componente
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -19,13 +25,15 @@ export default function AdminWhatsAppConversations() {
     if (selectedConversation) {
       loadMessages(selectedConversation.phoneNumber);
     }
+    // Actualizar la lista de conversaciones para reflejar el nuevo mensaje
+    loadConversations();
   };
 
   const handleBack = () => {
     setSelectedConversation(null);
   };
 
-  if (loading) {
+  if (loading && conversations.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -34,20 +42,26 @@ export default function AdminWhatsAppConversations() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="h-[90vh] flex flex-col">
+      {/* Compact Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Conversaciones WhatsApp</h1>
-            <p className="text-gray-600 mt-1">
-              Gestiona las conversaciones con tus pacientes
-            </p>
+            <h1 className="text-lg font-semibold text-gray-900">Centro de Comunicaciones</h1>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500">
-              {conversations.length} conversaciones
+            <span className="text-xs text-gray-500">
+              {conversations.length} chats
             </span>
+            <button
+              onClick={loadConversations}
+              disabled={loading}
+              className="flex items-center px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 disabled:opacity-50 transition-colors"
+              title="Actualizar"
+            >
+              <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </button>
           </div>
         </div>
       </div>

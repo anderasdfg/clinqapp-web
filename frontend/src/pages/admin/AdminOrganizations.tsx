@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Eye, 
-  MessageSquare, 
   Users, 
-  Calendar,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  Building2,
+  TrendingUp
 } from 'lucide-react';
 import { adminApi } from '../../hooks/useAdminAuth';
 
@@ -120,9 +120,9 @@ export default function AdminOrganizations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Organizaciones</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
           <p className="text-gray-600 mt-2">
-            Gestiona todas las organizaciones del sistema
+            Administra la cartera de clientes y sus suscripciones
           </p>
         </div>
       </div>
@@ -156,16 +156,16 @@ export default function AdminOrganizations() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Organización
+                  Cliente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plan
+                  Plan de Suscripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  WhatsApp
+                  Recordatorios
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuarios
+                  Personal
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Pacientes
@@ -200,12 +200,12 @@ export default function AdminOrganizations() {
                     <div className="flex items-center">
                       {org.sendReminders && org.notificationWhatsapp ? (
                         <div className="flex items-center text-green-600">
-                          <MessageSquare className="w-4 h-4 mr-1" />
+                          <TrendingUp className="w-4 h-4 mr-1" />
                           <span className="text-sm">Activo</span>
                         </div>
                       ) : (
                         <div className="flex items-center text-gray-400">
-                          <MessageSquare className="w-4 h-4 mr-1" />
+                          <TrendingUp className="w-4 h-4 mr-1" />
                           <span className="text-sm">Inactivo</span>
                         </div>
                       )}
@@ -219,7 +219,7 @@ export default function AdminOrganizations() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
-                      <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+                      <Building2 className="w-4 h-4 mr-1 text-gray-400" />
                       {org._count.patients}
                     </div>
                   </td>

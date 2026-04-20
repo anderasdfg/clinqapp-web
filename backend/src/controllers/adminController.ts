@@ -26,7 +26,7 @@ export class AdminController {
       const { username, password } = loginSchema.parse(req.body);
 
       // Hardcoded admin credentials
-      if (username === 'admin' && password === 'admin') {
+      if (username === 'admin' && password === 'Admin4563') {
         // Simple session token (in production, use JWT)
         const token = 'admin-session-' + Date.now();
         

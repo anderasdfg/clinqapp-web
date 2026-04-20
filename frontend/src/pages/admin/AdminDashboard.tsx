@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { 
   Building2, 
   Users, 
-  MessageSquare, 
-  Calendar,
-  Activity,
+  TrendingUp, 
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from 'lucide-react';
 import { adminApi } from '../../hooks/useAdminAuth';
 
@@ -60,36 +59,32 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      name: 'Total Organizaciones',
+      name: 'Clientes Activos',
       value: stats?.totalOrganizations || 0,
       icon: Building2,
       color: 'bg-blue-500',
-      change: '+12%',
-      changeType: 'positive'
+      description: 'Organizaciones registradas'
     },
     {
-      name: 'WhatsApp Habilitado',
+      name: 'Automatización Activa',
       value: stats?.whatsappEnabled || 0,
-      icon: MessageSquare,
+      icon: TrendingUp,
       color: 'bg-green-500',
-      change: '+8%',
-      changeType: 'positive'
+      description: 'Con recordatorios automáticos'
     },
     {
-      name: 'Recordatorios (7 días)',
+      name: 'Mensajes Enviados',
       value: stats?.recentReminders || 0,
-      icon: Calendar,
-      color: 'bg-yellow-500',
-      change: '+23%',
-      changeType: 'positive'
+      icon: BarChart3,
+      color: 'bg-indigo-500',
+      description: 'Últimos 7 días'
     },
     {
-      name: 'Total Usuarios',
+      name: 'Usuarios Totales',
       value: stats?.totalUsers || 0,
       icon: Users,
       color: 'bg-purple-500',
-      change: '+5%',
-      changeType: 'positive'
+      description: 'Personal médico activo'
     }
   ];
 
@@ -111,9 +106,9 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Resumen Ejecutivo</h1>
         <p className="text-gray-600 mt-2">
-          Resumen general del sistema ClinqApp
+          Métricas principales de ClinqApp
         </p>
       </div>
 
@@ -125,6 +120,7 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">{stat.name}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
               </div>
               <div className={`${stat.color} p-3 rounded-lg`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -201,17 +197,27 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold text-gray-900">
             Actividad Reciente
           </h3>
-          <Activity className="w-5 h-5 text-gray-400" />
+          <BarChart3 className="w-5 h-5 text-gray-400" />
         </div>
         
         <div className="space-y-3">
           <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-            <MessageSquare className="w-5 h-5 text-blue-600 mr-3" />
+            <TrendingUp className="w-5 h-5 text-blue-600 mr-3" />
             <div className="flex-1">
               <p className="text-sm font-medium text-blue-900">
                 {stats?.recentReminders || 0} recordatorios WhatsApp enviados
               </p>
               <p className="text-xs text-blue-600">En los últimos 7 días</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center p-3 bg-purple-50 rounded-lg">
+            <BarChart3 className="w-5 h-5 text-purple-600 mr-3" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-purple-900">
+                Centro de comunicaciones activo
+              </p>
+              <p className="text-xs text-purple-600">Monitoreo de conversaciones disponible</p>
             </div>
           </div>
           

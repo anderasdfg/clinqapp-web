@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
-  Calendar, 
-  MessageSquare, 
   Users, 
   Building2,
   Download,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from 'lucide-react';
 import { adminApi } from '../../hooks/useAdminAuth';
 
@@ -30,7 +29,7 @@ export default function AdminStats() {
   const [timeframeStats] = useState<TimeframeStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setError] = useState('');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('30d');
+  const [selectedTimeframe] = useState('30d');
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -105,39 +104,27 @@ export default function AdminStats() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Estadísticas y Métricas</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Métricas de Negocio</h1>
           <p className="text-gray-600 mt-2">
-            Análisis detallado del rendimiento del sistema
+            Análisis detallado del rendimiento comercial
           </p>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <select
-            value={selectedTimeframe}
-            onChange={(e) => setSelectedTimeframe(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="1y">Último año</option>
-          </select>
-          
+        <div className="flex space-x-3">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Actualizar
+            {refreshing ? 'Actualizando...' : 'Actualizar'}
           </button>
-          
           <button
             onClick={exportStats}
-            className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Download className="w-4 h-4 mr-2" />
-            Exportar
+            Exportar CSV
           </button>
         </div>
       </div>
@@ -147,14 +134,11 @@ export default function AdminStats() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Organizaciones</p>
+              <p className="text-sm font-medium text-gray-600">Clientes Activos</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">
                 {stats?.totalOrganizations || 0}
               </p>
-              <div className="flex items-center mt-2">
-                <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+8.2%</span>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">Organizaciones registradas</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-lg">
               <Building2 className="w-6 h-6 text-blue-600" />
@@ -165,20 +149,18 @@ export default function AdminStats() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">WhatsApp Activo</p>
+              <p className="text-sm font-medium text-gray-600">Automatización Activa</p>
               <p className="text-3xl font-bold text-green-600 mt-2">
                 {stats?.whatsappEnabled || 0}
               </p>
-              <div className="flex items-center mt-2">
-                <span className="text-sm text-gray-500">
-                  {stats?.totalOrganizations ? 
-                    ((stats.whatsappEnabled / stats.totalOrganizations) * 100).toFixed(1) : 0
-                  }% del total
-                </span>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats?.totalOrganizations ? 
+                  ((stats.whatsappEnabled / stats.totalOrganizations) * 100).toFixed(1) : 0
+                }% del total
+              </p>
             </div>
             <div className="bg-green-100 p-3 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-green-600" />
+              <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
@@ -186,16 +168,14 @@ export default function AdminStats() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Recordatorios Recientes</p>
+              <p className="text-sm font-medium text-gray-600">Mensajes Enviados</p>
               <p className="text-3xl font-bold text-purple-600 mt-2">
                 {stats?.recentReminders || 0}
               </p>
-              <div className="flex items-center mt-2">
-                <span className="text-sm text-gray-500">Últimos 7 días</span>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">Últimos 7 días</p>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg">
-              <Calendar className="w-6 h-6 text-purple-600" />
+              <BarChart3 className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
@@ -203,13 +183,11 @@ export default function AdminStats() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Usuarios</p>
+              <p className="text-sm font-medium text-gray-600">Personal Médico</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">
                 {stats?.totalUsers || 0}
               </p>
-              <div className="flex items-center mt-2">
-                <span className="text-sm text-gray-500">En el sistema</span>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">Usuarios activos</p>
             </div>
             <div className="bg-orange-100 p-3 rounded-lg">
               <Users className="w-6 h-6 text-orange-600" />
@@ -229,7 +207,7 @@ export default function AdminStats() {
             <div className="p-4 bg-blue-50 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">Estado del Scheduler</h4>
               <p className="text-sm text-blue-700">
-                El sistema de recordatorios se ejecuta automáticamente todos los días a las 9:00 AM (Lima)
+                El sistema de recordatorios se ejecuta automáticamente todos los días a las 8:00 AM (Lima)
               </p>
             </div>
             

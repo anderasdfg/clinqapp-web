@@ -83,17 +83,8 @@ export const patientSchema = z.object({
   gender: z.enum([GENDER.MALE, GENDER.FEMALE, GENDER.OTHER]).optional(),
 
   address: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val === "") return true;
-        return val.length >= 5;
-      },
-      {
-        message: "La dirección debe tener al menos 5 caracteres",
-      },
-    ),
+    .union([z.literal(""), z.string().min(5, "La dirección debe tener al menos 5 caracteres")])
+    .optional(),
 
   occupation: z
     .string()

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, User, Phone, MessageSquare, Send } from 'lucide-react';
 import { Conversation, Message } from '../../types/whatsapp';
 import { useWhatsAppMessages } from '../../hooks/useWhatsAppMessages';
@@ -20,6 +20,14 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const { sendMessage, sendingMessage } = useWhatsAppMessages();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll al último mensaje cuando cambian los mensajes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -47,15 +55,21 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     try {
       await sendMessage({
         phoneNumber: selectedConversation.phoneNumber,
-        message: newMessage,
+        message: newMessage.trim(),
         organizationId: selectedConversation.organizationId
       });
 
       setNewMessage('');
       onMessageSent();
       
+      // Auto-scroll después de enviar mensaje
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     } catch (error) {
-      // Error is handled by the hook
+      console.error('Error sending message:', error);
     }
   };
 
@@ -73,8 +87,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* Chat Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      {/* Compact Chat Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2">
         <div className="flex items-center space-x-3">
           <button
             onClick={onBack}
@@ -117,54 +131,58 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             <p>No hay mensajes en esta conversación</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.direction === 'OUTGOING' ? 'justify-end' : 'justify-start'}`}
-            >
+          <>
+            {messages.map((message) => (
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.direction === 'OUTGOING'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
+                key={message.id}
+                className={`flex ${message.direction === 'OUTGOING' ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="text-sm">{message.content}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <span className={`text-xs ${
-                    message.direction === 'OUTGOING' ? 'text-indigo-200' : 'text-gray-500'
-                  }`}>
-                    {formatTime(message.createdAt)}
-                  </span>
-                  {message.isAutoResponse && (
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.direction === 'OUTGOING'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <div className="flex items-center justify-between mt-1">
                     <span className={`text-xs ${
                       message.direction === 'OUTGOING' ? 'text-indigo-200' : 'text-gray-500'
                     }`}>
-                      Auto
+                      {formatTime(message.createdAt)}
                     </span>
-                  )}
+                    {message.isAutoResponse && (
+                      <span className={`text-xs ${
+                        message.direction === 'OUTGOING' ? 'text-indigo-200' : 'text-gray-500'
+                      }`}>
+                        Auto
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+            {/* Elemento invisible para auto-scroll */}
+            <div ref={messagesEndRef} />
+          </>
         )}
       </div>
 
-      {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <form onSubmit={handleSendMessage} className="flex space-x-3">
+      {/* Compact Message Input */}
+      <div className="bg-white border-t border-gray-200 p-2">
+        <form onSubmit={handleSendMessage} className="flex space-x-2">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={sendingMessage}
           />
           <button
             type="submit"
             disabled={sendingMessage || !newMessage.trim()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {sendingMessage ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
