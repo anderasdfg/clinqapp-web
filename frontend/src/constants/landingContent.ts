@@ -10,8 +10,7 @@ import {
   Send,
   Target,
   MessageCircle,
-  CreditCard,
-  RefreshCw,
+  CreditCard,  
 } from "lucide-react";
 
 // Images
