@@ -38,12 +38,12 @@ export const landingContent = {
       icon: Sparkles,
     },
     title: {
-      line1: "Tu Clínica Podológica,",
-      highlight: "Organizada",
-      line2: "y Visual",
+      line1: "Gestiona tu,",
+      highlight: "Centro Podológico",
+      line2: "desde un solo lugar",
     },
     description:
-      "La primera herramienta diseñada para podólogos. \nGestiona citas, ingresos y, sobre todo, \nla evidencia visual de tus pacientes en un solo lugar.",
+      "El primer software diseñado especialmente para podólogos. \n Gestiona historias clínicas, citas, ingresos y, sobre todo,  \n la evolucion de tus pacientes en un solo lugar",
     ctas: {
       primary: {
         text: "Prueba Gratis 14 Días",
@@ -75,14 +75,14 @@ export const landingContent = {
       title: "Todo lo que necesitas para ",
       highlight: "gestionar tu clínica",
       description:
-        "Diseñado específicamente para podólogos modernos que valoran la evidencia visual y la eficiencia clínica.",
+        "Menos desorden, más control y mejor atención para tus pacientes.",
     },
     items: [
       {
         icon: Camera,
         title: "Fotografía Clínica",
         description:
-          "Captura y compara la evolución de tus pacientes. Organiza la evidencia visual automáticamente en el historial clínico.",
+          "Guarda y compara la evolución de tus pacientes fácilmente. \n Ten toda la evidencia visual organizada sin perder fotos ni información.",
         badge: "Evidencia Visual",
         badgeColor: "bg-cyan-500",
         image: clinicalPhoto,
@@ -93,7 +93,7 @@ export const landingContent = {
         icon: Calendar,
         title: "Agenda Inteligente",
         description:
-          "Optimiza tus citas con recordatorios automáticos por WhatsApp. Reduce el ausentismo y llena tus huecos libres.",
+          "Organiza tus citas sin enredos. \n Recibe recordatorios automáticos y evita espacios vacíos en tu agenda.",
         badge: "Gestión Inteligente",
         badgeColor: "bg-purple-500",
         image: smartCalendar,
@@ -104,7 +104,7 @@ export const landingContent = {
         icon: FileText,
         title: "Historia Clínica 100% Digital",
         description:
-          "Olvídate del papel. Accede a los datos de tus pacientes desde cualquier dispositivo con la máxima seguridad en la nube.",
+          "Toda la información de tus pacientes en un solo lugar. \nAccede rápido, sin papeles y desde cualquier dispositivo.",
         badge: "Datos Seguros",
         badgeColor: "bg-blue-500",
         image: digitalRecords,
@@ -113,16 +113,15 @@ export const landingContent = {
       },
     ],
     features: [
-      { icon: Target, text: "14 días de prueba gratis" },
-      { icon: MessageCircle, text: "Soporte 24/7" },
-      { icon: CreditCard, text: "Sin tarjeta de crédito" },
-      { icon: RefreshCw, text: "Cancela cuando quieras" },
+      { icon: Target, text: "Pago mensual o anual" },
+      { icon: MessageCircle, text: "Ahorra 20% Anual" },
+      { icon: CreditCard, text: "Sin contratos" },      
     ],
   },
   trust: {
     header: {
-      title: "¿Cansado del ",
-      highlight: "caos administrativo",
+      title: "¿Sientes que tu clínica está ",
+      highlight: "fuera de control",
       question: "?",
       description:
         "Deja atrás las agendas de papel y las hojas de cálculo desorganizadas.",
@@ -130,21 +129,21 @@ export const landingContent = {
     problem: {
       title: "Sin ClinqApp",
       items: [
-        "Agendas de papel difíciles de leer",
-        "Pérdida de historiales clínicos",
-        "Citas olvidadas y ausentismo",
-        "Caja desorganizada sin reportes",
+        "Historias clínicas incompletas o perdidas",
+        "Agendas en papel que nadie entiende",
+        "No recuerdas qué tratamiento hiciste en cada visita",
+        "Falta de claridad en tus ingresos",
         "Fotos perdidas en el celular",
       ],
     },
     solution: {
       title: "Con ClinqApp",
       items: [
-        "Agenda digital sincronizada en todos tus dispositivos",
-        "Historiales clínicos visuales siempre accesibles",
-        "Recordatorios automáticos por WhatsApp",
-        "Reportes de caja en tiempo real",
-        "Comparativas antes/después organizadas",
+        "Toda la información de tus pacientes en un solo lugar",
+        "Agenda ordenada y sin enredos",
+        "Historial claro de cada tratamiento por visita",
+        "Ingresos organizados y fáciles de entender",
+        "Fotos y evolución de pacientes bien organizadas",
       ],
     },
     cta: {
@@ -158,53 +157,54 @@ export const landingContent = {
       title: "Planes que crecen ",
       highlight: "contigo",
       description:
-        "Sin comisiones ocultas. Cancela o cambia de plan en cualquier momento.",
+        "Sin comisiones ocultas. Cancela cuando quieras.",
     },
     plans: [
       {
         name: "Básico",
-        price: "S/.99",
+        price: "S/.59",
         period: "/mes",
         description:
-          "Ideal para podólogos independientes que empiezan a digitalizarse.",
+          "Ideal para podólogos independientes que quieren empezar a organizar su consulta (1 podólogo)",
         features: [
-          "Hasta 100 pacientes",
-          "Agenda básica",
-          "Historial clínico digital",
-          "Soporte por email",
+          "Gestión de agenda y citas en tiempo real",
+          "Registro completo de pacientes",
+          "Historias clínicas digitales organizadas",
+          "Control básico de ingresos",
         ],
-        cta: "Empezar Gratis",
+        cta: "Empezar gratis →",
         highlighted: false,
       },
       {
         name: "Profesional",
-        price: "S/.199",
+        price: "S/.120",
         period: "/mes",
-        description: "Nuestra opción más popular para clínicas en crecimiento.",
+        description: "Nuestra opción más elegida por clínicas en crecimiento (Hasta 4 podólogos)",
+        badge: "Más popular",
         features: [
-          "Pacientes ilimitados",
-          "Agenda inteligente con IA",
-          "Módulo de fotografía avanzada",
-          "Recordatorios WhatsApp ilimitados",
-          "Soporte prioritario 24/7",
+          "Incluye todo lo del plan Básico, más:",
+          "Seguimiento visual de pacientes con fotografías",
+          "Recordatorios automáticos para reducir ausencias",
+          "Control completo de ingresos",
+          "Gestión de inventario de productos"
         ],
-        cta: "Elegir Plan",
+        cta: "Elegir plan →",
         highlighted: true,
       },
       {
         name: "Clínica",
-        price: "S/.399",
-        period: "/mes",
+        price: "Precio personalizado",
+        period: "",
         description:
-          "Para centros con múltiples especialistas y necesidades complejas.",
+          "Para centros con múltiples especialistas y mayor volumen (Más de 4 podólogos)",
         features: [
-          "Múltiples sedes/sucursales",
-          "Gestión de staff ilimitada",
-          "Reportes financieros avanzados",
-          "API para integraciones",
-          "Account Manager dedicado",
-        ],
-        cta: "Contactar Ventas",
+          "Incluye todo lo del plan Profesional, más:",
+          "Gestión avanzada de múltiples usuarios",
+          "Reportes financieros y operativos en tiempo real",
+          "Soporte prioritario y acompañamiento",
+          "Configuración adaptada a tu clínica"
+        ],        
+        cta: "Contactar ventas →",
         highlighted: false,
       },
     ],
@@ -262,7 +262,7 @@ export const landingContent = {
       highlight: "modernizar",
       end: " tu consulta?",
       description:
-        "Únete a más de 500 podólogos que ya confían en ClinqApp para gestionar sus clínicas",
+        "Únete a quienes ya están llevando su clínica al siguiente nivel con ClinqApp.",
       primaryBtn: {
         text: "Comenzar Prueba Gratis",
         to: "/app/register",

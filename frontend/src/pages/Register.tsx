@@ -154,12 +154,13 @@ const Register = () => {
                         </h1>
 
                         <p className="text-lg text-white/80 mb-12 leading-relaxed max-w-md font-light">
-                            Únete a miles de profesionales de la salud que ya confían en ClinqApp para gestionar sus consultorios de manera eficiente.
+                            Únete a los podólogos que ya están organizando su clínica en un solo lugar.
+                            Agenda, pacientes, ingresos y evolución clínica, sin complicaciones.
                         </p>
 
                         {/* Features List */}
                         <div className="space-y-4 mb-12">
-                            {['Configuración en menos de 5 minutos', '30 días de prueba gratuita', 'Soporte técnico incluido'].map((feat) => (
+                            {['Configura tu cuenta en minutos', 'Empieza a ordenar tu clínica desde el primer día', 'Soporte real cuando lo necesites'].map((feat) => (
                                 <div key={feat} className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,8 +180,8 @@ const Register = () => {
                                 <img src={nurse1} alt="Enfermera" className="w-8 h-8 rounded-full border-2 border-white object-cover" />
                             </div>
                             <div className="text-sm">
-                                <div className="font-semibold">+1000 profesionales</div>
-                                <div className="text-white/70 text-xs">Ya usan ClinqApp</div>
+                                <div className="font-semibold">Podólogos en Perú ya están</div>
+                                <div className="text-white/70 text-xs">usando ClinqApp</div>
                             </div>
                         </div>
                     </div>

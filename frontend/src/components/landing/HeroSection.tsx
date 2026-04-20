@@ -143,11 +143,17 @@ export default function HeroSection() {
           {/* Social Proof */}
           <div className="flex items-center gap-4 pt-4">
             <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
+              {[
+                { id: 1, initials: 'AM', bg: 'bg-blue-500' },
+                { id: 2, initials: 'LC', bg: 'bg-green-500' },
+                { id: 3, initials: 'MR', bg: 'bg-purple-500' }
+              ].map((user) => (
                 <div 
-                  key={i} 
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-cyan to-brand-purple border-2 border-white"
-                />
+                  key={user.id} 
+                  className={`w-10 h-10 rounded-full ${user.bg} border-2 border-white flex items-center justify-center text-white text-sm font-medium`}
+                >
+                  {user.initials}
+                </div>
               ))}
             </div>
             <p className="text-sm text-gray-600">
@@ -159,13 +165,10 @@ export default function HeroSection() {
         {/* Right Column - Video Scrollytelling */}
         <div ref={mockupRef} className="relative hidden lg:flex items-center justify-center lg:justify-end">
           <div className="w-full max-w-[850px] lg:scale-[1.5] lg:origin-center transition-transform duration-1000">
-            <video
-              ref={videoRef}
-              src="/output_web.webm"
-              muted
-              playsInline
-              preload="auto"
-              onLoadedMetadata={() => setIsVideoLoaded(true)}
+            <img
+              src="/mockup.png"
+              alt="ClinqApp Dashboard Mockup"
+              onLoad={() => setIsVideoLoaded(true)}
               className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.18)] pointer-events-none"
             />
           </div>

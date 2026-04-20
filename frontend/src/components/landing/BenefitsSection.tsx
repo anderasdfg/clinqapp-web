@@ -70,25 +70,6 @@ export default function BenefitsSection() {
           })}
         </div>
 
-        {/* Additional Features Bar */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {benefits.features.map((feature: any, index: number) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 justify-center"
-                >
-                  <Icon className="w-5 h-5 text-brand-purple" />
-                  <span className="text-gray-900 font-medium text-sm">
-                    {feature.text}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </section>
   );

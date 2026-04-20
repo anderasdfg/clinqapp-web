@@ -3,9 +3,11 @@ import HeroSection from '../components/landing/HeroSection';
 import BenefitsSection from '../components/landing/BenefitsSection';
 import TrustSection from '../components/landing/TrustSection';
 import PricingSection from '../components/landing/PricingSection';
+import FeaturesBar from '../components/landing/FeaturesBar';
 /* import ContactSection from '../components/landing/ContactSection';
  */import FooterCTA from '../components/landing/FooterCTA';
 import '../styles/liquid-glass.css';
+import { landingContent } from '../constants/landingContent';
 
 export default function Landing() {
   return (
@@ -21,6 +23,7 @@ export default function Landing() {
       <BenefitsSection />
       <TrustSection />
       <PricingSection />
+      <FeaturesBar features={landingContent.benefits.features} />
      {/*  <ContactSection /> */}
       <FooterCTA />
     </div>
