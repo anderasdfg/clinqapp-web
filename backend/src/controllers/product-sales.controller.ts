@@ -129,6 +129,9 @@ export const getProductSales = async (req: AuthRequest, res: Response) => {
 export const getProductSale = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
     const organizationId = req.user?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
