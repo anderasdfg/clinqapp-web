@@ -88,6 +88,9 @@ model Organization {
   appointmentInterval        Int       @default(0) @map("appointment_interval")
   allowOnlineBooking         Boolean   @default(false) @map("allow_online_booking")
 
+  // Module permissions (control de módulos habilitados)
+  enabledModules Json?       @map("enabled_modules") @db.JsonB // { "patients": true, "agenda": true, "inventory": false, ... }
+
   // Relations
   users        User[]
   patients     Patient[]
@@ -99,6 +102,8 @@ model Organization {
   paymentMethods      PaymentMethodConfig[]
   consultationTypes   ConsultationTypeConfig[]
   whatsappMessages    WhatsAppMessage[]
+  productCategories   ProductCategory[]
+  productSales        ProductSale[]
 
   @@map("organizations")
 }
@@ -147,6 +152,7 @@ model User {
   appointments       Appointment[] @relation("AppointmentProfessional")
   treatments         Treatment[]   @relation("TreatmentProfessional")
   paymentCollections Payment[]     @relation("PaymentCollectedBy")
+  productSalesSold   ProductSale[] @relation("ProductSaleSoldBy")
 
   @@map("users")
   @@index([organizationId])
@@ -249,6 +255,7 @@ model Patient {
   treatments   Treatment[]
   payments     Payment[]
   whatsappMessages WhatsAppMessage[]
+  productSales ProductSale[]
 
   @@map("patients")
   @@index([organizationId])
@@ -505,6 +512,8 @@ model Payment {
   culqiChargeId String? @unique @map("culqi_charge_id")
   
   notes String?
+  
+  productSale ProductSale?
 
   @@map("payments")
   @@index([organizationId])
@@ -693,4 +702,148 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@index([token])
+}
+
+// ============================================
+// INVENTORY & PRODUCTS
+// ============================================
+
+model ProductCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+  
+  products Product[]
+
+  @@map("product_categories")
+  @@index([organizationId])
+  @@index([organizationId, deletedAt])
+}
+
+model Product {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  organizationId String       @map("organization_id") @db.Uuid
+  
+  categoryId String?          @map("category_id") @db.Uuid
+  category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  name        String
+  description String?
+  sku         String?
+  barcode     String?
+  
+  costPrice   Decimal  @map("cost_price") @db.Decimal(10, 2)
+  salePrice   Decimal  @map("sale_price") @db.Decimal(10, 2)
+  currency    String   @default("PEN")
+  
+  currentStock Int     @default(0) @map("current_stock")
+  minStock     Int     @default(0) @map("min_stock")
+  unit         String  @default("unidad")
+  
+  isActive     Boolean @default(true) @map("is_active")
+  
+  inventoryMovements InventoryMovement[]
+  saleItems          ProductSaleItem[]
+
+  @@map("products")
+  @@index([organizationId])
+  @@index([categoryId])
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, isActive])
+  @@unique([organizationId, sku])
+  @@unique([organizationId, barcode])
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  RETURN
+}
+
+model InventoryMovement {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  organizationId String  @map("organization_id") @db.Uuid
+  
+  productId String  @map("product_id") @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  type        MovementType
+  quantity    Int
+  previousStock Int       @map("previous_stock")
+  newStock      Int       @map("new_stock")
+  
+  notes       String?
+  performedBy String?    @map("performed_by") @db.Uuid
+
+  @@map("inventory_movements")
+  @@index([organizationId])
+  @@index([productId])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model ProductSale {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  patientId String?  @map("patient_id") @db.Uuid
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  
+  subtotal       Decimal       @db.Decimal(10, 2)
+  discount       Decimal       @default(0) @db.Decimal(10, 2)
+  total          Decimal       @db.Decimal(10, 2)
+  
+  paymentMethod  PaymentMethod @map("payment_method")
+  paymentId      String?       @unique @map("payment_id") @db.Uuid
+  payment        Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  
+  soldById       String        @map("sold_by") @db.Uuid
+  soldBy         User          @relation("ProductSaleSoldBy", fields: [soldById], references: [id], onDelete: Restrict)
+  notes          String?
+  
+  items ProductSaleItem[]
+
+  @@map("product_sales")
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model ProductSaleItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  saleId String      @map("sale_id") @db.Uuid
+  sale   ProductSale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  
+  productId String  @map("product_id") @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  
+  quantity  Int
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  @@map("product_sale_items")
+  @@index([saleId])
+  @@index([productId])
 }

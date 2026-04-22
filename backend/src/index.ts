@@ -30,9 +30,11 @@ const port = Number(process.env.PORT) || 3001;
 const allowedOrigins = [
   process.env.FRONTEND_URL, // Production frontend URL from environment
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:3000",
   "https://clinqapp-web.vercel.app",
   "https://clinqapp.net",
+  "https://www.clinqapp.net",
 ].filter(Boolean); // Remove undefined values
 
 console.log("🔒 CORS allowed origins:", allowedOrigins);
@@ -105,8 +107,10 @@ import salesRoutes from "./routes/sales.routes";
 import remindersRoutes from "./routes/reminders";
 import adminRoutes from "./routes/admin";
 import webhooksRoutes from "./routes/webhooks";
+import migrationRoutes from "./routes/migration";
 // Scheduler removido - se usa GCP Cloud Scheduler
 
+app.use("/api/migration", migrationRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/patients", patientsRoutes);

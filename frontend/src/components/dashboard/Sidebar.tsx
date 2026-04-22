@@ -4,6 +4,8 @@ import logoRectangle from '@/assets/images/logos/logo-rectangle.png';
 import { cn } from '@/lib/utils/cn';
 import { AuthService } from '@/services/auth.service';
 import { resetAllStores } from '@/lib/utils/store-utils';
+import { useEnabledModules } from '@/hooks/useEnabledModules';
+import { filterNavigationGroups } from '@/lib/utils/navigation-filter';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -14,6 +16,13 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const enabledModules = useEnabledModules();
+    
+    console.log('🎨 Sidebar - enabledModules:', enabledModules);
+    
+    // Filtrar grupos de navegación según módulos habilitados
+    const filteredNavigationGroups = filterNavigationGroups(NAVIGATION_GROUPS, enabledModules);
+    console.log('🎨 Sidebar - filteredNavigationGroups:', filteredNavigationGroups);
 
     const isActive = (path: string) => {
         return location.pathname === path;
@@ -90,7 +99,7 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
 
                     {/* Navigation */}
                     <nav className="flex-1 overflow-y-auto py-4 px-2 sidebar-scrollbar">
-                        {NAVIGATION_GROUPS.map((group) => (
+                        {filteredNavigationGroups.map((group) => (
                             <div key={group.id} className="mb-6">
                                 {!isCollapsed && (
                                     <h3 className="px-3 mb-2 text-xs font-semibold text-white/60 uppercase tracking-wider">

@@ -19,6 +19,36 @@ export const getOrganization = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// GET - Get enabled modules for current organization
+export const getEnabledModules = async (req: AuthRequest, res: Response) => {
+    try {
+        console.log('🔵 GET /organizations/current/modules - Request received');
+        const dbUser = req.dbUser;
+
+        if (!dbUser || !dbUser.organizationId) {
+            console.log('❌ No dbUser or organizationId');
+            return res.status(404).json({ error: 'Organización no encontrada' });
+        }
+
+        console.log('🔵 Fetching modules for org:', dbUser.organizationId);
+        const organization = await prisma.organization.findUnique({
+            where: { id: dbUser.organizationId },
+            select: { enabledModules: true }
+        });
+
+        if (!organization) {
+            console.log('❌ Organization not found');
+            return res.status(404).json({ error: 'Organización no encontrada' });
+        }
+
+        console.log('✅ Returning modules:', organization.enabledModules);
+        res.json({ enabledModules: organization.enabledModules });
+    } catch (error) {
+        console.error('❌ Error fetching enabled modules:', error);
+        res.status(500).json({ error: 'Error al obtener módulos habilitados' });
+    }
+};
+
 // PUT - Update organization data
 export const updateOrganization = async (req: AuthRequest, res: Response) => {
     try {

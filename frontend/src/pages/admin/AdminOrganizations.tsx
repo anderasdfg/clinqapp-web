@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import * as Switch from '@radix-ui/react-switch';
 import { adminApi } from '../../hooks/useAdminAuth';
+import { ModulePermissionsManager } from '@/components/admin/ModulePermissionsManager';
+import { adminService } from '@/services/admin.service';
+import { OrganizationModules } from '@/types/modules.types';
 
 interface Organization {
   id: string;
@@ -21,6 +24,7 @@ interface Organization {
   subscriptionStatus: string;
   sendReminders: boolean;
   notificationWhatsapp: boolean;
+  enabledModules?: OrganizationModules | null;
   createdAt: string;
   _count: {
     users: number;
@@ -60,6 +64,7 @@ export default function AdminOrganizations() {
         limit: 20,
         search: search || undefined
       });
+      console.log('📋 Lista de organizaciones cargada:', response.data.organizations[0]);
       setData(response.data);
     } catch (err: any) {
       setError(err.message);
@@ -75,6 +80,8 @@ export default function AdminOrganizations() {
   };
 
   const handleEditOrganization = (org: Organization) => {
+    console.log('✏️ Organización seleccionada para editar:', org);
+    console.log('✏️ enabledModules:', org.enabledModules);
     setSelectedOrg(org);
     setShowEditModal(true);
   };
@@ -318,6 +325,11 @@ export default function AdminOrganizations() {
             setShowEditModal(false);
             setSelectedOrg(null);
           }}
+          onUpdateOrganization={(updatedOrg) => {
+            console.log('🟣 7. Actualizando selectedOrg en padre:', updatedOrg.enabledModules);
+            setSelectedOrg(updatedOrg);
+            console.log('🟣 8. selectedOrg actualizado');
+          }}
         />
       )}
     </div>
@@ -329,9 +341,12 @@ interface EditOrganizationModalProps {
   organization: Organization;
   onClose: () => void;
   onSave: () => void;
+  onUpdateOrganization: (org: Organization) => void;
 }
 
-function EditOrganizationModal({ organization, onClose, onSave }: EditOrganizationModalProps) {
+function EditOrganizationModal({ organization, onClose, onSave, onUpdateOrganization }: EditOrganizationModalProps) {
+  const [activeTab, setActiveTab] = useState<'settings' | 'modules'>('settings');
+  const [currentOrg, setCurrentOrg] = useState(organization);
   const [formData, setFormData] = useState({
     sendReminders: organization.sendReminders,
     notificationWhatsapp: organization.notificationWhatsapp,
@@ -356,15 +371,76 @@ function EditOrganizationModal({ organization, onClose, onSave }: EditOrganizati
     }
   };
 
+  const handleSaveModules = async (modules: OrganizationModules) => {
+    try {
+      console.log('🔵 1. Guardando módulos:', modules);
+      const saveResponse = await adminService.updateOrganizationModules(organization.id, modules);
+      console.log('🟢 2. Respuesta del save:', saveResponse);
+      
+      // Recargar la organización para obtener los datos actualizados
+      console.log('🔵 3. Recargando organización...');
+      const updatedOrg = await adminService.getOrganization(organization.id);
+      console.log('🟢 4. Organización recargada:', updatedOrg.data.enabledModules);
+      
+      setCurrentOrg(updatedOrg.data);
+      console.log('🟢 5. currentOrg actualizado en modal');
+      
+      // Actualizar también en el componente padre
+      onUpdateOrganization(updatedOrg.data);
+      console.log('🟢 6. selectedOrg actualizado en padre');
+    } catch (err: any) {
+      console.error('❌ Error en handleSaveModules:', err);
+      throw new Error(err.message || 'Error al actualizar módulos');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Configurar: {organization.name}
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Configurar: {organization.name}
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'settings'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Configuración General
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('modules')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'modules'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Módulos Habilitados
+              </button>
+            </nav>
+          </div>
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* WhatsApp Settings */}
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900">Configuración recordatorios</h4>
@@ -437,23 +513,34 @@ function EditOrganizationModal({ organization, onClose, onSave }: EditOrganizati
               </div>
             )}
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
-                {loading ? 'Guardando...' : 'Guardar'}
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                >
+                  {loading ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Modules Tab */}
+          {activeTab === 'modules' && (
+            <ModulePermissionsManager
+              organizationId={currentOrg.id}
+              organizationName={currentOrg.name}
+              currentModules={currentOrg.enabledModules}
+              onSave={handleSaveModules}
+            />
+          )}
         </div>
       </div>
     </div>

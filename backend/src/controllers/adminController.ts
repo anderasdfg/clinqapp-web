@@ -15,6 +15,19 @@ const updateOrganizationSchema = z.object({
   subscriptionStatus: z.enum(['ACTIVE', 'CANCELLED', 'PAST_DUE', 'TRIALING']).optional()
 });
 
+const updateModulesSchema = z.object({
+  enabledModules: z.object({
+    patients: z.boolean(),
+    agenda: z.boolean(),
+    medicalRecords: z.boolean(),
+    staff: z.boolean(),
+    services: z.boolean(),
+    sales: z.boolean(),
+    inventory: z.boolean(),
+    productSales: z.boolean(),
+  })
+});
+
 export class AdminController {
   /**
    * Admin login with hardcoded credentials
@@ -166,6 +179,7 @@ export class AdminController {
             sendReminders: true,
             notificationWhatsapp: true,
             reminderHoursBefore: true,
+            enabledModules: true,
             createdAt: true,
             _count: {
               select: {
@@ -360,6 +374,51 @@ export class AdminController {
     } catch (error) {
       console.error('Error in getOrganizationReminderStats:', error);
       
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  }
+
+  /**
+   * Update organization enabled modules
+   * PUT /api/admin/organizations/:id/modules
+   */
+  static async updateOrganizationModules(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { enabledModules } = updateModulesSchema.parse(req.body);
+
+      const organization = await prisma.organization.update({
+        where: { id: id as string },
+        data: {
+          enabledModules: enabledModules as any // Prisma JsonValue
+        },
+        select: {
+          id: true,
+          name: true,
+          enabledModules: true
+        }
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Organization modules updated successfully',
+        data: organization
+      });
+    } catch (error) {
+      console.error('Error in updateOrganizationModules:', error);
+      
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid request data',
+          details: error.issues
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
         error: 'Internal server error'

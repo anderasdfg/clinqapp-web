@@ -17,6 +17,7 @@ router.get('/dashboard', AdminController.getDashboard);
 router.get('/organizations', AdminController.getOrganizations);
 router.get('/organizations/:id', AdminController.getOrganization);
 router.put('/organizations/:id', AdminController.updateOrganization);
+router.put('/organizations/:id/modules', AdminController.updateOrganizationModules);
 router.get('/organizations/:id/reminder-stats', AdminController.getOrganizationReminderStats);
 
 export default router;
