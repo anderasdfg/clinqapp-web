@@ -531,9 +531,12 @@ const PatientDetailPage = () => {
                                                     <div>
                                                         <p className="font-semibold text-emerald-900 mb-1">Uñas</p>
                                                         <p className="text-emerald-700">
-                                                            {(selectedPatient.medicalHistory.podiatricExam.nails?.onychopathy as string[] | undefined)?.length > 0 
-                                                                ? (selectedPatient.medicalHistory.podiatricExam.nails.onychopathy as string[]).join(', ')
-                                                                : 'Sin onicopatías'}
+                                                            {(() => {
+                                                                const onychopathy = selectedPatient.medicalHistory.podiatricExam.nails?.onychopathy;
+                                                                return Array.isArray(onychopathy) && onychopathy.length > 0
+                                                                    ? onychopathy.join(', ')
+                                                                    : 'Sin onicopatías';
+                                                            })()}
                                                         </p>
                                                     </div>
                                                     
@@ -541,11 +544,15 @@ const PatientDetailPage = () => {
                                                     <div>
                                                         <p className="font-semibold text-emerald-900 mb-1">Piel</p>
                                                         <p className="text-emerald-700">
-                                                            {[
-                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.helomas && 'Helomas',
-                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.ipk && 'IPK',
-                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.mycosis && 'Micosis'
-                                                            ].filter(Boolean).join(', ') || 'Normal'}
+                                                            {(() => {
+                                                                const skin = selectedPatient.medicalHistory.podiatricExam.skin as any;
+                                                                const conditions = [
+                                                                    skin?.helomas && 'Helomas',
+                                                                    skin?.ipk && 'IPK',
+                                                                    skin?.mycosis && 'Micosis'
+                                                                ].filter(Boolean);
+                                                                return conditions.length > 0 ? conditions.join(', ') : 'Normal';
+                                                            })()}
                                                         </p>
                                                     </div>
                                                     
@@ -553,8 +560,10 @@ const PatientDetailPage = () => {
                                                     <div>
                                                         <p className="font-semibold text-emerald-900 mb-1">Pulsos Pedios</p>
                                                         <p className="text-emerald-700">
-                                                            D: {(selectedPatient.medicalHistory.podiatricExam.vascular as any)?.pedalPulseRight || 'N/A'} | 
-                                                            I: {(selectedPatient.medicalHistory.podiatricExam.vascular as any)?.pedalPulseLeft || 'N/A'}
+                                                            {(() => {
+                                                                const vascular = selectedPatient.medicalHistory.podiatricExam.vascular as any;
+                                                                return `D: ${vascular?.pedalPulseRight || 'N/A'} | I: ${vascular?.pedalPulseLeft || 'N/A'}`;
+                                                            })()}
                                                         </p>
                                                     </div>
                                                     
@@ -562,10 +571,15 @@ const PatientDetailPage = () => {
                                                     <div>
                                                         <p className="font-semibold text-emerald-900 mb-1">Biomecánico</p>
                                                         <p className="text-emerald-700">
-                                                            {((selectedPatient.medicalHistory.podiatricExam.biomechanical as any)?.deformities as string[] | undefined)?.length > 0
-                                                                ? ((selectedPatient.medicalHistory.podiatricExam.biomechanical as any).deformities as string[]).slice(0, 2).join(', ') + 
-                                                                  (((selectedPatient.medicalHistory.podiatricExam.biomechanical as any).deformities as string[]).length > 2 ? '...' : '')
-                                                                : 'Sin deformidades'}
+                                                            {(() => {
+                                                                const biomechanical = selectedPatient.medicalHistory.podiatricExam.biomechanical as any;
+                                                                const deformities = biomechanical?.deformities;
+                                                                if (!Array.isArray(deformities) || deformities.length === 0) {
+                                                                    return 'Sin deformidades';
+                                                                }
+                                                                const display = deformities.slice(0, 2).join(', ');
+                                                                return deformities.length > 2 ? `${display}...` : display;
+                                                            })()}
                                                         </p>
                                                     </div>
                                                 </div>
