@@ -5,6 +5,7 @@ import { PaymentMethod, PAYMENT_METHOD_LABELS, PAYMENT_METHOD } from '@/types/ap
 import type { Appointment } from '@/types/appointment.types';
 import ProductSelector, { SelectedProduct } from './ProductSelector';
 import { toast } from 'sonner';
+import { useIsModuleEnabled } from '@/hooks/useEnabledModules';
 
 interface PaymentModalProps {
     appointment: Appointment;
@@ -23,6 +24,7 @@ interface PaymentFormData {
 const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: PaymentModalProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+    const isInventoryEnabled = useIsModuleEnabled('inventory');
     
     const totalAmount = appointment.services?.reduce((sum, s) => sum + Number(s.price), 0) || 0;
 
@@ -202,12 +204,14 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     />
                                 </div>
 
-                                <div className="pt-4 border-t border-[rgb(var(--border-primary))]">
-                                    <ProductSelector
-                                        selectedProducts={selectedProducts}
-                                        onProductsChange={setSelectedProducts}
-                                    />
-                                </div>
+                                {isInventoryEnabled && (
+                                    <div className="pt-4 border-t border-[rgb(var(--border-primary))]">
+                                        <ProductSelector
+                                            selectedProducts={selectedProducts}
+                                            onProductsChange={setSelectedProducts}
+                                        />
+                                    </div>
+                                )}
 
                                 {selectedProducts.length > 0 && (
                                     <div className="p-4 bg-[rgb(var(--bg-secondary))] rounded-lg">

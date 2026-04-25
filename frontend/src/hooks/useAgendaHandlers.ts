@@ -45,11 +45,9 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [postPaymentStatus, setPostPaymentStatus] = useState<AppointmentStatus | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
 
-  // Initial mount: Force refresh to ensure fresh data
+  // Fetch appointments when component mounts or week changes
   useEffect(() => {
-    setIsMounted(true);
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
 
@@ -58,22 +56,7 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
       endDate: end.toISOString(),
     });
 
-    fetchAppointments({}, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch appointments when week changes (after initial mount)
-  useEffect(() => {
-    if (!isMounted) return;
-
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
-
-    setFilters({
-      startDate: start.toISOString(),
-      endDate: end.toISOString(),
-    });
-
+    // Force refresh every time to ensure fresh data
     fetchAppointments({}, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate]);

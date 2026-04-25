@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { 
@@ -23,6 +23,10 @@ import { supabase } from '@/lib/supabase/client';
 
 import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
 
+// Cache para detalles de citas ya cargadas
+const appointmentDetailsCache = new Map<string, { data: Appointment; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 interface ClinicalWorkspaceSheetProps {
   appointment: Appointment | null;
   isOpen: boolean;
@@ -37,50 +41,94 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('attention');
   const [isLoading, setIsLoading] = useState(true);
+  const lastLoadedIdRef = useRef<string | null>(null);
   
   // Fetch full appointment details on mount/open to get medicalHistory
   useEffect(() => {
-    if (isOpen && appointment) {
-        setIsLoading(true);
-        // Optimistic update from props first
-         setClinicalNotes(appointment.clinicalNotes || '');
-         setCurrentImages(appointment.images || []);
-
-        const loadDetails = async () => {
-            try {
-                await fetchAppointmentById(appointment.id);
-                const updated = useAppointmentsStore.getState().appointments.find(a => a.id === appointment.id);
-                if (updated) {
-                     setClinicalNotes(updated.clinicalNotes || '');
-                     setCurrentImages(updated.images || []);
-                }
-            } catch (error) {
-                console.error('Error loading detail:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadDetails();
+    if (!isOpen || !appointment) {
+      return;
     }
+
+    // Si ya cargamos esta cita, no la volvemos a cargar
+    if (lastLoadedIdRef.current === appointment.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Optimistic update from props first
+    setClinicalNotes(appointment.clinicalNotes || '');
+    setCurrentImages(appointment.images || []);
+
+    const loadDetails = async () => {
+      try {
+        // Verificar cache primero
+        const cached = appointmentDetailsCache.get(appointment.id);
+        const now = Date.now();
+        
+        if (cached && (now - cached.timestamp) < CACHE_TTL) {
+          console.log('📦 Using cached appointment details');
+          const updated = cached.data;
+          setClinicalNotes(updated.clinicalNotes || '');
+          setCurrentImages(updated.images || []);
+          lastLoadedIdRef.current = appointment.id;
+          setIsLoading(false);
+          return;
+        }
+
+        // Si no está en cache, cargar desde API
+        console.log('🔄 Fetching fresh appointment details');
+        await fetchAppointmentById(appointment.id);
+        const updated = useAppointmentsStore.getState().appointments.find(a => a.id === appointment.id);
+        
+        if (updated) {
+          setClinicalNotes(updated.clinicalNotes || '');
+          setCurrentImages(updated.images || []);
+          
+          // Guardar en cache
+          appointmentDetailsCache.set(appointment.id, {
+            data: updated,
+            timestamp: now
+          });
+          
+          lastLoadedIdRef.current = appointment.id;
+        }
+      } catch (error) {
+        console.error('Error loading detail:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDetails();
   }, [isOpen, appointment?.id, fetchAppointmentById]);
 
-  if (!appointment) return null;
-
   // Find the most up-to-date appointment object from store or props
-  const currentAppointmentRaw = appointments.find(a => a.id === appointment.id) || appointment;
+  const currentAppointmentRaw = useMemo(
+    () => appointment ? (appointments.find(a => a.id === appointment.id) || appointment) : null,
+    [appointment, appointments]
+  );
 
-  const isReadOnly = ([
-    APPOINTMENT_STATUS.COMPLETED,
-    APPOINTMENT_STATUS.CANCELLED,
-    APPOINTMENT_STATUS.NO_SHOW
-  ] as AppointmentStatus[]).includes(currentAppointmentRaw.status);
+  const isReadOnly = useMemo(() => {
+    if (!currentAppointmentRaw) return false;
+    return ([
+      APPOINTMENT_STATUS.COMPLETED,
+      APPOINTMENT_STATUS.CANCELLED,
+      APPOINTMENT_STATUS.NO_SHOW
+    ] as AppointmentStatus[]).includes(currentAppointmentRaw.status);
+  }, [currentAppointmentRaw]);
 
-  // We need to ensure we have the medicalHistory which might come from the fetch
-  const patient = currentAppointmentRaw.patient;
-  const medicalHistory = patient?.medicalHistory;
-  const hasMedicalHistory = !!medicalHistory && Object.keys(medicalHistory).length > 0;
+  // Memoizar valores computados
+  const patient = useMemo(() => currentAppointmentRaw?.patient, [currentAppointmentRaw?.patient]);
+  const medicalHistory = useMemo(() => patient?.medicalHistory, [patient?.medicalHistory]);
+  const hasMedicalHistory = useMemo(
+    () => !!medicalHistory && Object.keys(medicalHistory).length > 0,
+    [medicalHistory]
+  );
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!appointment) return;
     if (!e.target.files || e.target.files.length === 0) return;
     
     setUploading(true);
@@ -115,9 +163,11 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
     } finally {
       setUploading(false);
     }
-  };
+  }, [appointment]);
 
-  const handleSave = async (status?: AppointmentStatus) => {
+  const handleSave = useCallback(async (status?: AppointmentStatus) => {
+      if (!appointment || !currentAppointmentRaw) return;
+      
       try {
           await updateAppointment(appointment.id, {
               clinicalNotes,
@@ -140,18 +190,20 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
       } catch (error) {
           console.error('Error saving appointment:', error);
       }
-  };
+  }, [appointment, clinicalNotes, currentImages, currentAppointmentRaw, updateAppointment, onClose, onShowPayment]);
 
-  const removeImage = (indexToRemove: number) => {
+  const removeImage = useCallback((indexToRemove: number) => {
       setCurrentImages(prev => prev.filter((_, index) => index !== indexToRemove));
-  };
+  }, []);
 
+  // Early return after all hooks
+  if (!appointment || !currentAppointmentRaw) return null;
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[85vw] lg:w-[800px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
+        <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[80vw] lg:w-[1000px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
           
           {isLoading ? (
             <div className="flex-1 flex flex-col relative">

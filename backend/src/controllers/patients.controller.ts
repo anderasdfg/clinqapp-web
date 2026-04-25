@@ -126,6 +126,7 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
           gender: true,
           referralSource: true,
           createdAt: true,
+          medicalHistory: true,
           assignedProfessional: {
             select: {
               id: true,

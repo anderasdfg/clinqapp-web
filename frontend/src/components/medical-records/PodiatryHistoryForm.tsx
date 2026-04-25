@@ -44,7 +44,7 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
         register,
         handleSubmit,
         control,
-        formState: {  },
+        formState: { errors },
     } = useForm<PodiatryHistoryData>({
         resolver: zodResolver(podiatryHistorySchema),
         defaultValues: initialData || {
@@ -56,7 +56,11 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
             allergies: { latex: false },
             podiatricExam: {
                 nails: { onychopathy: [] },
-                skin: {},
+                skin: {
+                    helomas: false,
+                    ipk: false,
+                    mycosis: false,
+                },
                 vascular: { pedalPulseRight: "PRESENTE", pedalPulseLeft: "PRESENTE" },
                 biomechanical: { deformities: [] },
             },
@@ -65,13 +69,19 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
     });
 
     const onSubmit = async (data: PodiatryHistoryData) => {
+        console.log('📝 Submitting medical history:', data);
         try {
             await updatePatient(patientId, { medicalHistory: data });
             if (onSuccess) onSuccess();
         } catch (error) {
-            console.error('Error updating medical history:', error);
+            console.error('❌ Error updating medical history:', error);
         }
     };
+
+    // Log validation errors
+    if (Object.keys(errors).length > 0) {
+        console.error('❌ Validation errors:', errors);
+    }
 
     const commonOnychopathies = ['Onicolisis', 'Leuconiquia', 'Onicorexis', 'Onicofosis', 'Microniquias', 'Juanete', 'Pie de Atleta', 'Soriasis', 'Izoriasis'];
     const commonDeformities = ["Hallux Valgus", "Dedos en Garra", "Dedo martillo", "Dedo manzo", "Pie cuadrado", "Pie griego"];
@@ -322,10 +332,14 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     control={control}
                                     render={({ field }) => (
                                         <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
-                                            {["Presente", "Ausente", "Disminuido"].map(p => (
-                                                <div key={p} className="flex items-center space-x-1">
-                                                    <RadioGroupItem value={p} id={`v-r-${p}`} />
-                                                    <Label htmlFor={`v-r-${p}`} className="text-xs cursor-pointer">{p}</Label>
+                                            {[
+                                                { value: "PRESENTE", label: "Presente" },
+                                                { value: "AUSENTE", label: "Ausente" },
+                                                { value: "DISMINUIDO", label: "Disminuido" }
+                                            ].map(p => (
+                                                <div key={p.value} className="flex items-center space-x-1">
+                                                    <RadioGroupItem value={p.value} id={`v-r-${p.value}`} />
+                                                    <Label htmlFor={`v-r-${p.value}`} className="text-xs cursor-pointer">{p.label}</Label>
                                                 </div>
                                             ))}
                                         </RadioGroup>
@@ -339,10 +353,14 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     control={control}
                                     render={({ field }) => (
                                         <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
-                                            {["Presente", "Ausente", "Disminuido"].map(p => (
-                                                <div key={p} className="flex items-center space-x-1">
-                                                    <RadioGroupItem value={p} id={`v-l-${p}`} />
-                                                    <Label htmlFor={`v-l-${p}`} className="text-xs cursor-pointer">{p}</Label>
+                                            {[
+                                                { value: "PRESENTE", label: "Presente" },
+                                                { value: "AUSENTE", label: "Ausente" },
+                                                { value: "DISMINUIDO", label: "Disminuido" }
+                                            ].map(p => (
+                                                <div key={p.value} className="flex items-center space-x-1">
+                                                    <RadioGroupItem value={p.value} id={`v-l-${p.value}`} />
+                                                    <Label htmlFor={`v-l-${p.value}`} className="text-xs cursor-pointer">{p.label}</Label>
                                                 </div>
                                             ))}
                                         </RadioGroup>
@@ -365,11 +383,17 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     name="podiatricExam.biomechanical.footType"
                                     control={control}
                                     render={({ field }) => (
-                                        <RadioGroup value={field.value} onValueChange={field.onChange} className="grid grid-cols-3 gap-4">
-                                            {["Plano", "Cavo", "Neutro","Egipcio", "Eliponiquio"].map(p => (
-                                                <div key={p} className="flex items-center space-x-2">
-                                                    <RadioGroupItem value={p} id={`f-t-${p}`} />
-                                                    <Label htmlFor={`f-t-${p}`} className="cursor-pointer">{p}</Label>
+                                        <RadioGroup value={field.value || ""} onValueChange={field.onChange} className="grid grid-cols-3 gap-4">
+                                            {[
+                                                { value: "PLANO", label: "Plano" },
+                                                { value: "CAVO", label: "Cavo" },
+                                                { value: "NEUTRO", label: "Neutro" },
+                                                { value: "EGIPCIO", label: "Egipcio" },
+                                                { value: "ELIPONIQUIO", label: "Eliponiquio" }
+                                            ].map(p => (
+                                                <div key={p.value} className="flex items-center space-x-2">
+                                                    <RadioGroupItem value={p.value} id={`f-t-${p.value}`} />
+                                                    <Label htmlFor={`f-t-${p.value}`} className="cursor-pointer">{p.label}</Label>
                                                 </div>
                                             ))}
                                         </RadioGroup>
@@ -433,7 +457,25 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                 </CardContent>
             </Card>
 
-            {/* ACTIONS */}
+            {/* Mostrar errores de validación */}
+            {Object.keys(errors).length > 0 && (
+                <Card className="border-red-500 bg-red-50">
+                    <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                            <ShieldAlert className="w-5 h-5 text-red-600 mt-0.5" />
+                            <div className="w-full">
+                                <h3 className="font-semibold text-red-900 mb-2">Errores de validación</h3>
+                                <div className="text-sm text-red-700 space-y-2">
+                                    <pre className="bg-red-100 p-3 rounded overflow-auto text-xs">
+                                        {JSON.stringify(errors, null, 2)}
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="flex items-center justify-between sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border rounded-xl shadow-lg z-10 transition-all duration-300">
                 <Button 
                     type="button" 

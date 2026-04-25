@@ -44,7 +44,7 @@ export const podiatryHistorySchema = z.object({
     }),
     biomechanical: z.object({
       footType: z
-        .enum(["PLANO", "CAVO", "NEUTRO"])
+        .enum(["PLANO", "CAVO", "NEUTRO", "EGIPCIO", "ELIPONIQUIO"])
         .optional()
         .or(z.literal("")),
       deformities: z.array(z.string()).default([]),

@@ -517,6 +517,62 @@ const PatientDetailPage = () => {
                                         </Card>
                                     </div>
 
+                                    {/* Exploración Clínica Específica - Quick View */}
+                                    {selectedPatient.medicalHistory?.podiatricExam && (
+                                        <Card className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 border-emerald-200">
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-sm font-bold text-emerald-800 flex items-center gap-2">
+                                                    <Stethoscope className="w-4 h-4" /> Exploración Clínica Específica
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                    {/* Uñas */}
+                                                    <div>
+                                                        <p className="font-semibold text-emerald-900 mb-1">Uñas</p>
+                                                        <p className="text-emerald-700">
+                                                            {(selectedPatient.medicalHistory.podiatricExam.nails?.onychopathy as string[] | undefined)?.length > 0 
+                                                                ? (selectedPatient.medicalHistory.podiatricExam.nails.onychopathy as string[]).join(', ')
+                                                                : 'Sin onicopatías'}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {/* Piel */}
+                                                    <div>
+                                                        <p className="font-semibold text-emerald-900 mb-1">Piel</p>
+                                                        <p className="text-emerald-700">
+                                                            {[
+                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.helomas && 'Helomas',
+                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.ipk && 'IPK',
+                                                                (selectedPatient.medicalHistory.podiatricExam.skin as any)?.mycosis && 'Micosis'
+                                                            ].filter(Boolean).join(', ') || 'Normal'}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {/* Vascular */}
+                                                    <div>
+                                                        <p className="font-semibold text-emerald-900 mb-1">Pulsos Pedios</p>
+                                                        <p className="text-emerald-700">
+                                                            D: {(selectedPatient.medicalHistory.podiatricExam.vascular as any)?.pedalPulseRight || 'N/A'} | 
+                                                            I: {(selectedPatient.medicalHistory.podiatricExam.vascular as any)?.pedalPulseLeft || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {/* Biomecánico */}
+                                                    <div>
+                                                        <p className="font-semibold text-emerald-900 mb-1">Biomecánico</p>
+                                                        <p className="text-emerald-700">
+                                                            {((selectedPatient.medicalHistory.podiatricExam.biomechanical as any)?.deformities as string[] | undefined)?.length > 0
+                                                                ? ((selectedPatient.medicalHistory.podiatricExam.biomechanical as any).deformities as string[]).slice(0, 2).join(', ') + 
+                                                                  (((selectedPatient.medicalHistory.podiatricExam.biomechanical as any).deformities as string[]).length > 2 ? '...' : '')
+                                                                : 'Sin deformidades'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
                                     {/* Chronological Image Gallery */}
                                     <Card className="bg-purple-50/30 border-purple-200 shadow-sm">
                                         <CardHeader className="border-b bg-white">

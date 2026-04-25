@@ -4,6 +4,7 @@ import { Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ProximaCita } from '@/types/dashboard.types';
+import { APPOINTMENT_STATUS_LABELS } from '@/types/appointment.types';
 
 interface AppointmentTableProps {
   appointments: ProximaCita[];
@@ -12,18 +13,21 @@ interface AppointmentTableProps {
 }
 
 const getStatusBadge = (status: string) => {
-  const statusMap: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
-    SCHEDULED: { variant: 'default', label: 'Programada' },
-    CONFIRMED: { variant: 'secondary', label: 'Confirmada' },
-    COMPLETED: { variant: 'outline', label: 'Completada' },
-    CANCELLED: { variant: 'destructive', label: 'Cancelada' },
+  const statusMap: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    PENDING: { variant: 'outline' },
+    SCHEDULED: { variant: 'default' },
+    CONFIRMED: { variant: 'secondary' },
+    COMPLETED: { variant: 'outline' },
+    CANCELLED: { variant: 'destructive' },
+    NO_SHOW: { variant: 'destructive' },
   };
 
-  const config = statusMap[status] || { variant: 'default' as const, label: status };
+  const config = statusMap[status] || { variant: 'default' as const };
+  const label = APPOINTMENT_STATUS_LABELS[status as keyof typeof APPOINTMENT_STATUS_LABELS] || status;
   
   return (
     <Badge variant={config.variant}>
-      {config.label}
+      {label}
     </Badge>
   );
 };

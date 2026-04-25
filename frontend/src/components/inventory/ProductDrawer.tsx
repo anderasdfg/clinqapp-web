@@ -101,7 +101,7 @@ export function ProductDrawer({
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="sku">SKU</Label>
+                  <Label htmlFor="sku">SKU (Opcional)</Label>
                   <Input
                     id="sku"
                     {...form.register('sku')}
@@ -111,7 +111,7 @@ export function ProductDrawer({
                 </div>
 
                 <div>
-                  <Label htmlFor="barcode">Código de Barras</Label>
+                  <Label htmlFor="barcode">Código de Barras (Opcional)</Label>
                   <Input
                     id="barcode"
                     {...form.register('barcode')}

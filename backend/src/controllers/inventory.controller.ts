@@ -285,11 +285,18 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 
     const validatedData = createProductSchema.parse(req.body);
 
+    // Convertir strings vacíos a null para campos únicos opcionales
+    const cleanData = {
+      ...validatedData,
+      sku: validatedData.sku && validatedData.sku.trim() !== '' ? validatedData.sku : null,
+      barcode: validatedData.barcode && validatedData.barcode.trim() !== '' ? validatedData.barcode : null,
+    };
+
     // Create product and initial stock movement in a transaction
     const result = await prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
-          ...validatedData,
+          ...cleanData,
           organizationId,
         },
         include: {
@@ -321,6 +328,24 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Datos inválidos', details: error.issues });
     }
+    
+    // Handle Prisma unique constraint errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P2002') {
+        const meta = (error as any).meta;
+        if (meta?.target?.includes('sku')) {
+          return res.status(400).json({ 
+            error: 'El SKU ya existe en tu organización. Por favor usa un SKU diferente.' 
+          });
+        }
+        if (meta?.target?.includes('barcode')) {
+          return res.status(400).json({ 
+            error: 'El código de barras ya existe en tu organización. Por favor usa uno diferente.' 
+          });
+        }
+      }
+    }
+    
     console.error('Error creating product:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
@@ -339,13 +364,24 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 
     const validatedData = updateProductSchema.parse(req.body);
 
+    // Convertir strings vacíos a null para campos únicos opcionales
+    const cleanData = {
+      ...validatedData,
+      sku: validatedData.sku !== undefined 
+        ? (validatedData.sku && validatedData.sku.trim() !== '' ? validatedData.sku : null)
+        : undefined,
+      barcode: validatedData.barcode !== undefined
+        ? (validatedData.barcode && validatedData.barcode.trim() !== '' ? validatedData.barcode : null)
+        : undefined,
+    };
+
     const product = await prisma.product.update({
       where: {
         id,
         organizationId,
         deletedAt: null,
       },
-      data: validatedData,
+      data: cleanData,
       include: {
         category: true,
       },
@@ -356,6 +392,24 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Datos inválidos', details: error.issues });
     }
+    
+    // Handle Prisma unique constraint errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P2002') {
+        const meta = (error as any).meta;
+        if (meta?.target?.includes('sku')) {
+          return res.status(400).json({ 
+            error: 'El SKU ya existe en tu organización. Por favor usa un SKU diferente.' 
+          });
+        }
+        if (meta?.target?.includes('barcode')) {
+          return res.status(400).json({ 
+            error: 'El código de barras ya existe en tu organización. Por favor usa uno diferente.' 
+          });
+        }
+      }
+    }
+    
     console.error('Error updating product:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }

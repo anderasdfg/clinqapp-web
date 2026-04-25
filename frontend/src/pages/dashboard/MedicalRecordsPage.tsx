@@ -51,10 +51,25 @@ const MedicalRecordsPage = () => {
 
     const getMedicalStatus = (patient: any) => {
         const history = patient.medicalHistory;
-        if (!history) return { label: 'Sin Historia', color: 'bg-muted text-muted-foreground' };
         
+        // Verificar si realmente tiene datos de historia clínica
+        if (!history || Object.keys(history).length === 0) {
+            return { label: 'Sin Historia', color: 'bg-muted text-muted-foreground' };
+        }
+        
+        // Verificar si tiene datos significativos (no solo un objeto vacío)
+        const hasData = history.systemic || history.allergies || history.podiatricExam || history.observations;
+        if (!hasData) {
+            return { label: 'Sin Historia', color: 'bg-muted text-muted-foreground' };
+        }
+        
+        // Alertas específicas
         if (history.systemic?.diabetes?.has) {
             return { label: 'Diabetes', color: 'bg-blue-100 text-blue-700 border-blue-200' };
+        }
+        
+        if (history.allergies?.medication || history.allergies?.latex) {
+            return { label: 'Alergias', color: 'bg-orange-100 text-orange-700 border-orange-200' };
         }
         
         return { label: 'Registrada', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
@@ -79,7 +94,13 @@ const MedicalRecordsPage = () => {
                         </div>
                         <div>
                             <p className="text-xs font-bold uppercase text-primary/70">Total Historias</p>
-                            <p className="text-lg font-bold leading-none">{patients.filter(p => p.medicalHistory).length}</p>
+                            <p className="text-lg font-bold leading-none">
+                                {patients.filter(p => {
+                                    const history = p.medicalHistory;
+                                    if (!history || Object.keys(history).length === 0) return false;
+                                    return !!(history.systemic || history.allergies || history.podiatricExam || history.observations);
+                                }).length}
+                            </p>
                         </div>
                     </Card>
                 </div>

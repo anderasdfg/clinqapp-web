@@ -94,10 +94,12 @@ export function useInventoryHandlers() {
 
   const handleSaveProduct = async (data: CreateProductData | UpdateProductData) => {
     try {
-      // Limpiar categoryId si es string vacío
+      // Limpiar campos opcionales si son strings vacíos
       const cleanData = {
         ...data,
         categoryId: data.categoryId && data.categoryId !== '' ? data.categoryId : undefined,
+        sku: data.sku && data.sku.trim() !== '' ? data.sku : undefined,
+        barcode: data.barcode && data.barcode.trim() !== '' ? data.barcode : undefined,
       };
 
       if (editingProduct) {

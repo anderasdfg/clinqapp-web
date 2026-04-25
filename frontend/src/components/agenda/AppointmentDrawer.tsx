@@ -82,7 +82,7 @@ export default function AppointmentDrawer({
       startTime: '',
       endTime: '',
       notes: '',
-      sessionNumber: undefined,
+      sessionNumber: 1,
     },
   });
 
@@ -231,7 +231,7 @@ export default function AppointmentDrawer({
           startTime: format(start, "yyyy-MM-dd'T'HH:mm"),
           endTime: format(new Date(appointment.endTime), "yyyy-MM-dd'T'HH:mm"),
           notes: appointment.notes || '',
-          sessionNumber: appointment.sessionNumber || undefined,
+          sessionNumber: appointment.sessionNumber || 1,
         });
       } else {
         // Create mode
@@ -246,7 +246,7 @@ export default function AppointmentDrawer({
           startTime: '',
           endTime: '',
           notes: '',
-          sessionNumber: undefined,
+          sessionNumber: 1,
         });
       }
     }
@@ -287,7 +287,7 @@ export default function AppointmentDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-3xl lg:max-w-4xl" aria-describedby="appointment-description">
+      <SheetContent className="sm:max-w-4xl lg:max-w-5xl" aria-describedby="appointment-description">
         <SheetHeader>
           <SheetTitle>
             {appointment ? 'Editar Cita' : 'Nueva Cita'}
