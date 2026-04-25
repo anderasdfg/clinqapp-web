@@ -1,8 +1,5 @@
-import axios from 'axios';
-import { AppConfig } from '../lib/config/app.config';
+import api from '@/lib/api/axios-instance';
 import { Product } from './inventory.service';
-
-const API_URL = AppConfig.apiUrl;
 
 // ============================================
 // TYPES
@@ -103,17 +100,17 @@ export const productSalesService = {
     page?: number;
     limit?: number;
   }): Promise<ProductSalesResponse> {
-    const response = await axios.get(`${API_URL}/product-sales`, { params });
+    const response = await api.get('/product-sales', { params });
     return response.data;
   },
 
   async getById(id: string): Promise<ProductSale> {
-    const response = await axios.get(`${API_URL}/product-sales/${id}`);
+    const response = await api.get(`/product-sales/${id}`);
     return response.data;
   },
 
   async create(data: CreateProductSaleData): Promise<ProductSale> {
-    const response = await axios.post(`${API_URL}/product-sales`, data);
+    const response = await api.post('/product-sales', data);
     return response.data;
   },
 
@@ -121,7 +118,7 @@ export const productSalesService = {
     startDate?: string;
     endDate?: string;
   }): Promise<SalesStats> {
-    const response = await axios.get(`${API_URL}/product-sales/stats`, { params });
+    const response = await api.get('/product-sales/stats', { params });
     return response.data;
   },
 
@@ -129,7 +126,7 @@ export const productSalesService = {
     startDate?: string;
     endDate?: string;
   }): Promise<Blob> {
-    const response = await axios.get(`${API_URL}/product-sales/export`, {
+    const response = await api.get('/product-sales/export', {
       params,
       responseType: 'blob',
     });

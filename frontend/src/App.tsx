@@ -19,6 +19,8 @@ import CreateServicePage from './pages/dashboard/CreateServicePage';
 import EditServicePage from './pages/dashboard/EditServicePage';
 import MedicalRecordsPage from './pages/dashboard/MedicalRecordsPage';
 import SalesPage from './pages/dashboard/SalesPage';
+import InventoryPage from './pages/dashboard/InventoryPage';
+import ProductSalesPage from './pages/dashboard/ProductSalesPage';
 import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
@@ -79,6 +81,8 @@ function App() {
                         <Route path="services/:id/edit" element={<EditServicePage />} />
                         <Route path="medical-records" element={<MedicalRecordsPage />} />
                         <Route path="sales" element={<SalesPage />} />
+                        <Route path="inventory" element={<InventoryPage />} />
+                        <Route path="product_sales" element={<ProductSalesPage />} />
                         <Route path="settings" element={<PatientsPage />} /> {/* Placeholder */}
                     </Route>
 

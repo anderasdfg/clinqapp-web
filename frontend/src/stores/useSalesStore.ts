@@ -16,6 +16,10 @@ interface SalesState {
   summary: {
     totalAmount: number;
     count: number;
+    serviceAmount?: number;
+    serviceCount?: number;
+    productAmount?: number;
+    productCount?: number;
   };
   filters: SalesFilters;
 

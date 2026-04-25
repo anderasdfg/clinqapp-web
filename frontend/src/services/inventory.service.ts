@@ -1,7 +1,4 @@
-import axios from 'axios';
-import { AppConfig } from '../lib/config/app.config';
-
-const API_URL = AppConfig.apiUrl;
+import api from '@/lib/api/axios-instance';
 
 // ============================================
 // TYPES
@@ -25,10 +22,10 @@ export interface Product {
   description?: string;
   sku?: string;
   barcode?: string;
-  purchasePrice: number;
+  costPrice: number;
   salePrice: number;
-  stockQuantity: number;
-  minStockAlert: number;
+  currentStock: number;
+  minStock: number;
   unit: string;
   isActive: boolean;
   categoryId?: string;
@@ -65,11 +62,10 @@ export interface CreateProductData {
   categoryId?: string;
   sku?: string;
   barcode?: string;
-  purchasePrice: number;
+  costPrice: number;
   salePrice: number;
-  stockQuantity?: number;
-  minStockAlert?: number;
-  unit?: string;
+  currentStock?: number;
+  minStock?: number;
   isActive?: boolean;
 }
 
@@ -107,22 +103,22 @@ export interface MovementsResponse {
 
 export const categoryService = {
   async getAll(): Promise<ProductCategory[]> {
-    const response = await axios.get(`${API_URL}/inventory/categories`);
+    const response = await api.get('/inventory/categories');
     return response.data;
   },
 
   async create(data: CreateCategoryData): Promise<ProductCategory> {
-    const response = await axios.post(`${API_URL}/inventory/categories`, data);
+    const response = await api.post('/inventory/categories', data);
     return response.data;
   },
 
   async update(id: string, data: UpdateCategoryData): Promise<ProductCategory> {
-    const response = await axios.put(`${API_URL}/inventory/categories/${id}`, data);
+    const response = await api.put(`/inventory/categories/${id}`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await axios.delete(`${API_URL}/inventory/categories/${id}`);
+    await api.delete(`/inventory/categories/${id}`);
   },
 };
 
@@ -138,36 +134,36 @@ export const productService = {
     page?: number;
     limit?: number;
   }): Promise<ProductsResponse> {
-    const response = await axios.get(`${API_URL}/inventory/products`, { params });
+    const response = await api.get('/inventory/products', { params });
     return response.data;
   },
 
   async getById(id: string): Promise<Product> {
-    const response = await axios.get(`${API_URL}/inventory/products/${id}`);
+    const response = await api.get(`/inventory/products/${id}`);
     return response.data;
   },
 
   async create(data: CreateProductData): Promise<Product> {
-    const response = await axios.post(`${API_URL}/inventory/products`, data);
+    const response = await api.post('/inventory/products', data);
     return response.data;
   },
 
   async update(id: string, data: UpdateProductData): Promise<Product> {
-    const response = await axios.put(`${API_URL}/inventory/products/${id}`, data);
+    const response = await api.put(`/inventory/products/${id}`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await axios.delete(`${API_URL}/inventory/products/${id}`);
+    await api.delete(`/inventory/products/${id}`);
   },
 
   async getLowStock(): Promise<Product[]> {
-    const response = await axios.get(`${API_URL}/inventory/products/low-stock`);
+    const response = await api.get('/inventory/products/low-stock');
     return response.data;
   },
 
   async adjustStock(id: string, data: StockAdjustmentData): Promise<Product> {
-    const response = await axios.post(`${API_URL}/inventory/products/${id}/stock`, data);
+    const response = await api.post(`/inventory/products/${id}/stock`, data);
     return response.data;
   },
 
@@ -175,7 +171,7 @@ export const productService = {
     page?: number;
     limit?: number;
   }): Promise<MovementsResponse> {
-    const response = await axios.get(`${API_URL}/inventory/products/${id}/movements`, { params });
+    const response = await api.get(`/inventory/products/${id}/movements`, { params });
     return response.data;
   },
 };

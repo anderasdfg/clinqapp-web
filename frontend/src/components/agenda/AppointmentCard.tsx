@@ -6,7 +6,7 @@ import {
     DropdownMenuItem, 
     DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, CreditCard, X, Loader2 } from 'lucide-react';
+import { MoreVertical, CreditCard, X, Loader2, Edit } from 'lucide-react';
 import { useState } from 'react';
 
 interface AppointmentCardProps {
@@ -14,9 +14,10 @@ interface AppointmentCardProps {
     onClick?: () => void;
     onShowPayment?: (appointment: Appointment, postPaymentStatus?: AppointmentStatus) => void;
     onStatusUpdate?: (appointmentId: string, status: AppointmentStatus) => void;
+    onEdit?: (appointment: Appointment) => void;
 }
 
-const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate }: AppointmentCardProps) => {
+const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate, onEdit }: AppointmentCardProps) => {
     const statusColor = APPOINTMENT_STATUS_COLORS[appointment.status];
     const isCompleted = appointment.status === APPOINTMENT_STATUS.COMPLETED;
     const isConfirmed = appointment.status === APPOINTMENT_STATUS.CONFIRMED;
@@ -52,6 +53,14 @@ const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate }
                                     <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                    <DropdownMenuItem 
+                                        className="gap-2 cursor-pointer"
+                                        onClick={() => onEdit?.(appointment)}
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                        Editar Cita
+                                    </DropdownMenuItem>
+
                                     {(!isConfirmed && !isNoShow && !isPaid) && (
                                         <DropdownMenuItem 
                                             className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
@@ -89,11 +98,19 @@ const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate }
                     )}
                 </div>
 
-                {/* Service Name */}
-                {appointment.service && (
-                    <p className="text-[rgb(var(--text-secondary))] truncate text-[10px]">
-                        {appointment.service.name}
-                    </p>
+                {/* Services */}
+                {appointment.services && appointment.services.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        {appointment.services.map((as) => (
+                            <span 
+                                key={as.id}
+                                className="px-1.5 py-0.5 rounded text-[9px] bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text-secondary))] border border-[rgb(var(--border-primary))]"
+                            >
+                                {as.service.name}
+                                {appointment.sessionNumber && ` - SESIÓN ${appointment.sessionNumber}`}
+                            </span>
+                        ))}
+                    </div>
                 )}
 
                 {/* Status Badge */}

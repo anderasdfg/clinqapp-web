@@ -119,6 +119,17 @@ export interface AppointmentService {
   description?: string | null;
   duration: number;
   basePrice: number;
+  category?: string;
+}
+
+// AppointmentService relation (tabla intermedia)
+export interface AppointmentServiceRelation {
+  id: string;
+  appointmentId: string;
+  serviceId: string;
+  price: number;
+  duration: number;
+  service: AppointmentService;
 }
 
 // Payment info (minimal)
@@ -140,7 +151,6 @@ export interface Appointment {
   organizationId: string;
   patientId: string;
   professionalId: string;
-  serviceId?: string | null;
   treatmentId?: string | null;
   sessionNumber?: number | null;
   startTime: string;
@@ -154,7 +164,7 @@ export interface Appointment {
   // Relations
   patient?: AppointmentPatient;
   professional?: AppointmentProfessional;
-  service?: AppointmentService | null;
+  services?: AppointmentServiceRelation[]; // Múltiples servicios
   payment?: AppointmentPayment | null;
 }
 

@@ -13,6 +13,7 @@ const NAVIGATION_TO_MODULE_MAP: Record<string, keyof OrganizationModules> = {
   'sales': 'sales',
   'inventory': 'inventory',
   'product_sales': 'productSales',
+  'product-sales': 'productSales',
 };
 
 /**
@@ -22,21 +23,17 @@ export function filterNavigationItems(
   items: NavigationItem[],
   enabledModules: OrganizationModules
 ): NavigationItem[] {
-  console.log('🔍 filterNavigationItems - enabledModules:', enabledModules);
-  console.log('🔍 filterNavigationItems - items:', items.map(i => i.id));
   
   return items.filter(item => {
     const moduleKey = NAVIGATION_TO_MODULE_MAP[item.id];
     
     // Si no está mapeado, mostrar por defecto (ej: home)
     if (!moduleKey) {
-      console.log(`✅ Item ${item.id} - no mapeado, mostrar por defecto`);
       return true;
     }
     
     // Verificar si el módulo está habilitado
     const isEnabled = enabledModules[moduleKey];
-    console.log(`${isEnabled ? '✅' : '❌'} Item ${item.id} -> module ${moduleKey} = ${isEnabled}`);
     return isEnabled;
   });
 }

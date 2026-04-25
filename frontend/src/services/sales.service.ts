@@ -1,24 +1,5 @@
-import axios from "axios";
-import { supabase } from "../lib/supabase/client";
+import api from "@/lib/api/axios-instance";
 import { SalesListResponse, SalesFilters } from "../types/sales.types";
-import { AppConfig } from "../lib/config/app.config";
-
-
-// Create axios instance
-const api = axios.create({
-  baseURL: AppConfig.apiUrl,
-});
-
-// Add auth interceptor
-api.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
-  return config;
-});
 
 export const salesService = {
   /**

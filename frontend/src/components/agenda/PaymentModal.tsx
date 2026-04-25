@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { supabase } from '@/lib/supabase/client';
 import { PaymentMethod, PAYMENT_METHOD_LABELS, PAYMENT_METHOD } from '@/types/appointment.types';
 import type { Appointment } from '@/types/appointment.types';
+import ProductSelector, { SelectedProduct } from './ProductSelector';
+import { toast } from 'sonner';
 
 interface PaymentModalProps {
     appointment: Appointment;
@@ -20,6 +22,9 @@ interface PaymentFormData {
 
 const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: PaymentModalProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+    
+    const totalAmount = appointment.services?.reduce((sum, s) => sum + Number(s.price), 0) || 0;
 
     const {
         register,
@@ -28,7 +33,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
         reset,
     } = useForm<PaymentFormData>({
         defaultValues: {
-            amount: appointment.service?.basePrice ? Number(appointment.service.basePrice) : 0,
+            amount: totalAmount,
             method: PAYMENT_METHOD.CASH,
         },
     });
@@ -42,6 +47,23 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                 throw new Error('No autenticado');
             }
 
+            // Prepare payment data with optional products
+            const paymentData: any = {
+                amount: Number(data.amount),
+                method: data.method,
+                receiptNumber: data.receiptNumber,
+                notes: data.notes,
+            };
+
+            // Add products if any selected
+            if (selectedProducts.length > 0) {
+                paymentData.products = selectedProducts.map(p => ({
+                    productId: p.productId,
+                    quantity: p.quantity,
+                    unitPrice: p.unitPrice,
+                }));
+            }
+
             // Register payment
             const response = await fetch(`${import.meta.env.VITE_API_URL}/appointments/${appointment.id}/payment`, {
                 method: 'POST',
@@ -49,12 +71,7 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({
-                    amount: Number(data.amount),
-                    method: data.method,
-                    receiptNumber: data.receiptNumber,
-                    notes: data.notes,
-                }),
+                body: JSON.stringify(paymentData),
             });
 
             if (!response.ok) {
@@ -62,12 +79,18 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                 throw new Error(errorData.error || 'Error al registrar pago');
             }
 
+            const successMessage = selectedProducts.length > 0
+                ? `Pago registrado exitosamente con ${selectedProducts.length} producto(s)`
+                : 'Pago registrado exitosamente';
+            toast.success(successMessage);
+
             reset();
+            setSelectedProducts([]);
             onPaymentRegistered();
             onClose();
         } catch (error) {
             console.error('Error registering payment:', error);
-            alert(error instanceof Error ? error.message : 'Error al registrar el pago');
+            toast.error(error instanceof Error ? error.message : 'Error al registrar el pago');
         } finally {
             setIsSubmitting(false);
         }
@@ -104,10 +127,12 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     <p className="font-medium text-[rgb(var(--text-primary))]">
                                         {appointment.patient?.firstName} {appointment.patient?.lastName}
                                     </p>
-                                    {appointment.service && (
-                                        <p className="text-sm text-[rgb(var(--text-secondary))] mt-1">
-                                            {appointment.service.name}
-                                        </p>
+                                    {appointment.services && appointment.services.length > 0 && (
+                                        <div className="text-sm text-[rgb(var(--text-secondary))] mt-1">
+                                            {appointment.services.map((s) => (
+                                                <p key={s.id}>{s.service.name}</p>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
 
@@ -118,13 +143,17 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     <input
                                         type="number"
                                         step="0.01"
+                                        min="0"
                                         {...register('amount', {
                                             required: 'El monto es requerido',
-                                            min: { value: 0.01, message: 'El monto debe ser mayor a 0' },
+                                            min: { value: 0, message: 'El monto no puede ser negativo' },
                                         })}
                                         className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
                                         placeholder="0.00"
                                     />
+                                    <p className="mt-1 text-xs text-[rgb(var(--text-secondary))]">
+                                        Puedes ingresar 0 para sesiones ya pagadas o tratamientos gratis
+                                    </p>
                                     {errors.amount && (
                                         <p className="mt-1 text-sm text-error">{errors.amount.message}</p>
                                     )}
@@ -167,11 +196,39 @@ const PaymentModal = ({ appointment, isOpen, onClose, onPaymentRegistered }: Pay
                                     </label>
                                     <textarea
                                         {...register('notes')}
-                                        rows={2}
+                                        rows={3}
                                         className="w-full px-4 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] text-[rgb(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
-                                        placeholder="Notas adicionales..."
+                                        placeholder="Notas adicionales sobre el pago..."
                                     />
                                 </div>
+
+                                <div className="pt-4 border-t border-[rgb(var(--border-primary))]">
+                                    <ProductSelector
+                                        selectedProducts={selectedProducts}
+                                        onProductsChange={setSelectedProducts}
+                                    />
+                                </div>
+
+                                {selectedProducts.length > 0 && (
+                                    <div className="p-4 bg-[rgb(var(--bg-secondary))] rounded-lg">
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-[rgb(var(--text-secondary))]">Servicios:</span>
+                                                <span className="font-medium text-[rgb(var(--text-primary))]">S/ {totalAmount.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-[rgb(var(--text-secondary))]">Productos:</span>
+                                                <span className="font-medium text-[rgb(var(--text-primary))]">S/ {selectedProducts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0).toFixed(2)}</span>
+                                            </div>
+                                            <div className="pt-2 border-t border-[rgb(var(--border-primary))] flex justify-between">
+                                                <span className="font-semibold text-[rgb(var(--text-primary))]">Total General:</span>
+                                                <span className="text-lg font-bold text-primary">
+                                                    S/ {(totalAmount + selectedProducts.reduce((sum, p) => sum + p.quantity * p.unitPrice, 0)).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

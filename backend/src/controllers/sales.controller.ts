@@ -18,6 +18,7 @@ const getSalesSchema = z.object({
   paymentMethod: z.string().optional(),
   serviceId: z.string().optional(),
   search: z.string().optional(), // Search by patient name
+  type: z.enum(["SERVICE", "PRODUCT", "ALL"]).optional().default("ALL"), // Filter by sale type
 });
 
 // GET /api/sales - List sales with filters
@@ -40,6 +41,7 @@ export const getSales = async (req: AuthRequest, res: Response) => {
       paymentMethod,
       serviceId,
       search,
+      type,
     } = validatedQuery;
 
     // Build where clause
@@ -83,56 +85,185 @@ export const getSales = async (req: AuthRequest, res: Response) => {
       };
     }
 
-    // Get total count
-    const total = await prisma.payment.count({ where });
-
-    // Get paginated data
-    const payments = await prisma.payment.findMany({
-      where,
-      include: {
-        patient: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-        appointment: {
-          select: {
-            service: {
+    // Fetch service sales (payments with appointments)
+    let serviceSales: any[] = [];
+    let serviceSummary = { totalAmount: 0, count: 0 };
+    
+    if (type === "SERVICE" || type === "ALL") {
+      const serviceWhere = { ...where, appointmentId: { not: null } };
+      
+      const [payments, summary] = await Promise.all([
+        prisma.payment.findMany({
+          where: serviceWhere,
+          include: {
+            patient: {
               select: {
-                name: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            appointment: {
+              select: {
+                id: true,
+                services: {
+                  include: {
+                    service: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                notes: true,
               },
             },
           },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+        prisma.payment.aggregate({
+          where: serviceWhere,
+          _sum: {
+            amount: true,
+          },
+          _count: true,
+        }),
+      ]);
 
-    // Calculate summary
-    const summary = await prisma.payment.aggregate({
-      where,
-      _sum: {
-        amount: true,
-      },
-      _count: true,
-    });
+      serviceSales = payments.map((payment) => ({
+        id: payment.id,
+        type: "SERVICE" as const,
+        date: payment.createdAt.toISOString(),
+        patientName: `${payment.patient.firstName} ${payment.patient.lastName}`,
+        description: payment.appointment?.services?.map(s => s.service.name).join(", ") || "N/A",
+        items: payment.appointment?.services?.map(s => ({
+          name: s.service.name,
+          quantity: 1,
+          unitPrice: parseFloat(s.price.toString()),
+          subtotal: parseFloat(s.price.toString()),
+        })) || [],
+        amount: parseFloat(payment.amount.toString()),
+        paymentMethod: payment.method,
+        status: payment.status,
+        notes: payment.notes || payment.appointment?.notes,
+        receiptNumber: payment.receiptNumber,
+      }));
 
-    // Format response
-    const data = payments.map((payment) => ({
-      id: payment.id,
-      date: payment.createdAt.toISOString(),
-      appointmentId: payment.appointmentId,
-      patientName: `${payment.patient.firstName} ${payment.patient.lastName}`,
-      serviceName: payment.appointment?.service?.name || "N/A",
-      amount: parseFloat(payment.amount.toString()),
-      paymentMethod: payment.method,
-      status: payment.status,
-    }));
+      serviceSummary = {
+        totalAmount: parseFloat(summary._sum.amount?.toString() || "0"),
+        count: summary._count,
+      };
+    }
+
+    // Fetch product sales
+    let productSales: any[] = [];
+    let productSummary = { totalAmount: 0, count: 0 };
+    
+    if (type === "PRODUCT" || type === "ALL") {
+      const productWhere: any = {
+        organizationId,
+      };
+
+      // Date filters
+      if (startDate || endDate) {
+        productWhere.createdAt = {};
+        if (startDate) {
+          productWhere.createdAt.gte = new Date(startDate);
+        }
+        if (endDate) {
+          const endDateTime = new Date(endDate);
+          endDateTime.setHours(23, 59, 59, 999);
+          productWhere.createdAt.lte = endDateTime;
+        }
+      }
+
+      // Payment method filter
+      if (paymentMethod) {
+        productWhere.paymentMethod = paymentMethod;
+      }
+
+      // Patient search
+      if (search) {
+        productWhere.patient = {
+          OR: [
+            { firstName: { contains: search, mode: "insensitive" } },
+            { lastName: { contains: search, mode: "insensitive" } },
+          ],
+        };
+      }
+
+      const [sales, summary] = await Promise.all([
+        prisma.productSale.findMany({
+          where: productWhere,
+          include: {
+            patient: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            items: {
+              include: {
+                product: {
+                  select: {
+                    name: true,
+                    unit: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+        prisma.productSale.aggregate({
+          where: productWhere,
+          _sum: {
+            total: true,
+          },
+          _count: true,
+        }),
+      ]);
+
+      productSales = sales.map((sale) => ({
+        id: sale.id,
+        type: "PRODUCT" as const,
+        date: sale.createdAt.toISOString(),
+        patientName: sale.patient ? `${sale.patient.firstName} ${sale.patient.lastName}` : "Venta directa",
+        description: sale.items.map(i => `${i.product.name} (${i.quantity})`).join(", "),
+        items: sale.items.map(i => ({
+          name: i.product.name,
+          quantity: i.quantity,
+          unitPrice: parseFloat(i.unitPrice.toString()),
+          subtotal: parseFloat(i.subtotal.toString()),
+          unit: i.product.unit,
+        })),
+        amount: parseFloat(sale.total.toString()),
+        subtotal: parseFloat(sale.subtotal.toString()),
+        discount: parseFloat(sale.discount.toString()),
+        paymentMethod: sale.paymentMethod,
+        status: "COMPLETED",
+        notes: sale.notes,
+      }));
+
+      productSummary = {
+        totalAmount: parseFloat(summary._sum.total?.toString() || "0"),
+        count: summary._count,
+      };
+    }
+
+    // Combine and sort all sales by date
+    const allSales = [...serviceSales, ...productSales].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // Paginate combined results
+    const total = allSales.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const data = allSales.slice(startIndex, endIndex);
 
     res.json({
       data,
@@ -143,8 +274,12 @@ export const getSales = async (req: AuthRequest, res: Response) => {
         totalPages: Math.ceil(total / limit),
       },
       summary: {
-        totalAmount: parseFloat(summary._sum.amount?.toString() || "0"),
-        count: summary._count,
+        totalAmount: serviceSummary.totalAmount + productSummary.totalAmount,
+        count: serviceSummary.count + productSummary.count,
+        serviceAmount: serviceSummary.totalAmount,
+        serviceCount: serviceSummary.count,
+        productAmount: productSummary.totalAmount,
+        productCount: productSummary.count,
       },
     });
   } catch (error) {
@@ -209,9 +344,13 @@ export const exportSales = async (req: AuthRequest, res: Response) => {
         },
         appointment: {
           select: {
-            service: {
-              select: {
-                name: true,
+            services: {
+              include: {
+                service: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -228,7 +367,7 @@ export const exportSales = async (req: AuthRequest, res: Response) => {
       .map((payment) => {
         const date = new Date(payment.createdAt).toLocaleDateString("es-PE");
         const patientName = `${payment.patient.firstName} ${payment.patient.lastName}`;
-        const serviceName = payment.appointment?.service?.name || "N/A";
+        const serviceName = payment.appointment?.services?.[0]?.service?.name || "N/A";
         const amount = parseFloat(payment.amount.toString()).toFixed(2);
         const method = payment.method;
         const status = payment.status;

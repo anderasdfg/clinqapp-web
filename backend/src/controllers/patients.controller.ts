@@ -66,15 +66,26 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
       deletedAt: null,
     };
 
-    // Search filter
+    // Search filter - supports full name, partial name, and DNI
     if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: "insensitive" } },
-        { lastName: { contains: search, mode: "insensitive" } },
-        { dni: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-      ];
+      const searchTerms = search.trim().split(/\s+/);
+      
+      if (searchTerms.length === 1) {
+        // Single term: search in firstName, lastName, or DNI
+        where.OR = [
+          { firstName: { contains: search, mode: "insensitive" } },
+          { lastName: { contains: search, mode: "insensitive" } },
+          { dni: { contains: search, mode: "insensitive" } },
+        ];
+      } else {
+        // Multiple terms: search for full name (firstName + lastName)
+        where.AND = searchTerms.map(term => ({
+          OR: [
+            { firstName: { contains: term, mode: "insensitive" } },
+            { lastName: { contains: term, mode: "insensitive" } },
+          ],
+        }));
+      }
     }
 
     // Assigned professional filter
@@ -213,11 +224,15 @@ export const getPatientById = async (req: AuthRequest, res: Response) => {
             endTime: true,
             status: true,
             notes: true,
-            service: {
-              select: {
-                id: true,
-                name: true,
-                duration: true,
+            services: {
+              include: {
+                service: {
+                  select: {
+                    id: true,
+                    name: true,
+                    duration: true,
+                  },
+                },
               },
             },
             professional: {

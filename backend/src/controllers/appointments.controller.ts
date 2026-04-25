@@ -8,12 +8,13 @@ import { Prisma } from "@prisma/client";
 const createAppointmentSchema = z.object({
   patientId: z.string().uuid("ID de paciente inválido"),
   professionalId: z.string().uuid("ID de profesional inválido"),
-  serviceId: z.string().uuid("ID de servicio inválido").optional(),
+  serviceIds: z.array(z.string().uuid("ID de servicio inválido")).min(1, "Debe seleccionar al menos un servicio"),
   startTime: z.string().datetime("Fecha y hora de inicio inválida"),
   endTime: z.string().datetime("Fecha y hora de fin inválida"),
   notes: z.string().optional(),
   clinicalNotes: z.string().optional(),
   images: z.array(z.string().url("URL de imagen inválida")).optional(),
+  sessionNumber: z.number().int().positive("El número de sesión debe ser positivo").optional(),
 });
 
 const updateAppointmentSchema = createAppointmentSchema.partial().extend({
@@ -41,16 +42,23 @@ const updateStatusSchema = z.object({
   cancellationReason: z.string().optional(),
 });
 
+const productItemSchema = z.object({
+  productId: z.string().uuid("ID de producto inválido"),
+  quantity: z.number().int().min(1, "La cantidad debe ser mayor a 0"),
+  unitPrice: z.number().min(0, "El precio unitario debe ser mayor o igual a 0"),
+});
+
 const registerPaymentSchema = z.object({
-  amount: z.number().positive("El monto debe ser mayor a 0"),
+  amount: z.number().min(0, "El monto no puede ser negativo"),
   method: z.enum(["CASH", "CARD", "BANK_TRANSFER", "YAPE", "PLIN", "OTHER"]),
   receiptNumber: z.string().optional(),
   notes: z.string().optional(),
+  products: z.array(productItemSchema).optional(),
 });
 
 // Simple in-memory cache for appointments
 const appointmentsCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 1000 * 30; // 30 seconds cache for agenda data
+const CACHE_TTL = 1000 * 5; // 5 seconds cache for agenda data
 const invalidateCache = (organizationId: string) => {
   const keysContext = Array.from(appointmentsCache.keys());
   for (const key of keysContext) {
@@ -150,6 +158,7 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
           images: true,
           sessionNumber: true,
           patientId: true,
+          professionalId: true,
           patient: {
             select: {
               id: true,
@@ -166,12 +175,15 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
               specialty: true,
             },
           },
-          service: {
-            select: {
-              id: true,
-              name: true,
-              duration: true,
-              basePrice: true,
+          services: {
+            include: {
+              service: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                },
+              },
             },
           },
           payment: {
@@ -232,7 +244,17 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
               take: 10,
               orderBy: { startTime: "desc" },
               include: {
-                service: true,
+                services: {
+                  include: {
+                    service: {
+                      select: {
+                        id: true,
+                        name: true,
+                        category: true,
+                      },
+                    },
+                  },
+                },
                 professional: {
                   select: {
                     id: true,
@@ -254,7 +276,17 @@ export const getAppointmentById = async (req: AuthRequest, res: Response) => {
             specialty: true,
           },
         },
-        service: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+              },
+            },
+          },
+        },
         payment: true,
       },
     });
@@ -388,17 +420,38 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Profesional no encontrado" });
     }
 
-    // Create appointment
+    // Fetch services to get prices and durations
+    const services = await prisma.service.findMany({
+      where: {
+        id: { in: data.serviceIds },
+        organizationId: dbUser.organizationId,
+        deletedAt: null,
+        isActive: true,
+      },
+    });
+
+    if (services.length !== data.serviceIds.length) {
+      return res.status(404).json({ error: "Uno o más servicios no encontrados" });
+    }
+
+    // Create appointment with services
     const appointment = await prisma.appointment.create({
       data: {
         organizationId: dbUser.organizationId,
         patientId: data.patientId,
         professionalId: data.professionalId,
-        serviceId: data.serviceId,
         startTime,
         endTime,
         notes: data.notes,
+        sessionNumber: data.sessionNumber,
         status: "PENDING",
+        services: {
+          create: services.map(service => ({
+            serviceId: service.id,
+            price: service.basePrice,
+            duration: service.duration,
+          })),
+        },
       },
       include: {
         patient: {
@@ -416,11 +469,15 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
             lastName: true,
           },
         },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            duration: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+              },
+            },
           },
         },
       },
@@ -509,24 +566,42 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
 
     // Update appointment
     console.log(`🔍 [PUT] Update ID: ${id} | Org: ${dbUser.organizationId}`);
-    console.log("🔍 Raw body:", JSON.stringify(req.body, null, 2));
-    console.log("🔍 Validated data:", JSON.stringify(data, null, 2));
 
+    // Prepare update data - exclude serviceIds as it needs special handling
+    const { serviceIds, ...restData } = data;
+    
     const updateData: any = {
-      ...data,
+      ...restData,
       startTime: data.startTime ? new Date(data.startTime) : undefined,
       endTime: data.endTime ? new Date(data.endTime) : undefined,
     };
 
-    // Explicitly set status to ensure it's not lost
-    if (data.status) {
-      updateData.status = data.status;
-    }
+    // Handle services update if provided
+    if (serviceIds && serviceIds.length > 0) {
+      // Fetch services to get prices and durations
+      const services = await prisma.service.findMany({
+        where: {
+          id: { in: serviceIds },
+          organizationId: dbUser.organizationId,
+          deletedAt: null,
+          isActive: true,
+        },
+      });
 
-    console.log(
-      "🔍 Final updateData for Prisma:",
-      JSON.stringify(updateData, null, 2),
-    );
+      if (services.length !== serviceIds.length) {
+        return res.status(404).json({ error: "Uno o más servicios no encontrados" });
+      }
+
+      // Delete existing services and create new ones
+      updateData.services = {
+        deleteMany: {},
+        create: services.map(service => ({
+          serviceId: service.id,
+          price: service.basePrice,
+          duration: service.duration,
+        })),
+      };
+    }
 
     const appointment = await prisma.appointment.update({
       where: { id },
@@ -548,12 +623,16 @@ export const updateAppointment = async (req: AuthRequest, res: Response) => {
             specialty: true,
           },
         },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            duration: true,
-            basePrice: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                duration: true,
+                basePrice: true,
+              },
+            },
           },
         },
         payment: {
@@ -646,12 +725,16 @@ export const updateAppointmentStatus = async (
             specialty: true,
           },
         },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            duration: true,
-            basePrice: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                duration: true,
+                basePrice: true,
+              },
+            },
           },
         },
         payment: {
@@ -783,7 +866,7 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { amount, method, receiptNumber, notes } = validation.data;
+    const { amount, method, receiptNumber, notes, products } = validation.data;
 
     // Check if appointment exists
     const appointment = await prisma.appointment.findFirst({
@@ -808,19 +891,129 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
         .json({ error: "Esta cita ya tiene un pago registrado" });
     }
 
-    // Create payment
-    const payment = await prisma.payment.create({
-      data: {
-        organizationId: dbUser.organizationId,
-        patientId: appointment.patientId,
-        appointmentId: appointment.id,
-        amount,
-        method,
-        status: "COMPLETED",
-        receiptNumber: receiptNumber || null,
-        notes,
-        collectedById: dbUser.id,
-      },
+    // If products are included, validate stock
+    if (products && products.length > 0) {
+      const productIds = products.map(p => p.productId);
+      const dbProducts = await prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          organizationId: dbUser.organizationId,
+          deletedAt: null,
+          isActive: true,
+        },
+      });
+
+      if (dbProducts.length !== productIds.length) {
+        return res.status(400).json({ error: "Uno o más productos no existen o no están activos" });
+      }
+
+      // Check stock availability
+      for (const item of products) {
+        const product = dbProducts.find(p => p.id === item.productId);
+        if (!product) {
+          return res.status(400).json({ error: `Producto ${item.productId} no encontrado` });
+        }
+        if (product.currentStock < item.quantity) {
+          return res.status(400).json({ 
+            error: `Stock insuficiente para ${product.name}. Disponible: ${product.currentStock}, Solicitado: ${item.quantity}` 
+          });
+        }
+      }
+    }
+
+    // Use transaction to create payment and optionally product sale
+    const result = await prisma.$transaction(async (tx) => {
+      // Create payment for appointment
+      const payment = await tx.payment.create({
+        data: {
+          organizationId: dbUser.organizationId,
+          patientId: appointment.patientId,
+          appointmentId: appointment.id,
+          amount,
+          method,
+          status: "COMPLETED",
+          receiptNumber: receiptNumber || null,
+          notes,
+          collectedById: dbUser.id,
+        },
+      });
+
+      // If products are included, create product sale
+      if (products && products.length > 0) {
+        // Calculate product sale totals
+        let productSubtotal = 0;
+        const itemsWithSubtotal = products.map(item => {
+          const itemSubtotal = item.quantity * item.unitPrice;
+          productSubtotal += itemSubtotal;
+          return {
+            ...item,
+            subtotal: itemSubtotal,
+          };
+        });
+
+        // Create product sale
+        const productSale = await tx.productSale.create({
+          data: {
+            organizationId: dbUser.organizationId,
+            patientId: appointment.patientId,
+            soldById: dbUser.id,
+            subtotal: productSubtotal,
+            discount: 0,
+            total: productSubtotal,
+            paymentMethod: method,
+            notes: `Venta de productos en cita #${appointment.id}`,
+            paymentId: payment.id,
+          },
+        });
+
+        // Create sale items and update stock
+        for (const item of itemsWithSubtotal) {
+          // Create sale item
+          await tx.productSaleItem.create({
+            data: {
+              saleId: productSale.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            },
+          });
+
+          // Get current product for stock update
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+          });
+
+          if (!product) {
+            throw new Error(`Producto ${item.productId} no encontrado`);
+          }
+
+          const previousStock = product.currentStock;
+          const newStock = previousStock - item.quantity;
+
+          // Update product stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { currentStock: newStock },
+          });
+
+          // Create inventory movement
+          await tx.inventoryMovement.create({
+            data: {
+              organizationId: dbUser.organizationId,
+              productId: item.productId,
+              performedBy: dbUser.id,
+              type: 'SALE',
+              quantity: item.quantity,
+              previousStock,
+              newStock,
+              notes: `Venta en cita #${appointment.id}`,
+            },
+          });
+        }
+      }
+
+      return payment;
     });
 
     // Invalidate cache
@@ -828,8 +1021,10 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json({
       success: true,
-      message: "Pago registrado exitosamente",
-      data: payment,
+      message: products && products.length > 0 
+        ? `Pago registrado exitosamente con ${products.length} producto(s)` 
+        : "Pago registrado exitosamente",
+      data: result,
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -840,6 +1035,8 @@ export const registerPayment = async (req: AuthRequest, res: Response) => {
       }
     }
     console.error("Error registering payment:", error);
-    res.status(500).json({ error: "Error al registrar pago" });
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : "Error al registrar pago" 
+    });
   }
 };

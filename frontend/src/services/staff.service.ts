@@ -1,28 +1,9 @@
-import axios from "axios";
-import { supabase } from "@/lib/supabase/client";
+import api from "@/lib/api/axios-instance";
 import type {
   StaffListResponse,
   StaffResponse,
   UpdateStaffDTO,
 } from "@/types/staff.types";
-import { AppConfig } from "@/lib/config/app.config";
-
-
-// Create axios instance
-const api = axios.create({
-  baseURL: AppConfig.apiUrl,
-});
-
-// Add auth interceptor
-api.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
-  return config;
-});
 
 export const staffService = {
   // Get all staff members

@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/api/axios-instance";
 import type {
   Appointment,
   CreateAppointmentDTO,
@@ -15,25 +15,6 @@ import type {
   AvailableSlotsParams,
   AvailableSlotsResponse,
 } from "@/types/schedule.types";
-import { supabase } from "@/lib/supabase/client";
-import { AppConfig } from "@/lib/config/app.config";
-
-
-// Create axios instance with interceptors
-const api = axios.create({
-  baseURL: AppConfig.apiUrl,
-});
-
-// Add auth token to requests
-api.interceptors.request.use(async (config) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
-  return config;
-});
 
 export const appointmentsService = {
   /**

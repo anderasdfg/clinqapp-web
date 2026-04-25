@@ -28,7 +28,7 @@ const createProductSaleSchema = z.object({
 
 export const getProductSales = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -132,7 +132,7 @@ export const getProductSale = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -192,8 +192,8 @@ export const getProductSale = async (req: AuthRequest, res: Response) => {
 
 export const createProductSale = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
-    const userId = req.user?.id;
+    const organizationId = req.dbUser?.organizationId;
+    const userId = req.dbUser?.id;
     if (!organizationId || !userId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -378,7 +378,7 @@ export const createProductSale = async (req: AuthRequest, res: Response) => {
 
 export const getSalesStats = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -402,7 +402,7 @@ export const getSalesStats = async (req: AuthRequest, res: Response) => {
     const [
       totalSales,
       totalRevenue,
-      topProducts,
+      topProductsRaw,
     ] = await Promise.all([
       // Total number of sales
       prisma.productSale.count({ where }),
@@ -415,32 +415,47 @@ export const getSalesStats = async (req: AuthRequest, res: Response) => {
         },
       }),
       
-      // Top selling products
-      prisma.productSaleItem.groupBy({
-        by: ['productId'],
-        where: {
-          sale: {
-            organizationId,
-            ...(startDate || endDate ? {
-              createdAt: where.createdAt
-            } : {}),
-          },
-        },
-        _sum: {
-          quantity: true,
-          subtotal: true,
-        },
-        orderBy: {
-          _sum: {
-            quantity: 'desc',
-          },
-        },
-        take: 10,
-      }),
+      // Top selling products - build query dynamically
+      (async () => {
+        let query = `
+          SELECT 
+            product_id as "productId",
+            SUM(quantity)::int as quantity,
+            SUM(product_sale_items.subtotal)::numeric as subtotal
+          FROM product_sale_items
+          INNER JOIN product_sales ON product_sale_items.sale_id = product_sales.id
+          WHERE product_sales.organization_id = $1::uuid
+        `;
+        
+        const params: any[] = [organizationId];
+        let paramIndex = 2;
+        
+        if (startDate) {
+          query += ` AND product_sales.created_at >= $${paramIndex}::timestamp`;
+          params.push(new Date(startDate as string));
+          paramIndex++;
+        }
+        
+        if (endDate) {
+          query += ` AND product_sales.created_at <= $${paramIndex}::timestamp`;
+          params.push(new Date(endDate as string));
+        }
+        
+        query += `
+          GROUP BY product_id
+          ORDER BY SUM(quantity) DESC
+          LIMIT 10
+        `;
+        
+        return prisma.$queryRawUnsafe<Array<{ productId: string; quantity: number; subtotal: number }>>(
+          query,
+          ...params
+        );
+      })(),
     ]);
 
     // Get product details for top products
-    const productIds = topProducts.map(item => item.productId);
+    const productIds = topProductsRaw.map(item => item.productId);
     const products = await prisma.product.findMany({
       where: {
         id: { in: productIds },
@@ -457,15 +472,19 @@ export const getSalesStats = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    const topProductsWithDetails = topProducts.map(item => ({
-      ...item,
+    const topProducts = topProductsRaw.map(item => ({
+      productId: item.productId,
+      _sum: {
+        quantity: item.quantity,
+        subtotal: parseFloat(item.subtotal.toString()),
+      },
       product: products.find(p => p.id === item.productId),
     }));
 
     res.json({
       totalSales,
       totalRevenue: totalRevenue._sum.total || 0,
-      topProducts: topProductsWithDetails,
+      topProducts,
     });
   } catch (error) {
     console.error('Error fetching sales stats:', error);
@@ -475,7 +494,7 @@ export const getSalesStats = async (req: AuthRequest, res: Response) => {
 
 export const exportSales = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }

@@ -103,11 +103,11 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     label: "Gestión",
     items: CRUD_NAVIGATION,
   },
-  /* {
+  {
     id: "sales",
-    label: "Ventas",
+    label: "Inventario & Productos",
     items: CRUD_SALES,
-  }, */
+  },
   /*   {
     id: "system",
     label: "Sistema",
@@ -142,4 +142,5 @@ export const NAVIGATION_ICONS: Record<string, string> = {
   search: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
   logout:
     "M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1",
+  box: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
 };

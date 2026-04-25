@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSalesStore } from '@/stores/useSalesStore';
-import { Search, DollarSign, Receipt, AlertCircle, Filter, X } from 'lucide-react';
+import { Search, DollarSign, Receipt, AlertCircle, Filter, X, Package, Stethoscope, Eye } from 'lucide-react';
+import SaleDetailModal from '@/components/sales/SaleDetailModal';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,10 +26,17 @@ const SalesPage = () => {
     } = useSalesStore();
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [localFilters, setLocalFilters] = useState({
+    const [localFilters, setLocalFilters] = useState<{
+        paymentMethod: string;
+        search: string;
+        type: 'SERVICE' | 'PRODUCT' | 'ALL';
+    }>({
         paymentMethod: '',
         search: '',
+        type: 'ALL',
     });
+    const [selectedSale, setSelectedSale] = useState<any>(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     useEffect(() => {
         fetchSales();
@@ -70,6 +78,7 @@ const SalesPage = () => {
         setLocalFilters({
             paymentMethod: '',
             search: '',
+            type: 'ALL',
         });
         clearFilters();
         fetchSales();
@@ -89,10 +98,15 @@ const SalesPage = () => {
     }, []);
 
     const formatDate = useCallback((dateString: string) => {
-        return new Date(dateString).toLocaleDateString('es-PE', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+    }, []);
+
+    const formatTime = useCallback((dateString: string) => {
+        return new Date(dateString).toLocaleTimeString('es-PE', {
             hour: '2-digit',
             minute: '2-digit',
         });
@@ -112,8 +126,21 @@ const SalesPage = () => {
     }, [paymentMethodLabels]);
 
     const hasActiveFilters = useMemo(() => {
-        return !!(dateRange?.from || dateRange?.to || localFilters.paymentMethod || localFilters.search);
+        return !!(dateRange?.from || dateRange?.to || localFilters.paymentMethod || localFilters.search || localFilters.type !== 'ALL');
     }, [dateRange, localFilters]);
+
+    const handleViewDetails = useCallback((sale: any) => {
+        setSelectedSale(sale);
+        setShowDetailModal(true);
+    }, []);
+
+    const getSaleTypeIcon = (type: string) => {
+        return type === 'SERVICE' ? <Stethoscope className="w-4 h-4" /> : <Package className="w-4 h-4" />;
+    };
+
+    const getSaleTypeBadge = (type: string) => {
+        return type === 'SERVICE' ? 'Servicio' : 'Producto';
+    };
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -149,7 +176,7 @@ const SalesPage = () => {
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -172,7 +199,7 @@ const SalesPage = () => {
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
-                                    Número de Transacciones
+                                    Transacciones
                                 </p>
                                 <p className="text-3xl font-bold text-[rgb(var(--text-primary))]">
                                     {summary.count}
@@ -180,6 +207,46 @@ const SalesPage = () => {
                             </div>
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
                                 <Receipt className="w-6 h-6 text-white" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                                    Servicios
+                                </p>
+                                <p className="text-2xl font-bold text-[rgb(var(--text-primary))]">
+                                    {formatCurrency(summary.serviceAmount || 0)}
+                                </p>
+                                <p className="text-xs text-[rgb(var(--text-secondary))]">
+                                    {summary.serviceCount || 0} ventas
+                                </p>
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                                <Stethoscope className="w-6 h-6 text-white" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                                    Productos
+                                </p>
+                                <p className="text-2xl font-bold text-[rgb(var(--text-primary))]">
+                                    {formatCurrency(summary.productAmount || 0)}
+                                </p>
+                                <p className="text-xs text-[rgb(var(--text-secondary))]">
+                                    {summary.productCount || 0} ventas
+                                </p>
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+                                <Package className="w-6 h-6 text-white" />
                             </div>
                         </div>
                     </CardContent>
@@ -233,6 +300,26 @@ const SalesPage = () => {
                                 />
                             </div>
 
+                        {/* Sale Type */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-[rgb(var(--text-primary))]">
+                                Tipo de Venta
+                            </label>
+                            <Select
+                                value={localFilters.type}
+                                onValueChange={(value) => handleFilterChange('type', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Todas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Todas</SelectItem>
+                                    <SelectItem value="SERVICE">Servicios</SelectItem>
+                                    <SelectItem value="PRODUCT">Productos</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         {/* Payment Method */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-[rgb(var(--text-primary))]">
@@ -248,11 +335,11 @@ const SalesPage = () => {
                                 <SelectContent>
                                     <SelectItem value="ALL">Todos</SelectItem>
                                     <SelectItem value="CASH">Efectivo</SelectItem>
-                                    <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                    <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                    <SelectItem value="CARD">Tarjeta</SelectItem>
                                     <SelectItem value="BANK_TRANSFER">Transferencia</SelectItem>
-                                    <SelectItem value="MOBILE_PAYMENT">Yape/Plin</SelectItem>
-                                    <SelectItem value="BANK_DEPOSIT">Depósito</SelectItem>
+                                    <SelectItem value="YAPE">Yape</SelectItem>
+                                    <SelectItem value="PLIN">Plin</SelectItem>
+                                    <SelectItem value="OTHER">Otro</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -313,24 +400,39 @@ const SalesPage = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>Tipo</TableHead>
                                     <TableHead>Fecha</TableHead>
                                     <TableHead>Paciente</TableHead>
-                                    <TableHead>Servicio</TableHead>
+                                    <TableHead>Descripción</TableHead>
                                     <TableHead className="text-right">Monto</TableHead>
                                     <TableHead>Método de Pago</TableHead>
+                                    <TableHead className="text-center">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {sales.map((sale) => (
-                                    <TableRow key={sale.id}>
-                                        <TableCell className="font-medium">
-                                            {formatDate(sale.date)}
+                                    <TableRow key={sale.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewDetails(sale)}>
+                                        <TableCell>
+                                            <Badge variant={sale.type === 'SERVICE' ? 'default' : 'secondary'} className="gap-1">
+                                                {getSaleTypeIcon(sale.type)}
+                                                {getSaleTypeBadge(sale.type)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-[rgb(var(--text-primary))]">
+                                                    {formatDate(sale.date)}
+                                                </span>
+                                                <span className="text-xs text-[rgb(var(--text-secondary))]">
+                                                    {formatTime(sale.date)}
+                                                </span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             {sale.patientName}
                                         </TableCell>
-                                        <TableCell className="text-[rgb(var(--text-secondary))]">
-                                            {sale.serviceName}
+                                        <TableCell className="text-[rgb(var(--text-secondary))] max-w-xs truncate">
+                                            {sale.description}
                                         </TableCell>
                                         <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
                                             {formatCurrency(sale.amount)}
@@ -339,6 +441,20 @@ const SalesPage = () => {
                                             <Badge variant="outline" className="font-normal">
                                                 {getPaymentMethodLabel(sale.paymentMethod)}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleViewDetails(sale);
+                                                }}
+                                                className="gap-1"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                Ver
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -379,6 +495,12 @@ const SalesPage = () => {
                     )}
                 </>
             )}
+            {/* Detail Modal */}
+            <SaleDetailModal
+                sale={selectedSale}
+                isOpen={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+            />
         </div>
     );
 };

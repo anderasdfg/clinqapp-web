@@ -16,9 +16,10 @@ router.use(authenticate);
 // ============================================
 // PRODUCT SALES ROUTES
 // ============================================
-router.get('/', getProductSales);
+// IMPORTANT: Specific routes must come before dynamic routes
 router.get('/stats', getSalesStats);
 router.get('/export', exportSales);
+router.get('/', getProductSales);
 router.get('/:id', getProductSale);
 router.post('/', createProductSale);
 

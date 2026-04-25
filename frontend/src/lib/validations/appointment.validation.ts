@@ -3,10 +3,11 @@ import { z } from 'zod';
 export const appointmentSchema = z.object({
     patientId: z.string().min(1, 'Selecciona un paciente'),
     professionalId: z.string().min(1, 'Selecciona un profesional'),
-    serviceId: z.string().optional(),
+    serviceIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un servicio'),
     startTime: z.string().min(1, 'Selecciona fecha y hora de inicio'),
     endTime: z.string().min(1, 'Selecciona fecha y hora de fin'),
     notes: z.string().optional(),
+    sessionNumber: z.number().int().positive('El número de sesión debe ser positivo').optional(),
 }).refine(
     (data) => {
         if (data.startTime && data.endTime) {

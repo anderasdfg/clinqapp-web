@@ -154,7 +154,15 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
         <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[85vw] lg:w-[800px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
           
           {isLoading ? (
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col relative">
+              {/* Central Spinner */}
+              <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/80 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Cargando información del paciente...</p>
+                </div>
+              </div>
+
               {/* Skeleton Header */}
               <div className="p-6 border-b flex items-start justify-between bg-background animate-pulse">
                 <div className="flex items-center gap-4">
@@ -171,7 +179,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
               </div>
 
               {/* Skeleton Tabs */}
-              <div className="px-6 border-b flex gap-6">
+              <div className="px-6 border-b flex gap-6 animate-pulse">
                 <div className="h-11 w-20 bg-muted/50 rounded-t" />
                 <div className="h-11 w-20 bg-muted/50 rounded-t" />
                 <div className="h-11 w-20 bg-muted/50 rounded-t" />
@@ -254,7 +262,7 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                         HISTORIAL
                      </Tabs.Trigger>
                      <Tabs.Trigger value="data" className="py-3 text-sm font-medium text-muted-foreground border-b-2 border-transparent data-[state=active]:text-primary data-[state=active]:border-primary transition-colors">
-                        DATOS
+                        HISTORIA CLÍNICA
                      </Tabs.Trigger>
                  </Tabs.List>
              </div>
@@ -380,15 +388,25 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                                                              {format(new Date(appt.startTime), "HH:mm")}
                                                          </span>
                                                      </div>
-                                                     <div className="flex flex-col">
-                                                         <span className="text-sm font-medium text-foreground">
-                                                             {appt.service?.name || 'Servicio no especificado'}
-                                                         </span>
-                                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                             <User className="w-3 h-3" />
-                                                             {appt.professional?.firstName} {appt.professional?.lastName}
-                                                         </span>
-                                                     </div>
+                                                     <div className="flex flex-col gap-1">
+                                                        {appt.services && appt.services.length > 0 ? (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {appt.services.map((as) => (
+                                                                    <span key={as.id} className="text-xs font-medium text-foreground bg-secondary px-2 py-0.5 rounded">
+                                                                        {as.service.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm font-medium text-foreground">
+                                                                Servicio no especificado
+                                                            </span>
+                                                        )}
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <User className="w-3 h-3" />
+                                                            {appt.professional?.firstName} {appt.professional?.lastName}
+                                                        </span>
+                                                    </div>
                                                  </div>
                                                  
                                                  <div className="flex items-center gap-3">

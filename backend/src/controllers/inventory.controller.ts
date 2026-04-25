@@ -25,7 +25,6 @@ const createProductSchema = z.object({
   salePrice: z.number().min(0, 'El precio de venta debe ser mayor o igual a 0'),
   currentStock: z.number().int().min(0, 'El stock debe ser mayor o igual a 0').default(0),
   minStock: z.number().int().min(0, 'El stock mínimo debe ser mayor o igual a 0').default(5),
-  unit: z.string().default('unidad'),
   isActive: z.boolean().default(true),
 });
 
@@ -43,7 +42,7 @@ const stockAdjustmentSchema = z.object({
 
 export const getCategories = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -78,7 +77,7 @@ export const getCategories = async (req: AuthRequest, res: Response) => {
 
 export const createCategory = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -108,7 +107,7 @@ export const updateCategory = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -139,7 +138,7 @@ export const deleteCategory = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -178,7 +177,7 @@ export const deleteCategory = async (req: AuthRequest, res: Response) => {
 
 export const getProducts = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -249,7 +248,7 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -278,8 +277,8 @@ export const getProduct = async (req: AuthRequest, res: Response) => {
 
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
-    const userId = req.user?.id;
+    const organizationId = req.dbUser?.organizationId;
+    const userId = req.dbUser?.id;
     if (!organizationId || !userId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -333,7 +332,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -368,7 +367,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -401,8 +400,8 @@ export const adjustStock = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
-    const userId = req.user?.id;
+    const organizationId = req.dbUser?.organizationId;
+    const userId = req.dbUser?.id;
     if (!organizationId || !userId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -474,7 +473,7 @@ export const getProductMovements = async (req: AuthRequest, res: Response) => {
     if (!id || Array.isArray(id)) {
       return res.status(400).json({ error: 'ID inválido' });
     }
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -521,7 +520,7 @@ export const getProductMovements = async (req: AuthRequest, res: Response) => {
 
 export const getLowStockProducts = async (req: AuthRequest, res: Response) => {
   try {
-    const organizationId = req.user?.organizationId;
+    const organizationId = req.dbUser?.organizationId;
     if (!organizationId) {
       return res.status(401).json({ error: 'No autorizado' });
     }

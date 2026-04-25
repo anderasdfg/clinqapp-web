@@ -22,12 +22,8 @@ export function useEnabledModules(): OrganizationModules {
       }
     };
     
+    // Solo cargar al montar el componente (login)
     fetchModules();
-    
-    // Refrescar cada 30 segundos para detectar cambios
-    const interval = setInterval(fetchModules, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   return enabledModules;

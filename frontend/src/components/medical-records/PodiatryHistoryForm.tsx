@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { podiatryHistorySchema, type PodiatryHistoryData } from '@/lib/validations/medical-record.validation';
@@ -16,7 +17,8 @@ import {
     ShieldAlert, 
     Footprints, 
     Save,
-    RotateCcw
+    RotateCcw,
+    FileText
 } from 'lucide-react';
 
 import { AppointmentPatient } from '@/types/appointment.types';
@@ -31,6 +33,7 @@ interface PodiatryHistoryFormProps {
 
 const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess, onCancel }: PodiatryHistoryFormProps) => {
     const { updatePatient, isUpdating } = usePatientsStore();
+    const [otherOnychopathy, setOtherOnychopathy] = useState('');
     
     // Auto-calculate age for display or use
     const age = patientContext?.dateOfBirth 
@@ -57,6 +60,7 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                 vascular: { pedalPulseRight: "PRESENTE", pedalPulseLeft: "PRESENTE" },
                 biomechanical: { deformities: [] },
             },
+            observations: "",
         },
     });
 
@@ -69,8 +73,8 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
         }
     };
 
-    const commonOnychopathies = ["Onicocriptosis", "Onicomicosis", "Onicogrifosis", "Onicodistrofia"];
-    const commonDeformities = ["Hallux Valgus", "Dedos en Garra", "Pie Plano", "Pie Cavo"];
+    const commonOnychopathies = ['Onicolisis', 'Leuconiquia', 'Onicorexis', 'Onicofosis', 'Microniquias', 'Juanete', 'Pie de Atleta', 'Soriasis', 'Izoriasis'];
+    const commonDeformities = ["Hallux Valgus", "Dedos en Garra", "Dedo martillo", "Dedo manzo", "Pie cuadrado", "Pie griego"];
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -248,28 +252,59 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                             <Stethoscope className="w-4 h-4" />
                             Estado de Uñas (Onicopatías)
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {commonOnychopathies.map((onic) => (
-                                <div key={onic} className="flex items-center space-x-2">
-                                    <Controller
-                                        name="podiatricExam.nails.onychopathy"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <Checkbox
-                                                id={`onic-${onic}`}
-                                                checked={field.value.includes(onic)}
-                                                onCheckedChange={(checked) => {
-                                                    const newValue = checked 
-                                                        ? [...field.value, onic]
-                                                        : field.value.filter((v: string) => v !== onic);
-                                                    field.onChange(newValue);
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                    <Label htmlFor={`onic-${onic}`} className="text-sm cursor-pointer">{onic}</Label>
-                                </div>
-                            ))}
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {commonOnychopathies.map((onic) => (
+                                    <div key={onic} className="flex items-center space-x-2">
+                                        <Controller
+                                            name="podiatricExam.nails.onychopathy"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Checkbox
+                                                    id={`onic-${onic}`}
+                                                    checked={field.value.includes(onic)}
+                                                    onCheckedChange={(checked) => {
+                                                        const newValue = checked 
+                                                            ? [...field.value, onic]
+                                                            : field.value.filter((v: string) => v !== onic);
+                                                        field.onChange(newValue);
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                        <Label htmlFor={`onic-${onic}`} className="text-sm cursor-pointer">{onic}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Otros - Campo personalizado */}
+                            <div className="flex items-center gap-3 pt-2 border-t">
+                                <Controller
+                                    name="podiatricExam.nails.onychopathy"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Checkbox
+                                            id="onic-other"
+                                            checked={otherOnychopathy !== '' && field.value.includes(otherOnychopathy)}
+                                            onCheckedChange={(checked) => {
+                                                if (checked && otherOnychopathy.trim()) {
+                                                    field.onChange([...field.value, otherOnychopathy.trim()]);
+                                                } else if (!checked && otherOnychopathy) {
+                                                    field.onChange(field.value.filter((v: string) => v !== otherOnychopathy));
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                />
+                                <Label htmlFor="onic-other" className="text-sm font-medium">Otros:</Label>
+                                <Input
+                                    type="text"
+                                    placeholder="Especificar otra onicopatía"
+                                    value={otherOnychopathy}
+                                    onChange={(e) => setOtherOnychopathy(e.target.value)}
+                                    className="flex-1 max-w-xs"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -287,7 +322,7 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     control={control}
                                     render={({ field }) => (
                                         <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
-                                            {["PRESENTE", "AUSENTE", "DISMINUIDO"].map(p => (
+                                            {["Presente", "Ausente", "Disminuido"].map(p => (
                                                 <div key={p} className="flex items-center space-x-1">
                                                     <RadioGroupItem value={p} id={`v-r-${p}`} />
                                                     <Label htmlFor={`v-r-${p}`} className="text-xs cursor-pointer">{p}</Label>
@@ -304,7 +339,7 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     control={control}
                                     render={({ field }) => (
                                         <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
-                                            {["PRESENTE", "AUSENTE", "DISMINUIDO"].map(p => (
+                                            {["Presente", "Ausente", "Disminuido"].map(p => (
                                                 <div key={p} className="flex items-center space-x-1">
                                                     <RadioGroupItem value={p} id={`v-l-${p}`} />
                                                     <Label htmlFor={`v-l-${p}`} className="text-xs cursor-pointer">{p}</Label>
@@ -330,8 +365,8 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                                     name="podiatricExam.biomechanical.footType"
                                     control={control}
                                     render={({ field }) => (
-                                        <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6">
-                                            {["PLANO", "CAVO", "NEUTRO"].map(p => (
+                                        <RadioGroup value={field.value} onValueChange={field.onChange} className="grid grid-cols-3 gap-4">
+                                            {["Plano", "Cavo", "Neutro","Egipcio", "Eliponiquio"].map(p => (
                                                 <div key={p} className="flex items-center space-x-2">
                                                     <RadioGroupItem value={p} id={`f-t-${p}`} />
                                                     <Label htmlFor={`f-t-${p}`} className="cursor-pointer">{p}</Label>
@@ -372,6 +407,32 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                 </CardContent>
             </Card>
 
+            {/* OBSERVACIONES GENERALES */}
+            <Card className="border border-purple-500 shadow-sm">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl text-purple-700">
+                        <FileText className="w-5 h-5" />
+                        Observaciones clínicas adicionales
+                    </CardTitle>
+                    <CardDescription>
+                        Notas adicionales sobre la historia clínica del paciente
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2">
+                    <div className="space-y-2">
+                        <Label htmlFor="observations" className="text-sm font-medium text-foreground">
+                            Observaciones
+                        </Label>
+                        <Textarea
+                            id="observations"
+                            {...register('observations')}
+                            placeholder="Escribe aquí cualquier observación relevante sobre la historia clínica del paciente..."
+                            className="min-h-[120px] resize-none focus:ring-2 focus:ring-purple-500"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* ACTIONS */}
             <div className="flex items-center justify-between sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border rounded-xl shadow-lg z-10 transition-all duration-300">
                 <Button 
@@ -380,7 +441,7 @@ const PodiatryHistoryForm = ({ patientId, patientContext, initialData, onSuccess
                     onClick={onCancel}
                     className="gap-2 text-muted-foreground hover:text-red-600"
                 >
-                    <RotateCcw className="w-4 h-4" /> Descargar cambios
+                    <RotateCcw className="w-4 h-4" /> Descartar cambios
                 </Button>
                 <div className="flex gap-4">
                     {onCancel && (

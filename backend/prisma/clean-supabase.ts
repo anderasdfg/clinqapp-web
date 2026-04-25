@@ -21,8 +21,6 @@ const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 async function cleanSupabase() {
-  console.log('🧹 Limpiando usuarios de Supabase Auth...');
-
   // Obtener todos los usuarios
   const {
     data: { users },
@@ -33,8 +31,6 @@ async function cleanSupabase() {
     console.error('❌ Error al listar usuarios:', error);
     return;
   }
-
-  console.log(`📊 Encontrados ${users.length} usuarios`);
 
   // Eliminar cada usuario
   for (const user of users) {

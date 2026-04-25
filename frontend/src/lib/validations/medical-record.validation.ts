@@ -51,6 +51,9 @@ export const podiatryHistorySchema = z.object({
       notes: z.string().optional(),
     }),
   }),
+
+  // Observaciones generales de la historia clínica
+  observations: z.string().optional(),
 });
 
 export type PodiatryHistoryData = z.infer<typeof podiatryHistorySchema>;

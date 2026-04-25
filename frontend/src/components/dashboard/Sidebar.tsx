@@ -22,7 +22,6 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
     
     // Filtrar grupos de navegación según módulos habilitados
     const filteredNavigationGroups = filterNavigationGroups(NAVIGATION_GROUPS, enabledModules);
-    console.log('🎨 Sidebar - filteredNavigationGroups:', filteredNavigationGroups);
 
     const isActive = (path: string) => {
         return location.pathname === path;

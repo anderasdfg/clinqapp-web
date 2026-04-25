@@ -120,15 +120,21 @@ const AppointmentDetailModal = ({ appointment, isOpen, onClose, onEdit }: Appoin
                                 </div>
 
                                 {/* Service Info */}
-                                {currentAppointment.service && (
+                                {currentAppointment.services && currentAppointment.services.length > 0 && (
                                     <div>
-                                        <label className="text-sm text-[rgb(var(--text-secondary))]">Servicio</label>
-                                        <p className="font-medium text-[rgb(var(--text-primary))]">
-                                            {currentAppointment.service.name}
-                                        </p>
-                                        <p className="text-sm text-[rgb(var(--text-secondary))]">
-                                            Duración: {currentAppointment.service.duration} minutos
-                                        </p>
+                                        <label className="text-sm text-[rgb(var(--text-secondary))]">Servicios</label>
+                                        {currentAppointment.services.map((appointmentService) => (
+                                            <div key={appointmentService.serviceId} className="mb-2">
+                                                <p className="font-medium text-[rgb(var(--text-primary))]">
+                                                    {appointmentService.service?.name || 'Servicio'}
+                                                </p>
+                                                {appointmentService.service?.duration && (
+                                                    <p className="text-sm text-[rgb(var(--text-secondary))]">
+                                                        Duración: {appointmentService.service.duration} minutos
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 

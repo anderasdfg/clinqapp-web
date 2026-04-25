@@ -12,7 +12,7 @@ import { AppointmentStatus, PaymentMethod } from "../appointment.types";
 export interface CreateAppointmentDTO {
   patientId: string; // UUID
   professionalId: string; // UUID
-  serviceId?: string; // UUID
+  serviceIds: string[]; // Array of service UUIDs (at least 1 required)
   startTime: string; // ISO datetime string
   endTime: string; // ISO datetime string
   notes?: string;

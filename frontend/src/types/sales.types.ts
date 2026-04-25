@@ -1,13 +1,26 @@
 // Sales Types
+export interface SaleItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  unit?: string;
+}
+
 export interface Sale {
   id: string;
+  type: 'SERVICE' | 'PRODUCT';
   date: string;
-  appointmentId: string | null;
   patientName: string;
-  serviceName: string;
+  description: string;
+  items: SaleItem[];
   amount: number;
+  subtotal?: number;
+  discount?: number;
   paymentMethod: string;
   status: string;
+  notes?: string;
+  receiptNumber?: string;
 }
 
 export interface SalesListResponse {
@@ -21,6 +34,10 @@ export interface SalesListResponse {
   summary: {
     totalAmount: number;
     count: number;
+    serviceAmount?: number;
+    serviceCount?: number;
+    productAmount?: number;
+    productCount?: number;
   };
 }
 
@@ -32,4 +49,5 @@ export interface SalesFilters {
   paymentMethod?: string;
   serviceId?: string;
   search?: string;
+  type?: 'SERVICE' | 'PRODUCT' | 'ALL';
 }

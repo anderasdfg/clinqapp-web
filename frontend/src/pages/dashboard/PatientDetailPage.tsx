@@ -549,7 +549,7 @@ const PatientDetailPage = () => {
                                                                             {formatDate(apt.startTime)}
                                                                         </span>
                                                                         <span className="text-xs text-muted-foreground">
-                                                                            {apt.service?.name || 'Atención Podológica'}
+                                                                            {apt.services?.map(s => s.service?.name).join(', ') || 'Atención Podológica'}
                                                                         </span>
                                                                     </div>
                                                                     <span className="text-xs text-muted-foreground">
@@ -635,7 +635,7 @@ const PatientDetailPage = () => {
                                                             </Badge>
                                                         </div>
                                                         <h4 className="font-semibold text-lg">
-                                                            {apt.service?.name || 'Servicio de Podología'}
+                                                            {apt.services?.map(s => s.service?.name).join(', ') || 'Servicio de Podología'}
                                                         </h4>
                                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                             <User className="w-3.5 h-3.5" />
@@ -689,7 +689,7 @@ const PatientDetailPage = () => {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold uppercase text-muted-foreground">Servicio</label>
-                                    <p className="font-medium text-lg">{selectedAppointment.service?.name || 'Servicio de Podología'}</p>
+                                    <p className="font-medium text-lg">{selectedAppointment.services?.map(s => s.service?.name).join(', ') || 'Servicio de Podología'}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold uppercase text-muted-foreground">Profesional</label>
