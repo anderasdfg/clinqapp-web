@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 console.log("🚀 Starting ClinqApp Backend...");
 console.log("📍 Environment:", process.env.NODE_ENV || "development");
 console.log("🔌 Port:", process.env.PORT || 3001);
+console.log("🟢 Node.js version:", process.version);
 
 // Check critical environment variables
 const requiredEnvVars = ["DATABASE_URL", "SUPABASE_URL", "SUPABASE_ANON_KEY"];
