@@ -20,7 +20,8 @@ const missingEnvVars = requiredEnvVars.filter(
 
 if (missingEnvVars.length > 0) {
   console.error("❌ Missing required environment variables:", missingEnvVars);
-  console.error("⚠️  Application may not function correctly!");
+  console.error("⚠️  Cannot start application without these variables!");
+  process.exit(1);
 }
 
 const app = express();
