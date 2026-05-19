@@ -31,16 +31,8 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
-COPY start.sh ./
-
-# Make start script executable
-RUN chmod +x start.sh
 
 EXPOSE 3001
 
-# Health check for Cloud Run
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Use startup script that validates environment and DB connection
-CMD ["./start.sh"]
+# Generate Prisma client at runtime and start
+CMD ["sh", "-c", "npx prisma generate && node dist/index.js"]
