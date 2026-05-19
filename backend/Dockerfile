@@ -34,5 +34,5 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
 
-# Generate Prisma client at runtime and start
-CMD ["sh", "-c", "npx prisma generate && node dist/index.js"]
+# Start application directly - Prisma client already generated in build stage
+CMD ["node", "dist/index.js"]
