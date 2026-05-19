@@ -68,7 +68,7 @@ export function usePatientsHandlers(): UsePatientsHandlersReturn {
 
     const debounceTimer = setTimeout(() => {
       fetchPatients({ page: 1 }, true);
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(debounceTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

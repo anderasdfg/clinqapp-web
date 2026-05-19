@@ -66,26 +66,11 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
       deletedAt: null,
     };
 
-    // Search filter - supports full name, partial name, and DNI
+    // For accent-insensitive search, we'll use a different approach
+    // Store search term for later use with raw SQL
+    let useRawSearch = false;
     if (search) {
-      const searchTerms = search.trim().split(/\s+/);
-      
-      if (searchTerms.length === 1) {
-        // Single term: search in firstName, lastName, or DNI
-        where.OR = [
-          { firstName: { contains: search, mode: "insensitive" } },
-          { lastName: { contains: search, mode: "insensitive" } },
-          { dni: { contains: search, mode: "insensitive" } },
-        ];
-      } else {
-        // Multiple terms: search for full name (firstName + lastName)
-        where.AND = searchTerms.map(term => ({
-          OR: [
-            { firstName: { contains: term, mode: "insensitive" } },
-            { lastName: { contains: term, mode: "insensitive" } },
-          ],
-        }));
-      }
+      useRawSearch = true;
     }
 
     // Assigned professional filter
@@ -109,36 +94,128 @@ export const getPatients = async (req: AuthRequest, res: Response) => {
 
     console.log(`🔍 Patients: Cache MISS for org ${dbUser.organizationId}`);
 
-    // Get patients with pagination - optimized with select
-    const [patients, total] = await Promise.all([
-      prisma.patient.findMany({
-        where,
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          dni: true,
-          phone: true,
-          email: true,
-          dateOfBirth: true,
-          gender: true,
-          referralSource: true,
-          createdAt: true,
-          medicalHistory: true,
-          assignedProfessional: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
+    let patients: any[];
+    let total: number;
+
+    // Use raw SQL with unaccent for accent-insensitive search
+    if (useRawSearch && search) {
+      const searchPattern = `%${search}%`;
+      const orgId = dbUser.organizationId;
+
+      // Build query parameters array
+      const queryParams: any[] = [orgId, searchPattern, searchPattern, searchPattern];
+      let paramIndex = 5;
+
+      // Build additional filters for raw query
+      let additionalFilters = "";
+      
+      if (assignedProfessionalId) {
+        additionalFilters += ` AND p.assigned_professional_id = $${paramIndex}::uuid`;
+        queryParams.push(assignedProfessionalId);
+        paramIndex++;
+      }
+
+      if (referralSource) {
+        additionalFilters += ` AND p.referral_source = $${paramIndex}`;
+        queryParams.push(referralSource);
+        paramIndex++;
+      }
+
+      // Add limit and offset at the end
+      const limitIndex = paramIndex;
+      const offsetIndex = paramIndex + 1;
+      queryParams.push(limit, skip);
+
+      // Query with unaccent for accent-insensitive search
+      patients = await prisma.$queryRawUnsafe(`
+        SELECT 
+          p.id,
+          p.first_name as "firstName",
+          p.last_name as "lastName",
+          p.dni,
+          p.phone,
+          p.email,
+          p.date_of_birth as "dateOfBirth",
+          p.gender,
+          p.referral_source as "referralSource",
+          p.created_at as "createdAt",
+          p.medical_history as "medicalHistory",
+          json_build_object(
+            'id', u.id,
+            'firstName', u.first_name,
+            'lastName', u.last_name
+          ) as "assignedProfessional"
+        FROM patients p
+        LEFT JOIN users u ON p.assigned_professional_id = u.id
+        WHERE p.organization_id = $1::uuid
+          AND p.deleted_at IS NULL
+          AND (
+            unaccent(p.first_name) ILIKE unaccent($2)
+            OR unaccent(p.last_name) ILIKE unaccent($3)
+            OR unaccent(p.first_name || ' ' || p.last_name) ILIKE unaccent($4)
+            OR p.dni ILIKE $4
+          )
+          ${additionalFilters}
+        ORDER BY p.created_at DESC
+        LIMIT $${limitIndex} OFFSET $${offsetIndex}
+      `, ...queryParams);
+
+      // Get total count with same filters
+      const countParams: any[] = [orgId, searchPattern, searchPattern, searchPattern];
+      if (assignedProfessionalId) {
+        countParams.push(assignedProfessionalId);
+      }
+      if (referralSource) {
+        countParams.push(referralSource);
+      }
+
+      const countResult: any = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(*)::int as count
+        FROM patients p
+        WHERE p.organization_id = $1::uuid
+          AND p.deleted_at IS NULL
+          AND (
+            unaccent(p.first_name) ILIKE unaccent($2)
+            OR unaccent(p.last_name) ILIKE unaccent($3)
+            OR unaccent(p.first_name || ' ' || p.last_name) ILIKE unaccent($4)
+            OR p.dni ILIKE $4
+          )
+          ${additionalFilters}
+      `, ...countParams);
+
+      total = countResult[0]?.count || 0;
+    } else {
+      // No search term, use regular Prisma query
+      [patients, total] = await Promise.all([
+        prisma.patient.findMany({
+          where,
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            dni: true,
+            phone: true,
+            email: true,
+            dateOfBirth: true,
+            gender: true,
+            referralSource: true,
+            createdAt: true,
+            medicalHistory: true,
+            assignedProfessional: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.patient.count({ where }),
-    ]);
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.patient.count({ where }),
+      ]);
+    }
 
     const result = {
       success: true,

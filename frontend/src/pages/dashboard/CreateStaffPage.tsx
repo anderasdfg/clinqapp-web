@@ -43,43 +43,22 @@ const CreateStaffPage = () => {
         setError(null);
 
         try {
-            // Create user in Supabase Auth
-
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: data.email,
-                password: data.password,
-                options: {
-                    data: {
-                        first_name: data.firstName,
-                        last_name: data.lastName,
-                    },
-                },
-            });
-
-            if (authError) {
-                throw new Error(authError.message);
-            }
-
-            if (!authData.user) {
-                throw new Error('No se pudo crear el usuario');
-            }
-
             // Get current session for API call
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) {
                 throw new Error('No autenticado');
             }
 
-            // Create user in database via API
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/staff/create-with-auth`, {
+            // Create staff via backend (handles Auth + DB creation)
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/staff`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
-                    authId: authData.user.id,
                     email: data.email,
+                    password: data.password,
                     firstName: data.firstName,
                     lastName: data.lastName,
                     phone: data.phone,

@@ -104,17 +104,15 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
     // If new params are provided, check if they match current filters
     if (newParams) {
       const currentFilters = state.filters;
-      // Compare meaningful filters
-      if (
-        (newParams.patientId &&
-          newParams.patientId !== currentFilters.patientId) ||
-        (newParams.professionalId &&
-          newParams.professionalId !== currentFilters.professionalId) ||
-        (newParams.status && newParams.status !== currentFilters.status) ||
-        (newParams.startDate &&
-          newParams.startDate !== currentFilters.startDate) ||
-        (newParams.endDate && newParams.endDate !== currentFilters.endDate)
-      ) {
+      // Compare all filters - any difference means we should refetch
+      const filtersChanged = 
+        newParams.patientId !== currentFilters.patientId ||
+        newParams.professionalId !== currentFilters.professionalId ||
+        newParams.status !== currentFilters.status ||
+        newParams.startDate !== currentFilters.startDate ||
+        newParams.endDate !== currentFilters.endDate;
+      
+      if (filtersChanged) {
         return true;
       }
     }

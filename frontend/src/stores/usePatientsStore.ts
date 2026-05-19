@@ -7,8 +7,8 @@ import type {
 } from "@/types/patient.types";
 import { patientsService } from "@/services/patients.service";
 
-// Cache TTL: 2 minutes
-const CACHE_TTL = 2 * 60 * 1000;
+// Cache TTL: 5 minutes (longer to reduce unnecessary requests)
+const CACHE_TTL = 5 * 60 * 1000;
 
 interface PatientsState {
   // Data

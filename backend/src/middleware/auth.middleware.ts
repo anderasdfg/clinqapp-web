@@ -21,6 +21,17 @@ const dbUserCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes cache TTL
 const SESSION_CACHE_TTL = 1000 * 60 * 2; // 2 minutes for session data
 
+// Export function to clear user cache
+export const clearUserCache = (authId?: string) => {
+  if (authId) {
+    dbUserCache.delete(authId);
+    console.log(`🗑️ Auth: Cleared cache for user ${authId}`);
+  } else {
+    dbUserCache.clear();
+    console.log(`🗑️ Auth: Cleared all user cache`);
+  }
+};
+
 export const authenticate = async (
   req: AuthRequest,
   res: Response,

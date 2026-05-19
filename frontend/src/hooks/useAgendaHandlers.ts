@@ -36,7 +36,6 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
     currentDate,
     setCurrentDate,
     fetchAppointments,
-    setFilters,
     updateAppointmentStatus,
   } = useAppointmentsStore();
 
@@ -51,13 +50,11 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });
     const end = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-    setFilters({
+    // Pass filters directly to fetchAppointments to ensure they're used
+    fetchAppointments({
       startDate: start.toISOString(),
       endDate: end.toISOString(),
-    });
-
-    // Force refresh every time to ensure fresh data
-    fetchAppointments({}, true);
+    }, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate]);
 

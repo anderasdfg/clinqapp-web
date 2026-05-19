@@ -43,10 +43,10 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
         register,
         handleSubmit,
         control,
-        formState: { errors, isValid, isDirty },
+        formState: { errors },
     } = useForm<PatientFormData>({
         resolver: zodResolver(patientSchema),
-        mode: 'onChange',
+        mode: 'all',
         defaultValues: patient
             ? {
                 firstName: patient.firstName,
@@ -60,10 +60,24 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                 occupation: patient.occupation || '',
                 emergencyContact: patient.emergencyContact || '',
                 emergencyPhone: patient.emergencyPhone || '',
-                referralSource: patient.referralSource,
-                assignedProfessionalId: patient.assignedProfessionalId || '',
+                referralSource: patient.referralSource || undefined,
+                assignedProfessionalId: patient.assignedProfessional?.id || patient.assignedProfessionalId || '',
             }
-            : undefined,
+            : {
+                firstName: '',
+                lastName: '',
+                dni: '',
+                phone: '',
+                email: '',
+                dateOfBirth: '',
+                gender: undefined,
+                address: '',
+                occupation: '',
+                emergencyContact: '',
+                emergencyPhone: '',
+                referralSource: undefined,
+                assignedProfessionalId: '',
+            },
     });
 
     // Load professionals
@@ -407,8 +421,11 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                                 control={control}
                                 render={({ field }) => (
                                     <Select
-                                        value={field.value || undefined}
-                                        onValueChange={(value) => field.onChange(value === "unassigned" ? "" : value)}
+                                        value={field.value || "unassigned"}
+                                        onValueChange={(value) => {
+                                            const newValue = value === "unassigned" ? "" : value;
+                                            field.onChange(newValue);
+                                        }}
                                     >
                                         <SelectTrigger id="assignedProfessionalId" className="h-9">
                                             <SelectValue placeholder="Sin asignar" />
@@ -444,7 +461,7 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
                 </Button>
                 <Button
                     type="submit"
-                    disabled={isSubmitting || !isValid || (patient && !isDirty)}
+                    disabled={isSubmitting}
                     style={{
                         background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)'
                     }}

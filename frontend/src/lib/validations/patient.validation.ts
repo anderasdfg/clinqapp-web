@@ -34,6 +34,7 @@ export const patientSchema = z.object({
     .refine(
       (val) => {
         if (!val || val === "") return true;
+        if (val.startsWith('TEMP-')) return true;
         return /^\d{8}$/.test(val) || /^\d{9}$/.test(val);
       },
       {
@@ -166,11 +167,7 @@ export const patientSchema = z.object({
     ])
     .optional(),
 
-  assignedProfessionalId: z
-    .string()
-    .uuid("ID de profesional inválido")
-    .optional()
-    .or(z.literal("")),
+  assignedProfessionalId: z.string().optional(),
 });
 
 export type PatientFormData = z.infer<typeof patientSchema>;

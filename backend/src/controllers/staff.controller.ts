@@ -1,7 +1,13 @@
 import { Response } from "express";
 import { prisma } from "../lib/prisma";
-import { AuthRequest } from "../middleware/auth.middleware";
+import { AuthRequest, clearUserCache } from "../middleware/auth.middleware";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Validation schemas
 const createStaffSchema = z.object({
@@ -84,14 +90,22 @@ export const getStaff = async (req: AuthRequest, res: Response) => {
         take: limit,
         select: {
           id: true,
+          authId: true,
           email: true,
           firstName: true,
           lastName: true,
           phone: true,
+          documentType: true,
+          documentNumber: true,
           specialty: true,
           licenseNumber: true,
           role: true,
+          organizationId: true,
+          avatarUrl: true,
+          emailVerified: true,
           createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
         },
         orderBy: { createdAt: "desc" },
       }),
@@ -248,6 +262,175 @@ export const createStaffWithAuth = async (req: AuthRequest, res: Response) => {
 
     // Invalidate cache
     staffCache.clear();
+    clearUserCache(data.authId); // Clear cache for the newly created user
+
+    res.status(201).json({
+      success: true,
+      message: "Personal creado exitosamente",
+      data: staff,
+    });
+  } catch (error) {
+    console.error("Error creating staff:", error);
+    res.status(500).json({ error: "Error al crear personal" });
+  }
+};
+
+// POST /api/staff - Create new staff member (creates in DB first, then Auth)
+export const createStaff = async (req: AuthRequest, res: Response) => {
+  try {
+    const dbUser = req.dbUser;
+
+    if (!dbUser) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Validate data
+    const createStaffWithPasswordSchema = z.object({
+      email: z.string().email("Email inválido"),
+      firstName: z.string().min(1, "Nombre es requerido"),
+      lastName: z.string().min(1, "Apellido es requerido"),
+      password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+      phone: z.string().optional(),
+      specialty: z.string().optional(),
+      licenseNumber: z.string().optional(),
+      role: z
+        .enum(["PROFESSIONAL", "OWNER", "RECEPTIONIST"])
+        .default("PROFESSIONAL"),
+    });
+
+    const validation = createStaffWithPasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Datos inválidos",
+        details: validation.error.issues,
+      });
+    }
+
+    const data = validation.data;
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: "El email ya está registrado" });
+    }
+
+    // 1. Create user in Supabase Auth FIRST
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        first_name: data.firstName,
+        last_name: data.lastName,
+      },
+    });
+
+    if (authError || !authData.user) {
+      console.error("Error creating auth user:", authError);
+      return res.status(500).json({ 
+        error: "Error al crear usuario de autenticación",
+        details: authError?.message 
+      });
+    }
+
+    // 2. Check if trigger already created the user
+    let staff = await prisma.user.findUnique({
+      where: { authId: authData.user.id },
+    });
+
+    if (staff) {
+      // Store the temporary organization ID to delete it later
+      const tempOrgId = staff.organizationId;
+
+      // Trigger created the user, update it with correct organizationId and role
+      staff = await prisma.user.update({
+        where: { authId: authData.user.id },
+        data: {
+          organizationId: dbUser.organizationId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          specialty: data.specialty,
+          licenseNumber: data.licenseNumber,
+          role: data.role,
+          emailVerified: true,
+        },
+        select: {
+          id: true,
+          authId: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          documentType: true,
+          documentNumber: true,
+          specialty: true,
+          licenseNumber: true,
+          role: true,
+          organizationId: true,
+          avatarUrl: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
+      });
+
+      // Delete the temporary organization created by the trigger
+      if (tempOrgId && tempOrgId !== dbUser.organizationId) {
+        try {
+          await prisma.organization.delete({
+            where: { id: tempOrgId },
+          });
+          console.log(`🗑️ Deleted temporary organization ${tempOrgId}`);
+        } catch (error) {
+          console.error(`Failed to delete temporary organization ${tempOrgId}:`, error);
+          // Don't fail the request if we can't delete the temp org
+        }
+      }
+    } else {
+      // Trigger didn't create user (shouldn't happen), create it manually
+      staff = await prisma.user.create({
+        data: {
+          authId: authData.user.id,
+          organizationId: dbUser.organizationId,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          specialty: data.specialty,
+          licenseNumber: data.licenseNumber,
+          role: data.role,
+          emailVerified: true,
+        },
+        select: {
+          id: true,
+          authId: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          documentType: true,
+          documentNumber: true,
+          specialty: true,
+          licenseNumber: true,
+          role: true,
+          organizationId: true,
+          avatarUrl: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+        },
+      });
+    }
+
+    // Invalidate cache
+    staffCache.clear();
+    clearUserCache(authData.user.id);
 
     res.status(201).json({
       success: true,
@@ -336,6 +519,9 @@ export const updateStaff = async (req: AuthRequest, res: Response) => {
 
     // Invalidate cache
     staffCache.clear();
+    if (existingStaff.authId) {
+      clearUserCache(existingStaff.authId); // Clear cache for the updated user
+    }
 
     res.json({
       success: true,
@@ -382,6 +568,9 @@ export const deleteStaff = async (req: AuthRequest, res: Response) => {
 
     // Invalidate cache
     staffCache.clear();
+    if (existingStaff.authId) {
+      clearUserCache(existingStaff.authId); // Clear cache for the deleted user
+    }
 
     res.json({
       success: true,
