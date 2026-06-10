@@ -9,6 +9,10 @@ export class AppointmentReminderService {
   /**
    * Process all appointment reminders for the next day
    * This should be called daily at 8 AM Lima time
+   * 
+   * Logic: Searches for appointments with startTime between today 00:00 and tomorrow 23:59 (Lima time)
+   * This ensures that ANY appointment scheduled for tomorrow is caught, even if it was scheduled
+   * after the 8 AM run (e.g., scheduled between 8 PM - 11 PM the day before)
    */
   static async processReminders(): Promise<{
     processed: number;
@@ -26,26 +30,30 @@ export class AppointmentReminderService {
     };
 
     try {
-      // Get tomorrow's date in Lima timezone
+      // Get current date in Lima timezone
       const now = new Date();
       const limaTime = toZonedTime(now, LIMA_TIMEZONE);
+      
+      // Get tomorrow's date in Lima timezone
       const tomorrow = addDays(limaTime, 1);
       
-      // Get start and end of tomorrow in Lima timezone, then convert to UTC
-      const tomorrowStartLima = startOfDay(tomorrow);
+      // Get start of today and end of tomorrow in Lima timezone, then convert to UTC
+      // This ensures we catch all appointments scheduled for tomorrow, even if they were
+      // scheduled after the 8 AM reminder run (e.g., scheduled between 8 PM - 11 PM)
+      const todayStartLima = startOfDay(limaTime);
       const tomorrowEndLima = endOfDay(tomorrow);
       
-      const tomorrowStartUTC = fromZonedTime(tomorrowStartLima, LIMA_TIMEZONE);
+      const todayStartUTC = fromZonedTime(todayStartLima, LIMA_TIMEZONE);
       const tomorrowEndUTC = fromZonedTime(tomorrowEndLima, LIMA_TIMEZONE);
 
-      console.log(`📅 Processing reminders for ${tomorrow.toDateString()} (Lima time)`);
-      console.log(`🕐 UTC range: ${tomorrowStartUTC.toISOString()} to ${tomorrowEndUTC.toISOString()}`);
+      console.log(`📅 Processing reminders for appointments between today and tomorrow (Lima time)`);
+      console.log(`🕐 UTC range: ${todayStartUTC.toISOString()} to ${tomorrowEndUTC.toISOString()}`);
 
       // Find all appointments for tomorrow that haven't had reminders sent yet
       const appointments = await prisma.appointment.findMany({
         where: {
           startTime: {
-            gte: tomorrowStartUTC,
+            gte: todayStartUTC,
             lte: tomorrowEndUTC
           },
           status: {
