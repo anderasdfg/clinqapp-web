@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSalesStore } from '@/stores/useSalesStore';
-import { Search, DollarSign, Receipt, AlertCircle, Filter, X, Package, Stethoscope, Eye } from 'lucide-react';
+import { useUserStore } from '@/stores/useUserStore';
+import { Search, DollarSign, Receipt, AlertCircle, Filter, X, Package, Stethoscope, Eye, Download } from 'lucide-react';
 import SaleDetailModal from '@/components/sales/SaleDetailModal';
+import SalesReportPDF from '@/components/sales/SalesReportPDF';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +27,8 @@ const SalesPage = () => {
         clearError,
     } = useSalesStore();
 
+    const { organization } = useUserStore();
+
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [localFilters, setLocalFilters] = useState<{
         paymentMethod: string;
@@ -37,6 +41,7 @@ const SalesPage = () => {
     });
     const [selectedSale, setSelectedSale] = useState<any>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showPDFReport, setShowPDFReport] = useState(false);
 
     useEffect(() => {
         fetchSales();
@@ -145,13 +150,24 @@ const SalesPage = () => {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold text-[rgb(var(--text-primary))]">
-                    Ventas
-                </h1>
-                <p className="text-[rgb(var(--text-secondary))]">
-                    Historial completo de transacciones
-                </p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold text-[rgb(var(--text-primary))]">
+                        Ventas
+                    </h1>
+                    <p className="text-[rgb(var(--text-secondary))]">
+                        Historial completo de transacciones
+                    </p>
+                </div>
+                {sales.length > 0 && (
+                    <Button
+                        onClick={() => setShowPDFReport(true)}
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 w-fit"
+                    >
+                        <Download className="w-4 h-4" />
+                        Descargar Reporte PDF
+                    </Button>
+                )}
             </div>
 
             {/* Error Alert */}
@@ -501,6 +517,24 @@ const SalesPage = () => {
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
             />
+
+            {/* PDF Report Modal */}
+            {showPDFReport && organization && (
+                <SalesReportPDF
+                    organizationName={organization.name}
+                    organizationPhone=""
+                    organizationEmail=""
+                    sales={sales}
+                    summary={summary}
+                    filters={{
+                        startDate: filters.startDate,
+                        endDate: filters.endDate,
+                        paymentMethod: filters.paymentMethod,
+                        type: filters.type,
+                    }}
+                    onClose={() => setShowPDFReport(false)}
+                />
+            )}
         </div>
     );
 };
