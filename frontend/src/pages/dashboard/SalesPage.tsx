@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSalesStore } from '@/stores/useSalesStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { useStaffStore } from '@/stores/useStaffStore';
 import { Search, DollarSign, Receipt, AlertCircle, Filter, X, Package, Stethoscope, Eye, Download } from 'lucide-react';
 import SaleDetailModal from '@/components/sales/SaleDetailModal';
 import SalesReportPDF from '@/components/sales/SalesReportPDF';
@@ -28,16 +29,19 @@ const SalesPage = () => {
     } = useSalesStore();
 
     const { organization } = useUserStore();
+    const { staff, fetchStaff } = useStaffStore();
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [localFilters, setLocalFilters] = useState<{
         paymentMethod: string;
         search: string;
         type: 'SERVICE' | 'PRODUCT' | 'ALL';
+        professionalId: string;
     }>({
         paymentMethod: '',
         search: '',
         type: 'ALL',
+        professionalId: '',
     });
     const [selectedSale, setSelectedSale] = useState<any>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -45,7 +49,8 @@ const SalesPage = () => {
 
     useEffect(() => {
         fetchSales();
-    }, []);
+        fetchStaff({ limit: 100 });
+    }, [fetchSales, fetchStaff]);
 
     const handleFilterChange = useCallback((key: string, value: string) => {
         const updatedFilters = { ...localFilters, [key]: value };
@@ -84,6 +89,7 @@ const SalesPage = () => {
             paymentMethod: '',
             search: '',
             type: 'ALL',
+            professionalId: '',
         });
         clearFilters();
         fetchSales();
@@ -192,77 +198,77 @@ const SalesPage = () => {
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 <Card>
-                    <CardContent className="p-6">
+                    <CardContent className="p-3 md:p-6">
                         <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                            <div className="space-y-0.5">
+                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
                                     Total de Ventas
                                 </p>
-                                <p className="text-3xl font-bold text-[rgb(var(--text-primary))]">
+                                <p className="text-base md:text-3xl font-bold text-[rgb(var(--text-primary))]">
                                     {formatCurrency(summary.totalAmount)}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg">
-                                <DollarSign className="w-6 h-6 text-white" />
+                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shrink-0">
+                                <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-white" />
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-6">
+                    <CardContent className="p-3 md:p-6">
                         <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                            <div className="space-y-0.5">
+                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
                                     Transacciones
                                 </p>
-                                <p className="text-3xl font-bold text-[rgb(var(--text-primary))]">
+                                <p className="text-base md:text-3xl font-bold text-[rgb(var(--text-primary))]">
                                     {summary.count}
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                                <Receipt className="w-6 h-6 text-white" />
+                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shrink-0">
+                                <Receipt className="w-4 h-4 md:w-6 md:h-6 text-white" />
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-6">
+                    <CardContent className="p-3 md:p-6">
                         <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                            <div className="space-y-0.5">
+                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
                                     Servicios
                                 </p>
-                                <p className="text-2xl font-bold text-[rgb(var(--text-primary))]">
+                                <p className="text-sm md:text-2xl font-bold text-[rgb(var(--text-primary))]">
                                     {formatCurrency(summary.serviceAmount || 0)}
                                 </p>
                                 <p className="text-xs text-[rgb(var(--text-secondary))]">
                                     {summary.serviceCount || 0} ventas
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
-                                <Stethoscope className="w-6 h-6 text-white" />
+                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shrink-0">
+                                <Stethoscope className="w-4 h-4 md:w-6 md:h-6 text-white" />
                             </div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="p-6">
+                    <CardContent className="p-3 md:p-6">
                         <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium text-[rgb(var(--text-secondary))]">
+                            <div className="space-y-0.5">
+                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
                                     Productos
                                 </p>
-                                <p className="text-2xl font-bold text-[rgb(var(--text-primary))]">
+                                <p className="text-sm md:text-2xl font-bold text-[rgb(var(--text-primary))]">
                                     {formatCurrency(summary.productAmount || 0)}
                                 </p>
                                 <p className="text-xs text-[rgb(var(--text-secondary))]">
                                     {summary.productCount || 0} ventas
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
-                                <Package className="w-6 h-6 text-white" />
+                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shrink-0">
+                                <Package className="w-4 h-4 md:w-6 md:h-6 text-white" />
                             </div>
                         </div>
                     </CardContent>
@@ -360,6 +366,30 @@ const SalesPage = () => {
                             </Select>
                         </div>
 
+                        {/* Professional */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-[rgb(var(--text-primary))]">
+                                Profesional
+                            </label>
+                            <Select
+                                value={localFilters.professionalId || undefined}
+                                onValueChange={(value) => handleFilterChange('professionalId', value === 'ALL' ? '' : value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Todos" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Todos</SelectItem>
+                                    <SelectItem value="UNASSIGNED">Sin asignar</SelectItem>
+                                    {staff.map((professional) => (
+                                        <SelectItem key={professional.id} value={professional.id}>
+                                            {professional.firstName} {professional.lastName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         {/* Search */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-[rgb(var(--text-primary))] flex items-center gap-1.5">
@@ -412,13 +442,68 @@ const SalesPage = () => {
                 </Card>
             ) : (
                 <>
-                    <Card>
+                    {/* Mobile: Card list */}
+                    <div className="flex flex-col gap-3 md:hidden">
+                        {sales.map((sale) => (
+                            <Card
+                                key={sale.id}
+                                className="cursor-pointer hover:shadow-md transition-shadow"
+                                onClick={() => handleViewDetails(sale)}
+                            >
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between gap-2 mb-3">
+                                        <Badge variant={sale.type === 'SERVICE' ? 'default' : 'secondary'} className="gap-1 shrink-0">
+                                            {getSaleTypeIcon(sale.type)}
+                                            {getSaleTypeBadge(sale.type)}
+                                        </Badge>
+                                        <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                                            {formatCurrency(sale.amount)}
+                                        </span>
+                                    </div>
+
+                                    <p className="font-semibold text-[rgb(var(--text-primary))] mb-1">
+                                        {sale.patientName}
+                                    </p>
+
+                                    {sale.description && (
+                                        <p className="text-sm text-[rgb(var(--text-secondary))] mb-2 line-clamp-1">
+                                            {sale.description}
+                                        </p>
+                                    )}
+
+                                    <div className="flex items-center justify-between mt-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-medium text-[rgb(var(--text-primary))]">
+                                                {formatDate(sale.date)}
+                                            </span>
+                                            <span className="text-xs text-[rgb(var(--text-secondary))]">
+                                                {formatTime(sale.date)}
+                                            </span>
+                                        </div>
+                                        <Badge variant="outline" className="font-normal text-xs">
+                                            {getPaymentMethodLabel(sale.paymentMethod)}
+                                        </Badge>
+                                    </div>
+
+                                    {sale.professionalName && (
+                                        <p className="text-xs text-[rgb(var(--text-secondary))] mt-2">
+                                            Profesional: <span className="font-medium">{sale.professionalName}</span>
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    {/* Desktop: Table */}
+                    <Card className="hidden md:block">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Tipo</TableHead>
                                     <TableHead>Fecha</TableHead>
                                     <TableHead>Paciente</TableHead>
+                                    <TableHead>Profesional</TableHead>
                                     <TableHead>Descripción</TableHead>
                                     <TableHead className="text-right">Monto</TableHead>
                                     <TableHead>Método de Pago</TableHead>
@@ -446,6 +531,9 @@ const SalesPage = () => {
                                         </TableCell>
                                         <TableCell className="font-medium">
                                             {sale.patientName}
+                                        </TableCell>
+                                        <TableCell className="font-medium text-sm">
+                                            {sale.professionalName || '-'}
                                         </TableCell>
                                         <TableCell className="text-[rgb(var(--text-secondary))] max-w-xs truncate">
                                             {sale.description}
@@ -516,6 +604,9 @@ const SalesPage = () => {
                 sale={selectedSale}
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
+                organizationName={organization?.name}
+                organizationPhone=""
+                organizationEmail=""
             />
 
             {/* PDF Report Modal */}

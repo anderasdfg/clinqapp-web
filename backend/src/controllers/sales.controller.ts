@@ -19,6 +19,7 @@ const getSalesSchema = z.object({
   serviceId: z.string().optional(),
   search: z.string().optional(), // Search by patient name
   type: z.enum(["SERVICE", "PRODUCT", "ALL"]).optional().default("ALL"), // Filter by sale type
+  professionalId: z.string().optional(), // Filter by professional
 });
 
 // GET /api/sales - List sales with filters
@@ -42,6 +43,7 @@ export const getSales = async (req: AuthRequest, res: Response) => {
       serviceId,
       search,
       type,
+      professionalId,
     } = validatedQuery;
 
     // Build where clause
@@ -90,7 +92,28 @@ export const getSales = async (req: AuthRequest, res: Response) => {
     let serviceSummary = { totalAmount: 0, count: 0 };
     
     if (type === "SERVICE" || type === "ALL") {
-      const serviceWhere = { ...where, appointmentId: { not: null } };
+      const serviceWhere: any = { ...where, appointmentId: { not: null } };
+      
+      // Add professional filter if specified
+      if (professionalId) {
+        if (professionalId === "UNASSIGNED") {
+          // Filter for sales without professional
+          serviceWhere.appointment = {
+            is: {
+              professionalId: {
+                equals: null,
+              },
+            },
+          };
+        } else {
+          // Filter for specific professional
+          serviceWhere.appointment = {
+            is: {
+              professionalId,
+            },
+          };
+        }
+      }
       
       const [payments, summary] = await Promise.all([
         prisma.payment.findMany({
@@ -105,6 +128,13 @@ export const getSales = async (req: AuthRequest, res: Response) => {
             appointment: {
               select: {
                 id: true,
+                professionalId: true,
+                professional: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
                 services: {
                   include: {
                     service: {
@@ -136,6 +166,10 @@ export const getSales = async (req: AuthRequest, res: Response) => {
         type: "SERVICE" as const,
         date: payment.createdAt.toISOString(),
         patientName: `${payment.patient.firstName} ${payment.patient.lastName}`,
+        professionalId: payment.appointment?.professionalId,
+        professionalName: payment.appointment?.professional 
+          ? `${payment.appointment.professional.firstName} ${payment.appointment.professional.lastName}`
+          : undefined,
         description: payment.appointment?.services?.map(s => s.service.name).join(", ") || "N/A",
         items: payment.appointment?.services?.map(s => ({
           name: s.service.name,
@@ -160,7 +194,9 @@ export const getSales = async (req: AuthRequest, res: Response) => {
     let productSales: any[] = [];
     let productSummary = { totalAmount: 0, count: 0 };
     
-    if (type === "PRODUCT" || type === "ALL") {
+    // Only fetch product sales if not filtering by a specific professional
+    // (products don't have professional assignment, only services do)
+    if ((type === "PRODUCT" || type === "ALL") && !professionalId) {
       const productWhere: any = {
         organizationId,
       };

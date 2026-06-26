@@ -295,6 +295,14 @@ select:focus {
     animation: slideInRight 0.3s ease-out;
   }
 
+  .animate-drawer-up {
+    animation: drawerUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .animate-drawer-right {
+    animation: drawerRight 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
   /* Hover Animations */
   .hover-lift {
     @apply transition-transform duration-300 hover:-translate-y-1;
@@ -364,6 +372,24 @@ select:focus {
 
   to {
     opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawerUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawerRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
     transform: translateX(0);
   }
 }

@@ -12,6 +12,8 @@ export interface Sale {
   type: 'SERVICE' | 'PRODUCT';
   date: string;
   patientName: string;
+  professionalId?: string;
+  professionalName?: string;
   description: string;
   items: SaleItem[];
   amount: number;
@@ -50,4 +52,5 @@ export interface SalesFilters {
   serviceId?: string;
   search?: string;
   type?: 'SERVICE' | 'PRODUCT' | 'ALL';
+  professionalId?: string;
 }

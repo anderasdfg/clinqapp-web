@@ -169,6 +169,7 @@ const SalesReportPDF = ({
                     <tr className="bg-gray-100 border-b border-gray-300">
                       <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs min-w-[70px]">Fecha</th>
                       <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs min-w-[80px]">Paciente</th>
+                      <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs min-w-[70px]">Profesional</th>
                       <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs min-w-[45px]">Tipo</th>
                       <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs flex-1">Descripción</th>
                       <th className="px-1.5 py-1.5 text-left font-bold text-gray-900 text-xs min-w-[60px]">Pago</th>
@@ -185,6 +186,7 @@ const SalesReportPDF = ({
                           </div>
                         </td>
                         <td className="px-1.5 py-1 text-gray-700 font-medium text-xs min-w-[80px]">{sale.patientName}</td>
+                        <td className="px-1.5 py-1 text-gray-700 text-xs min-w-[70px]">{sale.professionalName || '-'}</td>
                         <td className="px-1.5 py-1 text-gray-700 min-w-[45px]">
                           <span className={`px-1 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
                             sale.type === 'SERVICE'
