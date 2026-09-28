@@ -1,11 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
-import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfDay,
+  endOfDay,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
+} from 'date-fns';
 import { toast } from 'sonner';
-import type { Appointment, AppointmentStatus } from '@/types/appointment.types';
+import type { Appointment, AppointmentStatus, CalendarViewMode } from '@/types/appointment.types';
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS } from '@/types/appointment.types';
 
+function defaultViewMode(): CalendarViewMode {
+  if (typeof window === 'undefined') return 'day';
+  // ponytail: tablet portrait / narrow → day; desktop landscape → week
+  return window.matchMedia('(min-width: 1024px)').matches ? 'week' : 'day';
+}
+
 interface UseAgendaHandlersReturn {
+  viewMode: CalendarViewMode;
+  setViewMode: (mode: CalendarViewMode) => void;
   showAppointmentDrawer: boolean;
   showDetailSheet: boolean;
   showPaymentModal: boolean;
@@ -16,8 +33,8 @@ interface UseAgendaHandlersReturn {
   setShowPaymentModal: (show: boolean) => void;
   setSelectedAppointment: (appointment: Appointment | null) => void;
   setPostPaymentStatus: (status: AppointmentStatus | null) => void;
-  handlePreviousWeek: () => void;
-  handleNextWeek: () => void;
+  handlePrevious: () => void;
+  handleNext: () => void;
   handleToday: () => void;
   handleAppointmentClick: (appointment: Appointment) => void;
   handleStatusUpdate: (appointmentId: string, status: AppointmentStatus) => Promise<void>;
@@ -39,39 +56,45 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
     updateAppointmentStatus,
   } = useAppointmentsStore();
 
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(defaultViewMode);
   const [showAppointmentDrawer, setShowAppointmentDrawer] = useState(false);
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [postPaymentStatus, setPostPaymentStatus] = useState<AppointmentStatus | null>(null);
 
-  // Fetch appointments when component mounts or week changes
   useEffect(() => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const rangeStart =
+      viewMode === 'day'
+        ? startOfDay(currentDate)
+        : startOfWeek(currentDate, { weekStartsOn: 1 });
+    const rangeEnd =
+      viewMode === 'day'
+        ? endOfDay(currentDate)
+        : endOfWeek(currentDate, { weekStartsOn: 1 });
 
-    // Pass filters directly to fetchAppointments to ensure they're used
-    fetchAppointments({
-      startDate: start.toISOString(),
-      endDate: end.toISOString(),
-    }, true);
+    fetchAppointments(
+      {
+        startDate: rangeStart.toISOString(),
+        endDate: rangeEnd.toISOString(),
+      },
+      true,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate]);
+  }, [currentDate, viewMode]);
 
-  // Week navigation
-  const handlePreviousWeek = useCallback(() => {
-    setCurrentDate(subWeeks(currentDate, 1));
-  }, [currentDate, setCurrentDate]);
+  const handlePrevious = useCallback(() => {
+    setCurrentDate(viewMode === 'day' ? subDays(currentDate, 1) : subWeeks(currentDate, 1));
+  }, [currentDate, setCurrentDate, viewMode]);
 
-  const handleNextWeek = useCallback(() => {
-    setCurrentDate(addWeeks(currentDate, 1));
-  }, [currentDate, setCurrentDate]);
+  const handleNext = useCallback(() => {
+    setCurrentDate(viewMode === 'day' ? addDays(currentDate, 1) : addWeeks(currentDate, 1));
+  }, [currentDate, setCurrentDate, viewMode]);
 
   const handleToday = useCallback(() => {
     setCurrentDate(new Date());
   }, [setCurrentDate]);
 
-  // Appointment actions
   const handleAppointmentClick = useCallback((appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowDetailSheet(true);
@@ -92,11 +115,17 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
   }, [fetchAppointments]);
 
   const handleNewAppointment = useCallback(() => {
+    // Close sibling dialogs first — unmounting ClinicalWorkspace while open
+    // leaves a Radix overlay stuck on top of the appointment sheet.
+    setShowDetailSheet(false);
+    setShowPaymentModal(false);
     setSelectedAppointment(null);
     setShowAppointmentDrawer(true);
   }, []);
 
   const handleEditAppointment = useCallback((appointment: Appointment) => {
+    setShowDetailSheet(false);
+    setShowPaymentModal(false);
     setSelectedAppointment(appointment);
     setShowAppointmentDrawer(true);
   }, []);
@@ -129,7 +158,6 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
     setPostPaymentStatus(null);
   }, [postPaymentStatus, selectedAppointment, updateAppointmentStatus, fetchAppointments]);
 
-  // Close handlers
   const handleCloseAppointmentDrawer = useCallback(() => {
     setShowAppointmentDrawer(false);
     setSelectedAppointment(null);
@@ -146,6 +174,8 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
   }, []);
 
   return {
+    viewMode,
+    setViewMode,
     showAppointmentDrawer,
     showDetailSheet,
     showPaymentModal,
@@ -156,8 +186,8 @@ export function useAgendaHandlers(): UseAgendaHandlersReturn {
     setShowPaymentModal,
     setSelectedAppointment,
     setPostPaymentStatus,
-    handlePreviousWeek,
-    handleNextWeek,
+    handlePrevious,
+    handleNext,
     handleToday,
     handleAppointmentClick,
     handleStatusUpdate,

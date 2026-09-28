@@ -95,10 +95,17 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
 
     const onSubmit = async (data: PatientFormData) => {
         try {
+            const payload = {
+                ...data,
+                // "" from "Sin asignar" is not a UUID — send null to clear
+                assignedProfessionalId: data.assignedProfessionalId
+                    ? data.assignedProfessionalId
+                    : null,
+            };
             if (patient) {
-                await updatePatient(patient.id, data);
+                await updatePatient(patient.id, payload as any);
             } else {
-                await createPatient(data);
+                await createPatient(payload as any);
             }
 
             if (onSuccess) {
@@ -108,7 +115,11 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
             }
         } catch (error: any) {
             console.error('Error saving patient:', error);
-            const errorMessage = error?.response?.data?.error || error?.message || 'Error al guardar el paciente';
+            const errorMessage =
+                error?.response?.data?.details?.[0]?.message ||
+                error?.response?.data?.error ||
+                error?.message ||
+                'Error al guardar el paciente';
             toast({
                 variant: "destructive",
                 title: "Error al guardar",

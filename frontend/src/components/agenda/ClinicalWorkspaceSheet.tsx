@@ -197,21 +197,57 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
   }, []);
 
   // Early return after all hooks
-  if (!appointment || !currentAppointmentRaw) return null;
+  // Keep Dialog.Root mounted whenever parent says open — returning null while
+  // isOpen/appointment races (e.g. Nueva Cita clears appointment first) orphans
+  // the Radix overlay and blocks AppointmentDrawer.
+  const dialogOpen = Boolean(isOpen && appointment && currentAppointmentRaw);
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        if (!open && isUpdating) return;
+        if (!open) onClose();
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[80vw] lg:w-[1000px] bg-background border-l shadow-2xl transform transition-transform duration-300 z-50 data-[state=open]:animate-out data-[state=closed]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col">
+        <Dialog.Content
+          className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[80vw] lg:w-[1000px] bg-background border-l shadow-2xl z-50 duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right flex flex-col overscroll-contain"
+          aria-describedby="clinical-workspace-desc"
+        >
+          <Dialog.Title className="sr-only">
+            {patient
+              ? `Atención: ${patient.firstName} ${patient.lastName}`
+              : 'Espacio clínico'}
+          </Dialog.Title>
+          <Dialog.Description id="clinical-workspace-desc" className="sr-only">
+            Panel de atención, evoluciones e historia clínica del paciente
+          </Dialog.Description>
+
+          {appointment && currentAppointmentRaw ? (
+          <>
           
+          {(isUpdating && !isLoading) && (
+            <div
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/75 backdrop-blur-[2px] transition-opacity duration-200"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+              <p className="text-sm font-medium text-muted-foreground">
+                Guardando atención…
+              </p>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex-1 flex flex-col relative">
               {/* Central Spinner */}
               <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/80 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Cargando información del paciente...</p>
+                  <p className="text-sm text-muted-foreground">Cargando información del paciente…</p>
                 </div>
               </div>
 
@@ -308,13 +344,13 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
              <div className="px-6 border-b">
                  <Tabs.List className="flex gap-6">
                      <Tabs.Trigger value="attention" className="py-3 text-sm font-medium text-muted-foreground border-b-2 border-transparent data-[state=active]:text-primary data-[state=active]:border-primary transition-colors">
-                        ATENCIÓN
+                        Atención
                      </Tabs.Trigger>
                      <Tabs.Trigger value="history" className="py-3 text-sm font-medium text-muted-foreground border-b-2 border-transparent data-[state=active]:text-primary data-[state=active]:border-primary transition-colors">
-                        HISTORIAL
+                        Evoluciones
                      </Tabs.Trigger>
                      <Tabs.Trigger value="data" className="py-3 text-sm font-medium text-muted-foreground border-b-2 border-transparent data-[state=active]:text-primary data-[state=active]:border-primary transition-colors">
-                        HISTORIA CLÍNICA
+                        Historia base
                      </Tabs.Trigger>
                  </Tabs.List>
              </div>
@@ -363,13 +399,19 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
                         {/* EvidenceUploader Component Inline */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                              {currentImages.map((url, idx) => (
-                                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border bg-background">
-                                     <img src={url} alt={`Evidencia ${idx + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                         <button onClick={() => removeImage(idx)} className="p-1.5 bg-white/10 backdrop-blur rounded-full text-white hover:bg-white/20">
-                                             <Trash2 className="h-4 w-4" />
+                                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border bg-background">
+                                     <img src={url} alt={`Evidencia ${idx + 1}`} className="w-full h-full object-cover" />
+                                     {/* Always visible — tablet/touch has no reliable hover */}
+                                     {!isReadOnly && (
+                                         <button
+                                             type="button"
+                                             onClick={() => removeImage(idx)}
+                                             aria-label={`Eliminar evidencia ${idx + 1}`}
+                                             className="absolute top-1 right-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-black/65 text-white shadow-sm"
+                                         >
+                                             <Trash2 className="h-4 w-4" aria-hidden="true" />
                                          </button>
-                                     </div>
+                                     )}
                                  </div>
                              ))}
                              
@@ -550,6 +592,9 @@ const ClinicalWorkspaceSheet = ({ appointment, isOpen, onClose, onShowPayment }:
           </div>
             </>
           )}
+
+          </>
+          ) : null}
 
         </Dialog.Content>
       </Dialog.Portal>

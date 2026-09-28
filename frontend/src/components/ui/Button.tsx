@@ -15,10 +15,11 @@ const buttonVariants = cva(
                 destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent focus:ring-destructive transition-all duration-200',
             },
             size: {
-                sm: 'py-2 px-3 text-xs',
-                md: 'py-3 px-6 text-sm',
-                lg: 'py-4 px-8 text-base',
-                icon: 'h-10 w-10 p-0',
+                // ponytail: tablet/50+ — sm ≥44px touch target
+                sm: 'min-h-11 py-2 px-3 text-sm',
+                md: 'min-h-11 py-3 px-6 text-sm',
+                lg: 'min-h-12 py-4 px-8 text-base',
+                icon: 'min-h-11 min-w-11 h-11 w-11 p-0',
             },
         },
         defaultVariants: {

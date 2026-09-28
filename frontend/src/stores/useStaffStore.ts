@@ -64,8 +64,8 @@ export const useStaffStore = create<StaffState>((set, get) => ({
     try {
       const response = await staffService.getStaff(params);
       set({
-        staff: response.data,
-        pagination: response.pagination,
+        staff: Array.isArray(response?.data) ? response.data : [],
+        pagination: response?.pagination ?? state.pagination,
         lastFetchedAt: Date.now(),
         isLoading: false,
       });

@@ -4,6 +4,7 @@ import { usePatientsStore } from "@/stores/usePatientsStore";
 import { useServicesStore } from "@/stores/useServicesStore";
 import { useStaffStore } from "@/stores/useStaffStore";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
+import { setAccessToken } from "@/lib/auth/access-token";
 import { logger } from "./logger";
 
 /**
@@ -12,6 +13,7 @@ import { logger } from "./logger";
  */
 export const resetAllStores = () => {
   try {
+    setAccessToken(null);
     useUserStore.getState().clearUser();
 
     // These stores need a reset() method implemented

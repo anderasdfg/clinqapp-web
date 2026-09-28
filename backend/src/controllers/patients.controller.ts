@@ -31,7 +31,10 @@ const createPatientSchema = z.object({
       "OTHER",
     ])
     .optional(),
-  assignedProfessionalId: z.string().uuid().optional(),
+  assignedProfessionalId: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? null : val),
+    z.string().uuid().nullable().optional(),
+  ),
   medicalHistory: z.any().optional(),
 });
 

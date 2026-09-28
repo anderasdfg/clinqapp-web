@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useUserStore } from '@/stores/useUserStore';
 import { AuthService } from '@/services/auth.service';
 import { logger } from '@/lib/utils/logger';
+import { setAccessToken } from '@/lib/auth/access-token';
 
 const AuthContext = createContext({});
 
@@ -14,6 +15,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         const syncUser = async (session: any) => {
+            // Keep API token in sync before any profile fetches (avoids interceptor deadlock)
+            setAccessToken(session?.access_token ?? null);
+
             if (isSyncing.current) return;
             isSyncing.current = true;
             
@@ -46,10 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } catch (error) {
                 logger.error('Auth synchronization error', { error });
-                // Do NOT clearUser here unless we are sure there is no session.
-                // If it was just a network timeout, let the user stay with cached data.
-                const { data: { session: currentSession } } = await supabase.auth.getSession();
-                if (!currentSession) {
+                // Do NOT clearUser on transient failures while a token is still cached.
+                if (!session?.access_token) {
                     clearUser();
                 }
             } finally {
@@ -65,10 +67,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
                 logger.info('Auth state change detected', { event });
+                // Always refresh in-memory token first (sync, before any API)
+                setAccessToken(newSession?.access_token ?? null);
                 
-                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                     await syncUser(newSession);
                 } else if (event === 'SIGNED_OUT') {
+                    setAccessToken(null);
                     clearUser();
                 }
             });

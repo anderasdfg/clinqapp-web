@@ -282,9 +282,11 @@ const PatientDetailPage = () => {
                             Editar Perfil
                         </Link>
                     </Button>
-                    <Button className="gap-2 bg-primary shadow-md">
-                        <Plus className="w-4 h-4" />
-                        Nueva Cita
+                    <Button className="gap-2 bg-primary shadow-md" asChild>
+                        <Link to={`/app/dashboard/agenda?patientId=${id}&new=1`}>
+                            <Plus className="w-4 h-4" aria-hidden="true" />
+                            Nueva Cita
+                        </Link>
                     </Button>
                 </div>
             </div>
@@ -297,7 +299,7 @@ const PatientDetailPage = () => {
                     </TabsTrigger>
                     <TabsTrigger value="medical-record" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                         <Stethoscope className="w-4 h-4" />
-                        Historia
+                        Historia base
                     </TabsTrigger>
                     <TabsTrigger value="evolutions" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                         <History className="w-4 h-4" />

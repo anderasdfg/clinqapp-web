@@ -1,10 +1,10 @@
 import { Appointment, APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS, AppointmentStatus, APPOINTMENT_STATUS, PAYMENT_STATUS } from '@/types/appointment.types';
 import { formatTimeRange } from '@/lib/utils/calendar.utils';
-import { 
-    DropdownMenu, 
-    DropdownMenuContent, 
-    DropdownMenuItem, 
-    DropdownMenuTrigger 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, CreditCard, X, Loader2, Edit } from 'lucide-react';
 import { useState } from 'react';
@@ -37,55 +37,66 @@ const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate, 
 
     return (
         <div
-            className="group relative p-2 mb-1 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] hover:bg-[rgb(var(--bg-secondary))] cursor-pointer transition-colors duration-150 text-xs"
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick?.();
+                }
+            }}
+            className="relative p-3 mb-2 rounded-lg border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-card))] hover:bg-[rgb(var(--bg-secondary))] active:bg-[rgb(var(--bg-secondary))] cursor-pointer transition-colors duration-150 touch-manipulation"
         >
-            <div onClick={onClick} className="flex flex-col gap-1">
-                {/* Patient Name */}
-                <div className="flex items-start justify-between">
-                    <p className="font-medium text-[rgb(var(--text-primary))] truncate text-xs flex-1">
+            <div className="flex flex-col gap-1.5 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-[rgb(var(--text-primary))] truncate text-base flex-1 min-w-0">
                         {appointment.patient?.firstName} {appointment.patient?.lastName}
                     </p>
-                    
+
                     {!isCompleted && (
-                        <div onClick={(e) => e.stopPropagation()}>
+                        <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                             <DropdownMenu>
-                                <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity">
-                                    <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                                <DropdownMenuTrigger
+                                    aria-label="Acciones de la cita"
+                                    className="inline-flex items-center justify-center min-h-11 min-w-11 p-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary rounded-lg transition-colors"
+                                >
+                                    <MoreVertical className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem 
-                                        className="gap-2 cursor-pointer"
+                                    <DropdownMenuItem
+                                        className="gap-2 cursor-pointer min-h-11 text-base"
                                         onClick={() => onEdit?.(appointment)}
                                     >
-                                        <Edit className="w-4 h-4" />
+                                        <Edit className="w-4 h-4" aria-hidden="true" />
                                         Editar Cita
                                     </DropdownMenuItem>
 
                                     {(!isConfirmed && !isNoShow && !isPaid) && (
-                                        <DropdownMenuItem 
-                                            className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
+                                        <DropdownMenuItem
+                                            className="gap-2 cursor-pointer min-h-11 text-base text-blue-600 dark:text-blue-400"
                                             onClick={() => onShowPayment?.(appointment, APPOINTMENT_STATUS.CONFIRMED)}
                                         >
-                                            <CreditCard className="w-4 h-4" />
+                                            <CreditCard className="w-4 h-4" aria-hidden="true" />
                                             Registrar Pago (Reserva)
                                         </DropdownMenuItem>
                                     )}
 
                                     {!isNoShow && (
-                                        <DropdownMenuItem 
-                                            className="gap-2 cursor-pointer text-red-600 dark:text-red-400"
+                                        <DropdownMenuItem
+                                            className="gap-2 cursor-pointer min-h-11 text-base text-red-600 dark:text-red-400"
                                             onClick={() => handleStatusUpdate(appointment.id, APPOINTMENT_STATUS.NO_SHOW)}
                                         >
-                                            <div className="w-4 h-4 rounded-full border-2 border-current" />
+                                            <div className="w-4 h-4 rounded-full border-2 border-current" aria-hidden="true" />
                                             Marcar como No Asistió
                                         </DropdownMenuItem>
                                     )}
 
-                                    <DropdownMenuItem 
-                                        className="gap-2 cursor-pointer text-red-600 dark:text-red-400"
+                                    <DropdownMenuItem
+                                        className="gap-2 cursor-pointer min-h-11 text-base text-red-600 dark:text-red-400"
                                         onClick={() => handleStatusUpdate(appointment.id, APPOINTMENT_STATUS.CANCELLED)}
                                     >
-                                        <X className="w-4 h-4" />
+                                        <X className="w-4 h-4" aria-hidden="true" />
                                         Cancelar Cita
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -94,36 +105,32 @@ const AppointmentCard = ({ appointment, onClick, onShowPayment, onStatusUpdate, 
                     )}
 
                     {isUpdatingStatus && (
-                        <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                        <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" aria-hidden="true" />
                     )}
                 </div>
 
-                {/* Services */}
                 {appointment.services && appointment.services.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                         {appointment.services.map((as) => (
-                            <span 
+                            <span
                                 key={as.id}
-                                className="px-1.5 py-0.5 rounded text-[9px] bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text-secondary))] border border-[rgb(var(--border-primary))]"
+                                className="px-2 py-0.5 rounded text-sm bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text-secondary))] border border-[rgb(var(--border-primary))]"
                             >
                                 {as.service.name}
-                                {appointment.sessionNumber && ` - SESIÓN ${appointment.sessionNumber}`}
+                                {appointment.sessionNumber && ` — Sesión ${appointment.sessionNumber}`}
                             </span>
                         ))}
                     </div>
                 )}
 
-                {/* Status Badge */}
-                <div className="flex items-center">
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${statusColor}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded text-sm font-medium ${statusColor}`}>
                         {APPOINTMENT_STATUS_LABELS[appointment.status]}
                     </span>
+                    <p className="text-[rgb(var(--text-secondary))] text-sm tabular-nums">
+                        {formatTimeRange(appointment.startTime, appointment.endTime)}
+                    </p>
                 </div>
-
-                {/* Time */}
-                <p className="text-[rgb(var(--text-tertiary))] text-[10px]">
-                    {formatTimeRange(appointment.startTime, appointment.endTime)}
-                </p>
             </div>
         </div>
     );

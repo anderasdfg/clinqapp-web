@@ -10,6 +10,7 @@ import { AppConfig } from "@/lib/config/app.config";
 import { logger } from "@/lib/utils/logger";
 import { mapSupabaseAuthError } from "@/lib/errors/auth-errors";
 import type { User, Organization } from "@/stores/useUserStore";
+import { setAccessToken } from "@/lib/auth/access-token";
 
 /**
  * Authentication Service
@@ -165,13 +166,26 @@ export class AuthService {
   /**
    * Logout user
    */
+  /**
+   * Logout user.
+   * Clear local session first (sync storage) so Safari/iPad cannot hang on
+   * the network revoke and leave the UI without a redirect.
+   */
   static async logout(): Promise<void> {
+    setAccessToken(null);
     try {
-      await supabase.auth.signOut();
-      logger.info("User logged out");
+      // Local clear must succeed for SPA redirect; do not wait on network.
+      await supabase.auth.signOut({ scope: "local" });
     } catch (error) {
-      logger.error("Logout error", { error });
+      logger.error("Local logout error", { error });
     }
+    // Best-effort server revoke — never block navigation
+    void Promise.race([
+      supabase.auth.signOut({ scope: "global" }),
+      new Promise<void>((resolve) => setTimeout(resolve, 2500)),
+    ]).catch((error) => {
+      logger.error("Global logout error", { error });
+    });
   }
 
   /**
@@ -258,6 +272,35 @@ export class AuthService {
   }
 
   /**
+   * Update password after recovery link (Supabase recovery session required)
+   */
+  static async updatePassword(password: string): Promise<LoginResult> {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        logger.error("Password update error", { error: error.message });
+        return {
+          success: false,
+          error: mapSupabaseAuthError(error).userMessage,
+        };
+      }
+
+      logger.info("Password updated successfully");
+      return {
+        success: true,
+        message: "Contraseña actualizada correctamente",
+      };
+    } catch (error) {
+      logger.error("Unexpected password update error", { error });
+      return {
+        success: false,
+        error: AuthMessages.UNEXPECTED_ERROR,
+      };
+    }
+  }
+
+  /**
    * Get current session
    *
    * @returns Promise<Session | null>
@@ -336,25 +379,25 @@ export class AuthService {
    */
   static async getUserProfile(userId: string): Promise<User | null> {
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile fetch timeout")), 5000),
-      );
+      // Abortable timeout — clear timer so late responses don't reject after success
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const fetchPromise = supabase
+      const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("auth_id", userId)
+        .abortSignal(controller.signal)
         .single();
 
-      // Race against timeout
-      const result = (await Promise.race([
-        fetchPromise,
-        timeoutPromise,
-      ])) as any;
-      const { data, error } = result;
+      clearTimeout(timeoutId);
 
       if (error || !data) {
+        // Abort = soft miss (slow network); don't spam as unexpected
+        if (error?.name === "AbortError" || controller.signal.aborted) {
+          logger.warn("Profile fetch timed out", { userId });
+          return null;
+        }
         logger.error("Error fetching user profile", { error: error?.message });
         return null;
       }
@@ -371,7 +414,11 @@ export class AuthService {
         organizationId: data.organization_id,
         emailVerified: data.email_verified,
       };
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        logger.warn("Profile fetch timed out", { userId });
+        return null;
+      }
       logger.error("Unexpected error fetching profile", { error });
       return null;
     }

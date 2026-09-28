@@ -81,7 +81,7 @@ const MedicalRecordsPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground mb-1">
-                        Historias Clínicas
+                        Historias
                     </h1>
                     <p className="text-muted-foreground">
                         Consulta y gestiona los registros podológicos de tus pacientes

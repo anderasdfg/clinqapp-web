@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthService } from "@/services/auth.service";
+import { resetAllStores } from "@/lib/utils/store-utils";
+import { setAccessToken } from "@/lib/auth/access-token";
 import type { LoginFormData, RegisterFormData } from "@/types/auth.types";
 
 interface UseAuthReturn {
@@ -80,10 +82,13 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
 
     try {
+      setAccessToken(null);
+      resetAllStores();
+      navigate("/app/login", { replace: true });
       await AuthService.logout();
-      navigate("/app/login");
     } catch (err) {
       setError("Error al cerrar sesión");
+      navigate("/app/login", { replace: true });
     } finally {
       setIsLoading(false);
     }

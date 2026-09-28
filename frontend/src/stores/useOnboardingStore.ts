@@ -43,7 +43,7 @@ export interface OnboardingState {
     isStepCompleted: (step: number) => boolean;
 }
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 4;
 
 const initialState = {
     currentStep: 0,
@@ -56,6 +56,14 @@ const initialState = {
     notifications: null,
     invitations: null,
 };
+
+/** Map legacy 6/9-step wizard indexes onto the 4-step UI. */
+function migrateStep(step: number): number {
+    if (step <= 1) return step;
+    if (step === 2 || step === 3) return 2; // old payment/consultation → services
+    if (step === 4) return 2; // old services
+    return 3; // summary
+}
 
 export const useOnboardingStore = create<OnboardingState>()(
     persist(
@@ -136,56 +144,25 @@ export const useOnboardingStore = create<OnboardingState>()(
                 const state = get();
 
                 switch (step) {
-                    case 0: // Basic Data
+                    case 0:
                         return !!(
                             state.basicData?.name &&
-                            state.basicData?.ruc &&
                             state.basicData?.address &&
                             state.basicData?.phone &&
                             state.basicData?.email
                         );
-
-                    case 1: // Business Hours
+                    case 1:
                         return !!(
                             state.businessHours?.schedules &&
                             state.businessHours.schedules.length > 0
                         );
-
-                    case 2: // Payment Methods
-                        return !!(
-                            state.paymentMethods?.methods &&
-                            state.paymentMethods.methods.length > 0
-                        );
-
-                    case 3: // Consultation Types
-                        return !!(
-                            state.consultationTypes?.types &&
-                            state.consultationTypes.types.length > 0
-                        );
-
-                    case 4: // Services
+                    case 2:
                         return !!(
                             state.services?.services &&
                             state.services.services.length > 0
                         );
-
-                    case 5: // Schedule Config
-                        return !!(
-                            state.scheduleConfig?.defaultAppointmentDuration !== undefined
-                        );
-
-                    case 6: // Notifications
-                        return !!(
-                            state.notifications?.notificationEmail !== undefined ||
-                            state.notifications?.notificationWhatsapp !== undefined
-                        );
-
-                    case 7: // Invitations (optional)
-                        return true; // This step is optional
-
-                    case 8: // Summary (always accessible)
+                    case 3:
                         return true;
-
                     default:
                         return false;
                 }
@@ -204,6 +181,25 @@ export const useOnboardingStore = create<OnboardingState>()(
                 notifications: state.notifications,
                 invitations: state.invitations,
             }),
+            onRehydrateStorage: () => (state) => {
+                if (!state) return;
+                const hasServices = !!(state.services?.services && state.services.services.length > 0);
+                // Legacy wizard: 0 basic, 1 hours, 2 payment, 3 consultation, 4 services, 5+ summary
+                // New UI: 0–1 same, 2 services, 3 summary
+                if (state.currentStep > 3) {
+                    state.currentStep = hasServices ? 3 : migrateStep(state.currentStep);
+                } else if (state.currentStep === 3 && !hasServices) {
+                    state.currentStep = 2;
+                }
+                if (!state.paymentMethods?.methods?.length) {
+                    state.paymentMethods = {
+                        methods: [{ type: 'CASH' as any, otherName: null }],
+                    };
+                }
+                if (!state.consultationTypes?.types?.length) {
+                    state.consultationTypes = { types: ['IN_PERSON'] as any };
+                }
+            },
         }
     )
 );

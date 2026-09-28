@@ -37,7 +37,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
   },
   {
     id: "medical-records",
-    label: "Historia Clínica",
+    label: "Historias",
     icon: "clipboard",
     path: "/app/dashboard/medical-records",
   },

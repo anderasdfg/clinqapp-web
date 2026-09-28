@@ -33,9 +33,18 @@ const Login = () => {
     const user = useUserStore((state) => state.user);
 
     useEffect(() => {
-        if (user) {
-            navigate('/app/dashboard/home');
-        }
+        if (!user) return;
+
+        let cancelled = false;
+        (async () => {
+            const needsOnboarding = await AuthService.needsOnboarding();
+            if (cancelled) return;
+            navigate(needsOnboarding ? '/app/onboarding' : '/app/dashboard/home');
+        })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [user, navigate]);
 
     const {

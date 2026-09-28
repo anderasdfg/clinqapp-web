@@ -27,6 +27,8 @@ import NotFound from './pages/NotFound';
 import PatientDetailPage from './pages/dashboard/PatientDetailPage';
 
 import AuthCallback from './pages/auth/AuthCallback';
+import ResetPassword from './pages/auth/ResetPassword';
+import ForgotPassword from './pages/ForgotPassword';
 import { AuthProvider } from './components/auth/AuthProvider';
 
 // Admin imports
@@ -52,6 +54,9 @@ function App() {
                     
                     {/* App Routes */}
                     <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/auth/reset-password" element={<ResetPassword />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/app/forgot-password" element={<ForgotPassword />} />
                     <Route path="/app/login" element={<Login />} />
                     <Route path="/app/register" element={<Register />} />
                     <Route

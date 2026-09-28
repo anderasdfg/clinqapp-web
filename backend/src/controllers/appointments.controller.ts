@@ -18,6 +18,11 @@ const createAppointmentSchema = z.object({
 });
 
 const updateAppointmentSchema = createAppointmentSchema.partial().extend({
+  // "" from cleared combobox is not a UUID — treat as "leave unchanged"
+  professionalId: z.preprocess(
+    (val) => (val === "" || val === null ? undefined : val),
+    z.string().uuid("ID de profesional inválido").optional(),
+  ),
   status: z
     .enum([
       "PENDING",

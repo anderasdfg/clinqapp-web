@@ -4,6 +4,7 @@ import logoRectangle from '@/assets/images/logos/logo-rectangle.png';
 import { cn } from '@/lib/utils/cn';
 import { AuthService } from '@/services/auth.service';
 import { resetAllStores } from '@/lib/utils/store-utils';
+import { setAccessToken } from '@/lib/auth/access-token';
 import { useEnabledModules } from '@/hooks/useEnabledModules';
 import { filterNavigationGroups } from '@/lib/utils/navigation-filter';
 
@@ -28,14 +29,15 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
     };
 
     const handleLogout = async () => {
+        // Clear UI auth state first so Login does not bounce back to dashboard
+        // if Safari is slow to finish signOut.
+        setAccessToken(null);
+        resetAllStores();
+        navigate('/app/login', { replace: true });
         try {
             await AuthService.logout();
-            resetAllStores();
-            navigate('/app/login');
         } catch (error) {
             console.error('Error during logout:', error);
-            resetAllStores();
-            navigate('/app/login');
         }
     };
 
@@ -141,9 +143,10 @@ const Sidebar = ({ isOpen, isCollapsed, onToggleCollapse }: SidebarProps) => {
                     {/* Footer */}
                     <div className="p-4 border-t border-white/10">
                         <button
+                            type="button"
                             onClick={handleLogout}
                             className={cn(
-                                'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg',
+                                'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg min-h-11',
                                 'text-white/90 hover:bg-white/10 hover:text-white transition-all duration-200',
                                 isCollapsed && 'justify-center'
                             )}

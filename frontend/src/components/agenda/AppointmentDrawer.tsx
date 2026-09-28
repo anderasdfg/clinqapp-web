@@ -5,6 +5,7 @@ import { appointmentSchema, type AppointmentFormData } from '@/lib/validations/a
 import { useAppointmentsStore } from '@/stores/useAppointmentsStore';
 import { usePatientsStore } from '@/stores/usePatientsStore';
 import { useServicesStore } from '@/stores/useServicesStore';
+import { useStaffStore } from '@/stores/useStaffStore';
 import type { Appointment } from '@/types/appointment.types';
 import type { TimeSlot } from '@/types/schedule.types';
 import { format } from 'date-fns';
@@ -21,23 +22,27 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/textarea';
 import { Combobox } from '@/components/ui/combobox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { TimePicker } from '@/components/ui/TimePicker';
 import { ServiceSelector } from './ServiceSelector';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase/client';
+import QuickPatientModal from '@/components/patients/QuickPatientModal';
+import { UserPlus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AppointmentDrawerProps {
   appointment?: Appointment;
   isOpen: boolean;
   onClose: () => void;
   defaultDate?: Date;
-}
-
-interface ProfessionalOption {
-  id: string;
-  firstName: string;
-  lastName: string;
+  defaultPatientId?: string;
 }
 
 export default function AppointmentDrawer({
@@ -45,6 +50,7 @@ export default function AppointmentDrawer({
   isOpen,
   onClose,
   defaultDate,
+  defaultPatientId,
 }: AppointmentDrawerProps) {
   const {
     createAppointment,
@@ -56,14 +62,16 @@ export default function AppointmentDrawer({
 
   const { patients, fetchPatients } = usePatientsStore();
   const { services, fetchServices } = useServicesStore();
-  const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
+  const staff = useStaffStore((s) => s.staff);
+  const fetchStaff = useStaffStore((s) => s.fetchStaff);
+  const staffLoading = useStaffStore((s) => s.isLoading);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(defaultDate || new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [duration, setDuration] = useState<number>(60);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [showQuickPatient, setShowQuickPatient] = useState(false);
 
   const {
     register,
@@ -86,63 +94,19 @@ export default function AppointmentDrawer({
     },
   });
 
-  // Get organization ID from authenticated user
+  // Reset nested QuickPatient when drawer closes (avoids orphan portal overlay)
   useEffect(() => {
-    const getOrgId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get organization ID from users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('organization_id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (!error && data) {
-        console.log('✅ Organization ID:', data.organization_id);
-        setOrganizationId(data.organization_id);
-      }
-    };
-
-    if (isOpen) {
-      getOrgId();
-    }
+    if (!isOpen) setShowQuickPatient(false);
   }, [isOpen]);
 
-  // Load professionals
+  // Prefetched on AgendaPage; refresh here if store empty or stale
   useEffect(() => {
-    const loadProfessionals = async () => {
-      if (!organizationId) return;
+    if (!isOpen) return;
+    void fetchStaff({ limit: 100 });
+  }, [isOpen, fetchStaff]);
 
-      console.log('� Loading professionals for org:', organizationId);
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, role')
-        .eq('organization_id', organizationId)
-        .is('deleted_at', null);
-
-      if (error) {
-        console.error('❌ Error loading professionals:', error);
-        return;
-      }
-
-      if (data) {
-        console.log('✅ Professionals loaded:', data.length, data);
-        setProfessionals(
-          data.map((p: any) => ({
-            id: p.id,
-            firstName: p.first_name,
-            lastName: p.last_name,
-          }))
-        );
-      }
-    };
-
-    if (isOpen && organizationId) {
-      loadProfessionals();
-    }
-  }, [isOpen, organizationId]);
+  const professionals = staff;
+  const loadingProfessionals = staffLoading && staff.length === 0;
 
   // Load services from store
   useEffect(() => {
@@ -215,9 +179,6 @@ export default function AppointmentDrawer({
   useEffect(() => {
     if (isOpen) {
       if (appointment) {
-        // Edit mode - wait for professionals to load
-        if (professionals.length === 0) return;
-        
         const start = new Date(appointment.startTime);
         setSelectedDate(start);
         setSelectedTime(format(start, 'HH:mm'));
@@ -234,13 +195,13 @@ export default function AppointmentDrawer({
           sessionNumber: appointment.sessionNumber || 1,
         });
       } else {
-        // Create mode
+        // Create mode — do not depend on professionals (avoids wiping QuickPatient patientId)
         const initialDate = defaultDate || new Date();
         setSelectedDate(initialDate);
         setSelectedTime('');
         setSelectedServiceIds([]);
         reset({
-          patientId: '',
+          patientId: defaultPatientId || '',
           professionalId: '',
           serviceIds: [],
           startTime: '',
@@ -250,26 +211,37 @@ export default function AppointmentDrawer({
         });
       }
     }
-  }, [isOpen, appointment, reset, defaultDate, professionals]);
+  }, [isOpen, appointment, reset, defaultDate, defaultPatientId]);
 
   const onSubmit = async (data: AppointmentFormData) => {
     try {
       const payload = {
         ...data,
+        // omit empty UUIDs — backend zod rejects ""
+        professionalId: data.professionalId || undefined,
+        patientId: data.patientId || undefined,
         startTime: new Date(data.startTime).toISOString(),
         endTime: new Date(data.endTime).toISOString(),
       };
 
       if (appointment) {
         await updateAppointment(appointment.id, payload as any);
+        toast.success('Cita actualizada');
       } else {
         await createAppointment(payload as any);
+        toast.success('Cita creada');
       }
 
-      await fetchAppointments({}, true);
       onClose();
-    } catch (error) {
+      // Agenda already updated in store; soft refresh in background
+      void fetchAppointments({}, true);
+    } catch (error: any) {
       console.error('Error saving appointment:', error);
+      const msg =
+        error?.response?.data?.error ||
+        error?.message ||
+        'No se pudo guardar la cita. Intenta de nuevo.';
+      toast.error(msg);
     }
   };
 
@@ -280,14 +252,49 @@ export default function AppointmentDrawer({
     label: `${p.firstName} ${p.lastName}`,
   }));
 
-  const professionalOptions = professionals.map((p) => ({
-    value: p.id,
-    label: `${p.firstName} ${p.lastName}`,
-  }));
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open && showQuickPatient) return;
+    if (!open) onClose();
+  };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-4xl lg:max-w-5xl" aria-describedby="appointment-description">
+    <>
+    <Sheet open={isOpen} onOpenChange={handleSheetOpenChange}>
+      <SheetContent
+        className="sm:max-w-4xl lg:max-w-5xl overscroll-contain flex flex-col"
+        aria-describedby="appointment-description"
+        aria-busy={isLoading || loadingSlots}
+        onInteractOutside={(e) => {
+          if (isLoading) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (isLoading) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (showQuickPatient) {
+            e.preventDefault();
+            setShowQuickPatient(false);
+          } else if (isLoading) {
+            e.preventDefault();
+          }
+        }}
+      >
+        {/* Inner relative wrapper — never put `relative` on SheetContent itself;
+            it overrides Tailwind `fixed` and parks the panel below the viewport. */}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+        {(isLoading || loadingSlots) && (
+          <div
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-[2px] transition-opacity duration-200"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+            <p className="text-sm font-medium text-[rgb(var(--text-primary))]">
+              {isLoading ? 'Guardando cita…' : 'Cargando horarios…'}
+            </p>
+          </div>
+        )}
+
         <SheetHeader>
           <SheetTitle>
             {appointment ? 'Editar Cita' : 'Nueva Cita'}
@@ -299,14 +306,29 @@ export default function AppointmentDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="relative flex min-h-0 flex-1 flex-col">
+          <fieldset disabled={isLoading} className="min-w-0 min-h-0 flex-1 border-0 p-0 m-0">
           <ScrollArea className="h-[calc(100vh-200px)] pr-4">
             <div className="space-y-6 py-6">
               {/* Patient */}
               <div className="space-y-2">
-                <Label htmlFor="patientId">
-                  Paciente <span className="text-destructive">*</span>
-                </Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="patientId">
+                    Paciente <span className="text-destructive">*</span>
+                  </Label>
+                  {!appointment && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 min-h-11"
+                      onClick={() => setShowQuickPatient(true)}
+                    >
+                      <UserPlus className="w-4 h-4" aria-hidden="true" />
+                      Nuevo paciente
+                    </Button>
+                  )}
+                </div>
                 <Controller
                   name="patientId"
                   control={control}
@@ -316,7 +338,7 @@ export default function AppointmentDrawer({
                       value={field.value}
                       onValueChange={field.onChange}
                       placeholder="Selecciona un paciente"
-                      searchPlaceholder="Buscar paciente..."
+                      searchPlaceholder="Buscar paciente…"
                     />
                   )}
                 />
@@ -336,13 +358,28 @@ export default function AppointmentDrawer({
                   name="professionalId"
                   control={control}
                   render={({ field }) => (
-                    <Combobox
-                      options={professionalOptions}
-                      value={field.value}
+                    <Select
+                      value={field.value || undefined}
                       onValueChange={field.onChange}
-                      placeholder="Selecciona un profesional"
-                      searchPlaceholder="Buscar profesional..."
-                    />
+                      disabled={loadingProfessionals}
+                    >
+                      <SelectTrigger id="professionalId" className="min-h-11">
+                        <SelectValue
+                          placeholder={
+                            loadingProfessionals
+                              ? 'Cargando profesionales…'
+                              : 'Selecciona un profesional'
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {professionals.map((prof) => (
+                          <SelectItem key={prof.id} value={prof.id}>
+                            {prof.firstName} {prof.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
                 {errors.professionalId && (
@@ -429,6 +466,7 @@ export default function AppointmentDrawer({
               </div>
             </div>
           </ScrollArea>
+          </fieldset>
 
           <SheetFooter className="mt-6">
             <Button
@@ -439,16 +477,25 @@ export default function AppointmentDrawer({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading
-                ? 'Guardando...'
-                : appointment
-                ? 'Actualizar Cita'
-                : 'Crear Cita'}
+            <Button type="submit" isLoading={isLoading}>
+              {appointment ? 'Actualizar Cita' : 'Crear Cita'}
             </Button>
           </SheetFooter>
         </form>
+        </div>
       </SheetContent>
     </Sheet>
+
+    <QuickPatientModal
+      isOpen={isOpen && showQuickPatient}
+      onClose={() => setShowQuickPatient(false)}
+      onSuccess={async (patientId) => {
+        await fetchPatients({ limit: 1000 }, true);
+        setValue('patientId', patientId, { shouldValidate: true });
+        setShowQuickPatient(false);
+        toast.success('Paciente creado');
+      }}
+    />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +6,12 @@ import { useOnboardingStore } from '@/stores/useOnboardingStore';
 import { OnboardingService } from '@/services/onboarding.service';
 import { basicClinicDataSchema, type BasicClinicData } from '@/lib/validations/onboarding';
 import { ServiceTemplate } from '@/lib/constants/service-templates';
-import { DAYS_OF_WEEK, PAYMENT_METHODS, CONSULTATION_TYPES } from '@/lib/constants/onboarding';
+import { DAYS_OF_WEEK } from '@/lib/constants/onboarding';
+import {
+    defaultSchedules,
+    schedulesFromPersisted,
+    servicesFromPersisted,
+} from '@/lib/onboarding-local-sync';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/Button';
 import { BasicDataStep } from '@/components/onboarding/steps/BasicDataStep';
@@ -14,12 +19,9 @@ import { ServicesStep } from '@/components/onboarding/steps/ServicesStep';
 import { StepHeader } from '@/components/onboarding/StepHeader';
 import { ErrorAlert } from '@/components/onboarding/ErrorAlert';
 import { StepNavigation } from '@/components/onboarding/StepNavigation';
-import { SelectableCard } from '@/components/onboarding/SelectableCard';
 import { SummaryCard } from '@/components/onboarding/SummaryCard';
 import {
     ClockIcon,
-    CreditCardIcon,
-    DocumentIcon,
     CheckCircleIcon
 } from '@/components/icons/OnboardingIcons';
 import logoIcon from '@/assets/images/logos/logo-icon.png';
@@ -30,20 +32,20 @@ const Onboarding = () => {
         currentStep,
         nextStep,
         prevStep,
+        setCurrentStep,
         setBasicData,
         setBusinessHours,
         setPaymentMethods,
         setConsultationTypes,
         setServices,
         basicData,
-        businessHours,
-        paymentMethods,
-        consultationTypes,
         reset,
     } = useOnboardingStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Gate until zustand persist finishes — local useState must not race defaults over storage
+    const [hydrated, setHydrated] = useState(() => useOnboardingStore.persist.hasHydrated());
 
     // Step 1: Basic Data Form
     const basicDataForm = useForm({
@@ -52,27 +54,35 @@ const Onboarding = () => {
     });
 
     // Step 2: Business Hours
-    const [schedules, setSchedules] = useState(
-        businessHours?.schedules || DAYS_OF_WEEK.map(day => ({
-            dayOfWeek: day.value,
-            startTime: '09:00',
-            endTime: '18:00',
-            enabled: day.value !== 'SUNDAY',
-        }))
-    );
+    const [schedules, setSchedules] = useState(defaultSchedules);
 
     // Step 3: Payment Methods
-    const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(
-        paymentMethods?.methods?.map(m => m.type) || ['CASH']
-    );
+    const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['CASH']);
 
     // Step 4: Consultation Types
-    const [selectedConsultationTypes, setSelectedConsultationTypes] = useState<string[]>(
-        consultationTypes?.types || ['IN_PERSON']
-    );
+    const [selectedConsultationTypes, setSelectedConsultationTypes] = useState<string[]>(['IN_PERSON']);
 
     // Step 5: Services
     const [selectedServices, setSelectedServices] = useState<ServiceTemplate[]>([]);
+
+    useEffect(() => {
+        const syncFromStore = () => {
+            const s = useOnboardingStore.getState();
+            setSchedules(schedulesFromPersisted(s.businessHours));
+            setSelectedPaymentMethods(
+                s.paymentMethods?.methods?.map((m) => m.type) || ['CASH']
+            );
+            setSelectedConsultationTypes(s.consultationTypes?.types || ['IN_PERSON']);
+            setSelectedServices(servicesFromPersisted(s.services));
+            if (s.basicData) basicDataForm.reset(s.basicData as BasicClinicData);
+            setHydrated(true);
+        };
+
+        if (useOnboardingStore.persist.hasHydrated()) {
+            syncFromStore();
+        }
+        return useOnboardingStore.persist.onFinishHydration(syncFromStore);
+    }, [basicDataForm]);
 
     // Handlers
     const onStep1Submit = (data: BasicClinicData) => {
@@ -86,37 +96,19 @@ const Onboarding = () => {
             setError('Debe configurar al menos un día de atención');
             return;
         }
-        setBusinessHours({ schedules });
+        setBusinessHours({ schedules: schedules as any });
+        // ponytail: auto-defaults for day-1; payments/consultation types later from settings
+        setPaymentMethods({
+            methods: [{ type: 'CASH' as any, otherName: null }],
+        });
+        setConsultationTypes({ types: ['IN_PERSON'] as any });
+        setSelectedPaymentMethods(['CASH']);
+        setSelectedConsultationTypes(['IN_PERSON']);
         setError(null);
         nextStep();
     };
 
     const handleStep3Next = () => {
-        if (selectedPaymentMethods.length === 0) {
-            setError('Debe seleccionar al menos un método de pago');
-            return;
-        }
-        setPaymentMethods({
-            methods: selectedPaymentMethods.map(type => ({
-                type: type as any,
-                otherName: null
-            })),
-        });
-        setError(null);
-        nextStep();
-    };
-
-    const handleStep4Next = () => {
-        if (selectedConsultationTypes.length === 0) {
-            setError('Debe seleccionar al menos un tipo de consulta');
-            return;
-        }
-        setConsultationTypes({ types: selectedConsultationTypes as any });
-        setError(null);
-        nextStep();
-    };
-
-    const handleStep5Next = () => {
         if (selectedServices.length === 0) {
             setError('Debe agregar al menos un servicio');
             return;
@@ -142,11 +134,22 @@ const Onboarding = () => {
         try {
             const storeState = useOnboardingStore.getState();
 
+            if (!storeState.services?.services?.length) {
+                setError('Agrega al menos un servicio antes de completar');
+                setIsLoading(false);
+                setCurrentStep(2);
+                return;
+            }
+
             const completeData = {
                 basicData: storeState.basicData!,
                 businessHours: storeState.businessHours!,
-                paymentMethods: storeState.paymentMethods!,
-                consultationTypes: storeState.consultationTypes!,
+                paymentMethods: storeState.paymentMethods || {
+                    methods: [{ type: 'CASH' as any, otherName: null }],
+                },
+                consultationTypes: storeState.consultationTypes || {
+                    types: ['IN_PERSON'] as any,
+                },
                 services: storeState.services!,
                 scheduleConfig: {
                     defaultAppointmentDuration: 30,
@@ -192,22 +195,6 @@ const Onboarding = () => {
             prev.map(s =>
                 s.dayOfWeek === dayValue ? { ...s, [field]: value } : s
             )
-        );
-    };
-
-    const togglePaymentMethod = (method: string) => {
-        setSelectedPaymentMethods(prev =>
-            prev.includes(method)
-                ? prev.filter(m => m !== method)
-                : [...prev, method]
-        );
-    };
-
-    const toggleConsultationType = (type: string) => {
-        setSelectedConsultationTypes(prev =>
-            prev.includes(type)
-                ? prev.filter(t => t !== type)
-                : [...prev, type]
         );
     };
 
@@ -269,67 +256,10 @@ const Onboarding = () => {
 
             case 2:
                 return (
-                    <div className="space-y-5">
-                        <StepHeader
-                            icon={<CreditCardIcon />}
-                            title="Métodos de Pago"
-                            description="Selecciona los métodos de pago que aceptas"
-                            gradient="from-accent/20 to-accent/5"
-                            iconColor="text-accent"
-                        />
-
-                        {error && <ErrorAlert message={error} />}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {PAYMENT_METHODS.map((method) => (
-                                <SelectableCard
-                                    key={method.value}
-                                    label={method.label}
-                                    isSelected={selectedPaymentMethods.includes(method.value)}
-                                    onClick={() => togglePaymentMethod(method.value)}
-                                />
-                            ))}
-                        </div>
-
-                        <StepNavigation onBack={prevStep} onNext={handleStep3Next} />
-                    </div>
-                );
-
-            case 3:
-                return (
-                    <div className="space-y-5">
-                        <StepHeader
-                            icon={<DocumentIcon />}
-                            title="Tipos de Consulta"
-                            description="¿Cómo atiendes a tus pacientes?"
-                            gradient="from-info/20 to-info/5"
-                            iconColor="text-info"
-                        />
-
-                        {error && <ErrorAlert message={error} />}
-
-                        <div className="space-y-3">
-                            {CONSULTATION_TYPES.map((type) => (
-                                <SelectableCard
-                                    key={type.value}
-                                    label={type.label}
-                                    isSelected={selectedConsultationTypes.includes(type.value)}
-                                    onClick={() => toggleConsultationType(type.value)}
-                                    fullWidth
-                                />
-                            ))}
-                        </div>
-
-                        <StepNavigation onBack={prevStep} onNext={handleStep4Next} />
-                    </div>
-                );
-
-            case 4:
-                return (
                     <ServicesStep
                         selectedServices={selectedServices}
                         onServicesChange={setSelectedServices}
-                        onNext={handleStep5Next}
+                        onNext={handleStep3Next}
                         onBack={prevStep}
                         error={error}
                     />
@@ -341,7 +271,7 @@ const Onboarding = () => {
                         <StepHeader
                             icon={<CheckCircleIcon />}
                             title="¡Todo Listo!"
-                            description="Tu consultorio está configurado y listo para comenzar"
+                            description="Tu consultorio está listo. Podrás ajustar pagos y tipos de consulta después."
                             gradient="from-success/20 to-success/5"
                             iconColor="text-success"
                             large
@@ -369,8 +299,16 @@ const Onboarding = () => {
         }
     };
 
-    const totalSteps = 6;
+    const totalSteps = 4;
     const progress = ((currentStep + 1) / totalSteps) * 100;
+
+    if (!hydrated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[rgb(var(--bg-primary))] to-[rgb(var(--bg-secondary))]">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-label="Cargando configuración" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[rgb(var(--bg-primary))] to-[rgb(var(--bg-secondary))] py-6 px-4 sm:px-6 lg:px-8">

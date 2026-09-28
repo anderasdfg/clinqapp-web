@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 import { AppConfig } from '../config/app.config';
 import { supabase } from '../supabase/client';
+import { resolveAccessToken } from '../auth/access-token';
 
 export type ApiRequestConfig = InternalAxiosRequestConfig & {
   /** When true, response interceptor will not show an error toast */
@@ -26,18 +27,22 @@ function getErrorMessage(error: AxiosError<any>): string {
 }
 
 /**
- * Request interceptor: Add auth token to all requests
+ * Request interceptor: attach Bearer from memory cache.
+ * Never await unbounded getSession() here — it deadlocks with auth locks.
  */
 api.interceptors.request.use(
   async (config) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`;
+    const token = await resolveAccessToken(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session?.access_token ?? null;
+    });
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {

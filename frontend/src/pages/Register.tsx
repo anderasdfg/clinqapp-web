@@ -99,7 +99,15 @@ const Register = () => {
             });
 
             if (result.success) {
-                setSuccessMessage(result.message || 'Cuenta creada exitosamente');
+                const session = await AuthService.getSession();
+                if (session) {
+                    navigate('/app/onboarding');
+                    return;
+                }
+                setSuccessMessage(
+                    result.message ||
+                        'Cuenta creada. Revisa tu correo para verificarla e inicia sesión.',
+                );
                 setTimeout(() => {
                     navigate('/app/login');
                 }, 3000);

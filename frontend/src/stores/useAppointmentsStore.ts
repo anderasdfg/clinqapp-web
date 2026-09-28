@@ -217,9 +217,6 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
         totalAppointments: state.totalAppointments + 1,
         isCreating: false,
       }));
-
-      // Refresh appointments list
-      await get().fetchAppointments();
     } catch (error) {
       console.error("Error creating appointment:", error);
       set({ isCreating: false });
