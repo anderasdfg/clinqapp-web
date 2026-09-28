@@ -21,8 +21,8 @@
 ## Deployment
 
 - [ ] Push a repositorio: `git push origin main`
-- [ ] Esperar deployment automático (Vercel/Netlify)
-- [ ] O ejecutar deployment manual según proceso
+- [ ] Esperar deployment automático del frontend (Vercel)
+- [ ] Desplegar/verificar backend en GCP
 
 ## Post-Deployment
 

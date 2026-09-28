@@ -57,7 +57,7 @@ Deberías ver archivos como: `index.a1b2c3d4.js`, `index.e5f6g7h8.css`
 
 ### 6. Desplegar
 
-Sigue tu proceso normal de deployment (Vercel, Netlify, etc.)
+Sigue tu proceso normal de deployment (frontend en Vercel, backend en GCP)
 
 ### 7. Verificar en producción
 

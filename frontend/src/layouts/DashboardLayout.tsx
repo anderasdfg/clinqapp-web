@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
 import DashboardFooter from '@/components/dashboard/DashboardFooter';
-import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils/cn';
 
 const DashboardLayout = () => {
@@ -59,9 +58,6 @@ const DashboardLayout = () => {
                 {/* Footer */}
                 <DashboardFooter />
             </div>
-            
-            {/* Toast Notifications */}
-            <Toaster />
         </div>
     );
 };

@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster as SonnerToaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { Toaster as RadixToaster } from './components/ui/toaster';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -41,6 +43,8 @@ function App() {
     return (
         <ThemeProvider>
             <AuthProvider>
+                <SonnerToaster richColors position="top-right" closeButton />
+                <RadixToaster />
                 <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <Routes>
                     {/* Landing Page */}

@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { ReminderController } from '../controllers/reminderController';
+import { schedulerAuth } from '../middleware/schedulerAuth';
 
 const router = Router();
+
+router.use(schedulerAuth);
 
 // Send manual reminder for specific appointment
 router.post('/send-manual', ReminderController.sendManualReminder);

@@ -1,0 +1,5 @@
+- Monorepo con Express 5 (backend) y React 18 + Vite (frontend).
+- El backend está en la carpeta `/backend` y usa Prisma.
+- El frontend está en la carpeta `/frontend`.
+- No mezclar dependencias. No importar código del backend en el frontend ni viceversa.
+- Utilizar ES modules y Zod para validaciones.

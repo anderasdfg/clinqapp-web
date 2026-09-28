@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 
@@ -30,33 +32,55 @@ const updateModulesSchema = z.object({
 
 export class AdminController {
   /**
-   * Admin login with hardcoded credentials
+   * Admin login — username + bcrypt password hash from env; issues JWT.
    * POST /api/admin/login
+   * Env: ADMIN_USERNAME, ADMIN_PASSWORD_HASH, ADMIN_JWT_SECRET, ADMIN_JWT_EXPIRES_IN
    */
   static async login(req: Request, res: Response): Promise<void> {
     try {
       const { username, password } = loginSchema.parse(req.body);
 
-      // Hardcoded admin credentials
-      if (username === 'admin' && password === 'Admin4563') {
-        // Simple session token (in production, use JWT)
-        const token = 'admin-session-' + Date.now();
-        
-        res.status(200).json({
-          success: true,
-          message: 'Login successful',
-          token,
-          user: {
-            username: 'admin',
-            role: 'ADMIN'
-          }
+      const expectedUsername = process.env.ADMIN_USERNAME;
+      const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+      const jwtSecret = process.env.ADMIN_JWT_SECRET;
+      const expiresIn = process.env.ADMIN_JWT_EXPIRES_IN || '8h';
+
+      if (!expectedUsername || !passwordHash || !jwtSecret) {
+        console.error('Admin login env not configured (ADMIN_USERNAME / ADMIN_PASSWORD_HASH / ADMIN_JWT_SECRET)');
+        res.status(503).json({
+          success: false,
+          error: 'Admin authentication is not configured'
         });
-      } else {
+        return;
+      }
+
+      // Always bcrypt.compare (even on wrong username) to avoid timing oracle
+      const usernameOk = username === expectedUsername;
+      const passwordOk = await bcrypt.compare(password, passwordHash);
+
+      if (!usernameOk || !passwordOk) {
         res.status(401).json({
           success: false,
           error: 'Invalid credentials'
         });
+        return;
       }
+
+      const token = jwt.sign(
+        { username: expectedUsername, role: 'ADMIN' },
+        jwtSecret,
+        { expiresIn: expiresIn as jwt.SignOptions['expiresIn'] },
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          username: expectedUsername,
+          role: 'ADMIN'
+        }
+      });
     } catch (error) {
       console.error('Error in admin login:', error);
       

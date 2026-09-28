@@ -144,6 +144,7 @@ export class ReminderController {
   /**
    * Send daily reminders - Endpoint para GCP Cloud Scheduler
    * POST /api/reminders/send-daily
+   * Requires header: X-Scheduler-Secret
    */
   static async sendDailyReminders(req: Request, res: Response): Promise<void> {
     try {

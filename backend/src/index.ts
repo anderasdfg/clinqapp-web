@@ -69,6 +69,8 @@ app.use(
       "X-Requested-With",
       "Accept",
       "Origin",
+      "X-Scheduler-Secret",
+      "X-Migration-Secret",
       "Access-Control-Allow-Headers",
       "Access-Control-Request-Method",
       "Access-Control-Request-Headers",
@@ -140,7 +142,7 @@ const server = app.listen(port, "0.0.0.0", () => {
   console.log("🔔 WhatsApp reminders configurados con GCP Cloud Scheduler");
 });
 
-// Graceful shutdown handling for Railway
+// Graceful shutdown (GCP Cloud Run / containers send SIGTERM)
 const gracefulShutdown = (signal: string) => {
   console.log(`\n⚠️  Received ${signal}, closing server gracefully...`);
   

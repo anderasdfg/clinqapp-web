@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { migrationAuth } from '../middleware/migrationAuth';
 
 const router = Router();
+
+router.use(migrationAuth);
 
 router.post('/add-enabled-modules', async (req: Request, res: Response) => {
   try {
