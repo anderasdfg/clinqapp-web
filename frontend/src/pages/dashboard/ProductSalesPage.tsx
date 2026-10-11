@@ -6,6 +6,7 @@ import { useProductSalesHandlers } from '@/hooks/useProductSalesHandlers';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StatsCard } from '@/components/dashboard/StatsCard';
 import { SaleFilters } from '@/components/product-sales/SaleFilters';
 import { SaleCard } from '@/components/product-sales/SaleCard';
 import { NewSaleDrawer } from '@/components/product-sales/NewSaleDrawer';
@@ -256,55 +257,33 @@ export default function ProductSalesPage() {
             </Card>
           ) : (
             <>
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Total Ventas
-                        </p>
-                        <p className="text-2xl font-bold mt-2">
-                          {stats?.totalSales || 0}
-                        </p>
-                      </div>
-                      <ShoppingCart className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Ingresos Totales
-                        </p>
-                        <p className="text-2xl font-bold mt-2 text-primary">
-                          {formatCurrency(stats?.totalRevenue || 0)}
-                        </p>
-                      </div>
-                      <DollarSign className="h-8 w-8 text-primary" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Productos Vendidos
-                        </p>
-                        <p className="text-2xl font-bold mt-2">
-                          {stats?.topProducts?.length || 0}
-                        </p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Summary Cards — match dashboard StatsCard layout on tablet */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <StatsCard
+                  title="Total Ventas"
+                  value={stats?.totalSales || 0}
+                  icon={ShoppingCart}
+                  iconColor="text-blue-600"
+                  iconBgColor="bg-blue-50 dark:bg-blue-950/30"
+                  isLoading={isLoadingStats}
+                />
+                <StatsCard
+                  title="Ingresos Totales"
+                  value={formatCurrency(stats?.totalRevenue || 0)}
+                  icon={DollarSign}
+                  iconColor="text-emerald-600"
+                  iconBgColor="bg-emerald-50 dark:bg-emerald-950/30"
+                  valueColor="text-emerald-600 dark:text-emerald-500"
+                  isLoading={isLoadingStats}
+                />
+                <StatsCard
+                  title="Productos Vendidos"
+                  value={stats?.topProducts?.length || 0}
+                  icon={TrendingUp}
+                  iconColor="text-orange-600"
+                  iconBgColor="bg-orange-50 dark:bg-orange-950/30"
+                  isLoading={isLoadingStats}
+                />
               </div>
 
               {/* Top Products */}

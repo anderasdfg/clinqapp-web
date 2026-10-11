@@ -72,15 +72,17 @@ export function WeekCalendar({
     );
   }
 
+  // ponytail: 7×160px so appointment cards fit on iPad landscape (sidebar-narrowed viewport);
+  // scroll instead of clipping when the shell is tighter than ~1120px.
   return (
     <div className="card overflow-hidden">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className="min-w-[800px]">
+        <div className="min-w-[1120px]">
           <div className="grid grid-cols-7 bg-[rgb(var(--bg-secondary))] border-b border-[rgb(var(--border-primary))]">
             {weekDays.map((day) => (
               <div
                 key={day.toISOString()}
-                className="p-4 text-center border-r border-[rgb(var(--border-primary))] last:border-r-0"
+                className="min-w-[160px] p-3 sm:p-4 text-center border-r border-[rgb(var(--border-primary))] last:border-r-0"
               >
                 <div className="text-sm font-medium text-[rgb(var(--text-secondary))] uppercase">
                   {format(day, 'EEE', { locale: es })}
@@ -105,7 +107,7 @@ export function WeekCalendar({
               return (
                 <div
                   key={day.toISOString()}
-                  className="min-h-[400px] p-3 border-r border-[rgb(var(--border-primary))] last:border-r-0 bg-[rgb(var(--bg-card))]"
+                  className="min-h-[400px] min-w-[160px] p-2 sm:p-3 border-r border-[rgb(var(--border-primary))] last:border-r-0 bg-[rgb(var(--bg-card))] overflow-hidden"
                 >
                   <DayColumn
                     appointments={dayAppointments}

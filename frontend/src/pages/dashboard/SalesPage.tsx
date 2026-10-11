@@ -5,6 +5,7 @@ import { useStaffStore } from '@/stores/useStaffStore';
 import { Search, DollarSign, Receipt, AlertCircle, Filter, X, Package, Stethoscope, Eye, Download } from 'lucide-react';
 import SaleDetailModal from '@/components/sales/SaleDetailModal';
 import SalesReportPDF from '@/components/sales/SalesReportPDF';
+import { StatsCard } from '@/components/dashboard/StatsCard';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -197,82 +198,43 @@ const SalesPage = () => {
                 </Card>
             )}
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <Card>
-                    <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
-                                    Total de Ventas
-                                </p>
-                                <p className="text-base md:text-3xl font-bold text-[rgb(var(--text-primary))]">
-                                    {formatCurrency(summary.totalAmount)}
-                                </p>
-                            </div>
-                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shrink-0">
-                                <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-white" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
-                                    Transacciones
-                                </p>
-                                <p className="text-base md:text-3xl font-bold text-[rgb(var(--text-primary))]">
-                                    {summary.count}
-                                </p>
-                            </div>
-                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shrink-0">
-                                <Receipt className="w-4 h-4 md:w-6 md:h-6 text-white" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
-                                    Servicios
-                                </p>
-                                <p className="text-sm md:text-2xl font-bold text-[rgb(var(--text-primary))]">
-                                    {formatCurrency(summary.serviceAmount || 0)}
-                                </p>
-                                <p className="text-xs text-[rgb(var(--text-secondary))]">
-                                    {summary.serviceCount || 0} ventas
-                                </p>
-                            </div>
-                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shrink-0">
-                                <Stethoscope className="w-4 h-4 md:w-6 md:h-6 text-white" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-3 md:p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <p className="text-xs md:text-sm font-medium text-[rgb(var(--text-secondary))]">
-                                    Productos
-                                </p>
-                                <p className="text-sm md:text-2xl font-bold text-[rgb(var(--text-primary))]">
-                                    {formatCurrency(summary.productAmount || 0)}
-                                </p>
-                                <p className="text-xs text-[rgb(var(--text-secondary))]">
-                                    {summary.productCount || 0} ventas
-                                </p>
-                            </div>
-                            <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shrink-0">
-                                <Package className="w-4 h-4 md:w-6 md:h-6 text-white" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Summary Cards — same StatsCard pattern as dashboard home (vertical stack, no icon overflow on tablet) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                <StatsCard
+                    title="Total de Ventas"
+                    value={formatCurrency(summary.totalAmount)}
+                    icon={DollarSign}
+                    iconColor="text-emerald-600"
+                    iconBgColor="bg-emerald-50 dark:bg-emerald-950/30"
+                    valueColor="text-emerald-600 dark:text-emerald-500"
+                    isLoading={isLoading}
+                />
+                <StatsCard
+                    title="Transacciones"
+                    value={summary.count}
+                    icon={Receipt}
+                    iconColor="text-blue-600"
+                    iconBgColor="bg-blue-50 dark:bg-blue-950/30"
+                    isLoading={isLoading}
+                />
+                <StatsCard
+                    title="Servicios"
+                    value={formatCurrency(summary.serviceAmount || 0)}
+                    subtitle={`${summary.serviceCount || 0} ventas`}
+                    icon={Stethoscope}
+                    iconColor="text-purple-600"
+                    iconBgColor="bg-purple-50 dark:bg-purple-950/30"
+                    isLoading={isLoading}
+                />
+                <StatsCard
+                    title="Productos"
+                    value={formatCurrency(summary.productAmount || 0)}
+                    subtitle={`${summary.productCount || 0} ventas`}
+                    icon={Package}
+                    iconColor="text-orange-600"
+                    iconBgColor="bg-orange-50 dark:bg-orange-950/30"
+                    isLoading={isLoading}
+                />
             </div>
 
             {/* Filters */}

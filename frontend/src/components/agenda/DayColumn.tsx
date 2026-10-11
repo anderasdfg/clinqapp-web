@@ -29,7 +29,7 @@ export function DayColumn({
   );
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 min-w-0">
       {sortedAppointments.map((appointment) => (
         <AppointmentCard
           key={appointment.id}
