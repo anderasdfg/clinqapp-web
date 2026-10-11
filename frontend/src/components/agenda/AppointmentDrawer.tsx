@@ -265,10 +265,14 @@ export default function AppointmentDrawer({
         aria-describedby="appointment-description"
         aria-busy={isLoading || loadingSlots}
         onInteractOutside={(e) => {
-          if (isLoading) e.preventDefault();
+          if (isLoading || showQuickPatient) e.preventDefault();
         }}
         onPointerDownOutside={(e) => {
-          if (isLoading) e.preventDefault();
+          if (isLoading || showQuickPatient) e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          // Nested QuickPatient lives inside Sheet; still block stray outside focus steals
+          if (showQuickPatient) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
           if (showQuickPatient) {
@@ -482,20 +486,20 @@ export default function AppointmentDrawer({
             </Button>
           </SheetFooter>
         </form>
+
+        <QuickPatientModal
+          isOpen={showQuickPatient}
+          onClose={() => setShowQuickPatient(false)}
+          onSuccess={async (patientId) => {
+            await fetchPatients({ limit: 1000 }, true);
+            setValue('patientId', patientId, { shouldValidate: true });
+            setShowQuickPatient(false);
+            toast.success('Paciente creado');
+          }}
+        />
         </div>
       </SheetContent>
     </Sheet>
-
-    <QuickPatientModal
-      isOpen={isOpen && showQuickPatient}
-      onClose={() => setShowQuickPatient(false)}
-      onSuccess={async (patientId) => {
-        await fetchPatients({ limit: 1000 }, true);
-        setValue('patientId', patientId, { shouldValidate: true });
-        setShowQuickPatient(false);
-        toast.success('Paciente creado');
-      }}
-    />
     </>
   );
 }
