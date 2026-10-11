@@ -13,6 +13,7 @@ import { Eye, Pencil, Trash2, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
+import { formatDocumentNumberForDisplay } from '@/lib/utils/document-number';
 
 interface Patient {
   id: string;
@@ -63,7 +64,7 @@ export function PatientTableRow({ patient, onDelete }: PatientTableRowProps) {
               {patient.firstName} {patient.lastName}
             </div>
             <div className="text-sm text-[rgb(var(--text-secondary))]">
-              {patient.dni || 'Sin DNI'}
+              {formatDocumentNumberForDisplay(patient.dni, 'Sin DNI')}
             </div>
           </div>
         </div>

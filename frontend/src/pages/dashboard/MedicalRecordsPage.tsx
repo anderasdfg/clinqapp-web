@@ -26,6 +26,7 @@ import {
     History,
     ClipboardList
 } from 'lucide-react';
+import { formatDocumentNumberForDisplay } from '@/lib/utils/document-number';
 
 const MedicalRecordsPage = () => {
     const {
@@ -171,9 +172,11 @@ const MedicalRecordsPage = () => {
                                                         <div className="font-bold text-foreground">
                                                             {patient.firstName} {patient.lastName}
                                                         </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            DNI: {patient.dni || '---'}
-                                                        </div>
+                                                        {formatDocumentNumberForDisplay(patient.dni) && (
+                                                            <div className="text-xs text-muted-foreground">
+                                                                DNI: {formatDocumentNumberForDisplay(patient.dni)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </TableCell>

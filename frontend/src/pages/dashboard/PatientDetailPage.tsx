@@ -34,7 +34,8 @@ import {
     ShieldAlert,
     Footprints,
     Camera,
-    X
+    X,
+    Download
 } from 'lucide-react';
 import {
     Dialog,
@@ -45,16 +46,21 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PodiatryHistoryForm from '@/components/medical-records/PodiatryHistoryForm';
+import ClinicalHistoryPDF from '@/components/medical-records/ClinicalHistoryPDF';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase/client';
+import { formatDocumentNumberForDisplay } from '@/lib/utils/document-number';
+import { useUserStore } from '@/stores/useUserStore';
 
 const PatientDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { selectedPatient, isLoading, fetchPatientById } = usePatientsStore();
     const { appointments, fetchAppointments } = useAppointmentsStore();
+    const { organization } = useUserStore();
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showHistoryPDF, setShowHistoryPDF] = useState(false);
     const [appointmentImages, setAppointmentImages] = useState<Map<string, string[]>>(new Map());
     const [isUploading, setIsUploading] = useState(false);
     
@@ -258,9 +264,11 @@ const PatientDetailPage = () => {
                                 <h1 className="text-3xl font-bold text-[rgb(var(--text-primary))]">
                                     {selectedPatient.firstName} {selectedPatient.lastName}
                                 </h1>
-                                <Badge variant="secondary" className="font-semibold">
-                                    DNI: {selectedPatient.dni || '---'}
-                                </Badge>
+                                {formatDocumentNumberForDisplay(selectedPatient.dni) && (
+                                    <Badge variant="secondary" className="font-semibold">
+                                        DNI: {formatDocumentNumberForDisplay(selectedPatient.dni)}
+                                    </Badge>
+                                )}
                             </div>
                             <div className="flex items-center gap-4 mt-1 text-[rgb(var(--text-secondary))] text-sm">
                                 <span className="flex items-center gap-1">
@@ -447,7 +455,7 @@ const PatientDetailPage = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between bg-white p-6 rounded-2xl border shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border shadow-sm">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
                                                 <Stethoscope className="w-6 h-6 text-emerald-600" />
@@ -457,13 +465,22 @@ const PatientDetailPage = () => {
                                                 <p className="text-sm text-muted-foreground">Última actualización: {format(new Date(selectedPatient.updatedAt), "dd 'de' MMMM, yyyy", { locale: es })}</p>
                                             </div>
                                         </div>
-                                        <Button 
-                                            variant="outline" 
-                                            onClick={() => setIsEditingHistory(true)}
-                                            className="gap-2"
-                                        >
-                                            <Pencil className="w-4 h-4" /> Editar Historia
-                                        </Button>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setShowHistoryPDF(true)}
+                                                className="gap-2"
+                                            >
+                                                <Download className="w-4 h-4" /> Descargar PDF
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => setIsEditingHistory(true)}
+                                                className="gap-2"
+                                            >
+                                                <Pencil className="w-4 h-4" /> Editar Historia
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     {/* Quick Summary View of History */}
@@ -674,9 +691,20 @@ const PatientDetailPage = () => {
                 {/* TAB CONTENT: EVOLUTIONS */}
                 <TabsContent value="evolutions" className="mt-6">
                     <Card className="shadow-sm">
-                        <CardHeader className="border-b bg-muted/10 pb-4">
-                            <CardTitle className="text-xl">Evoluciones y Notas Clínicas</CardTitle>
-                            <CardDescription>Seguimiento cronológico del tratamiento</CardDescription>
+                        <CardHeader className="border-b bg-muted/10 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <CardTitle className="text-xl">Evoluciones y Notas Clínicas</CardTitle>
+                                <CardDescription>Seguimiento cronológico del tratamiento</CardDescription>
+                            </div>
+                            {(selectedPatient.medicalHistory || patientAppointments.length > 0) && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowHistoryPDF(true)}
+                                    className="gap-2 shrink-0"
+                                >
+                                    <Download className="w-4 h-4" /> Descargar PDF
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent className="p-0">
                             {patientAppointments.length === 0 ? (
@@ -870,6 +898,15 @@ const PatientDetailPage = () => {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {showHistoryPDF && selectedPatient && (
+                <ClinicalHistoryPDF
+                    patient={selectedPatient}
+                    appointments={patientAppointments as Appointment[]}
+                    organizationName={organization?.name || 'Mi Clínica'}
+                    onClose={() => setShowHistoryPDF(false)}
+                />
+            )}
         </div>
     );
 };

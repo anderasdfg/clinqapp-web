@@ -8,6 +8,7 @@ import { staffService } from '@/services/staff.service';
 import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
 import { GENDER } from '@/types/dto/patient.dto';
 import type { Patient } from '@/types/patient.types';
+import { formatDocumentNumberForDisplay } from '@/lib/utils/document-number';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
@@ -51,7 +52,8 @@ const PatientForm = ({ patient, onSuccess }: PatientFormProps) => {
             ? {
                 firstName: patient.firstName,
                 lastName: patient.lastName,
-                dni: patient.dni || '',
+                // Hide TEMP-* in the input; empty submit keeps existing TEMP via backend preprocess
+                dni: formatDocumentNumberForDisplay(patient.dni),
                 phone: patient.phone,
                 email: patient.email || '',
                 dateOfBirth: patient.dateOfBirth ? patient.dateOfBirth.split('T')[0] : '',

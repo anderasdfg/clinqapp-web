@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePatientsStore } from '@/stores/usePatientsStore';
@@ -6,6 +6,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/Button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { REFERRAL_SOURCE_LABELS } from '@/types/patient.types';
 
 const quickPatientSchema = z.object({
     firstName: z.string().min(1, 'El nombre es requerido'),
@@ -15,6 +23,17 @@ const quickPatientSchema = z.object({
         .max(9, 'El teléfono debe tener 9 dígitos')
         .regex(/^9\d{8}$/, 'El teléfono debe comenzar con 9'),
     email: z.string().email('Email inválido').optional().or(z.literal('')),
+    referralSource: z
+        .enum([
+            'WEBSITE',
+            'INSTAGRAM',
+            'TIKTOK',
+            'FACEBOOK',
+            'GOOGLE',
+            'WORD_OF_MOUTH',
+            'OTHER',
+        ])
+        .optional(),
 });
 
 type QuickPatientFormData = z.infer<typeof quickPatientSchema>;
@@ -31,6 +50,7 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors },
     } = useForm<QuickPatientFormData>({
         resolver: zodResolver(quickPatientSchema),
@@ -45,6 +65,7 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
                 phone: data.phone,
                 // Only include email if it's not empty
                 ...(data.email && { email: data.email }),
+                ...(data.referralSource && { referralSource: data.referralSource }),
             });
 
             onSuccess(patient.id);
@@ -139,6 +160,31 @@ const QuickPatientForm = ({ onSuccess, onCancel }: QuickPatientFormProps) => {
                 />
                 {errors.email && (
                     <p className="text-sm text-error">{errors.email.message}</p>
+                )}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="quick-referralSource">Fuente de Referencia</Label>
+                <Controller
+                    name="referralSource"
+                    control={control}
+                    render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger id="quick-referralSource" className="h-9">
+                                <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(REFERRAL_SOURCE_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
+                {errors.referralSource && (
+                    <p className="text-sm text-error">{errors.referralSource.message}</p>
                 )}
             </div>
 
